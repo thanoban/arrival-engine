@@ -9,4 +9,5 @@ android {
 dependencies {
     implementation(project(":domain:trip"))
     implementation(project(":core:datastore"))
+    implementation(libs.coroutines.android)
 }
