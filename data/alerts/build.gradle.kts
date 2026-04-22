@@ -26,6 +26,7 @@ dependencies {
     ksp(libs.hilt.work.compiler)
     implementation(libs.coroutines.android)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.timber)
 
     testImplementation(project(":core:testing"))

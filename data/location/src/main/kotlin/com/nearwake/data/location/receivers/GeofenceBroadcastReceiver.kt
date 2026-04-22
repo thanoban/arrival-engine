@@ -10,6 +10,17 @@ import timber.log.Timber
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val event = GeofencingEvent.fromIntent(intent)
+        if (event == null) {
+            Timber.w("Geofence event was null.")
+            GeofenceEventBus.emit(
+                GeofenceTransitionEvent(
+                    geofenceIds = emptyList(),
+                    transitionType = -1,
+                ),
+            )
+            return
+        }
+
         if (event.hasError()) {
             val errorCode = event.errorCode
             if (errorCode == GeofenceStatusCodes.GEOFENCE_NOT_AVAILABLE) {
