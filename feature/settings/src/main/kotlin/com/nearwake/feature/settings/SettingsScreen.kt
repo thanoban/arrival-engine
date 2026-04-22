@@ -10,6 +10,7 @@ import com.nearwake.core.ui.NearWakeScaffold
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onDiagnostics: () -> Unit,
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val state = viewModel.state.value
@@ -18,6 +19,7 @@ fun SettingsScreen(
         subtitle = "Preferences for default alert timing, intensity, and diagnostics.",
     ) {
         OutlinedButton(onClick = onBack) { Text("Back") }
+        OutlinedButton(onClick = onDiagnostics) { Text("Diagnostics") }
         NearWakeCard {
             Text("Default alert lead: ${state.alertLeadSummary}")
             Text("Diagnostics enabled: ${state.diagnosticsEnabled}")
