@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":domain:location"))
     implementation(project(":domain:routing"))
+    implementation(project(":domain:trip"))
 
     implementation(libs.retrofit)
     implementation(libs.kotlinx.serialization.json)
@@ -21,6 +22,7 @@ dependencies {
     implementation(libs.coroutines.android)
 
     testImplementation(project(":core:testing"))
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.mockk)
 }
