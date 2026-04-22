@@ -8,6 +8,7 @@ import com.nearwake.feature.alerts.AlertScreen
 import com.nearwake.feature.alerts.RecoveryScreen
 import com.nearwake.feature.diagnostics.DiagnosticsScreen
 import com.nearwake.feature.history.HistoryScreen
+import com.nearwake.feature.history.TripSummaryScreen
 import com.nearwake.feature.livetrip.LiveTripScreen
 import com.nearwake.feature.onboarding.OnboardingScreen
 import com.nearwake.feature.permissions.PermissionsScreen
@@ -45,26 +46,34 @@ fun NearWakeNavHost() {
         }
         composable(NearWakeRoute.Places.route) {
             PlaceSearchScreen(
-                onSelectPlace = { navController.navigate(NearWakeRoute.TripSetup.route) },
+                onSelectPlace = { placeId ->
+                    navController.navigate(NearWakeRoute.TripSetup.createRoute(placeId))
+                },
                 onBack = { navController.popBackStack() },
             )
         }
         composable(NearWakeRoute.TripSetup.route) {
             TripSetupScreen(
-                onStartTrip = { navController.navigate(NearWakeRoute.LiveTrip.route) },
+                onStartTrip = { tripId ->
+                    navController.navigate(NearWakeRoute.LiveTrip.createRoute(tripId))
+                },
                 onBack = { navController.popBackStack() },
             )
         }
         composable(NearWakeRoute.LiveTrip.route) {
             LiveTripScreen(
                 onCancel = { navController.popBackStack(NearWakeRoute.Home.route, false) },
-                onSimulateAlert = { navController.navigate(NearWakeRoute.Alert.route) },
+                onSimulateAlert = { tripId ->
+                    navController.navigate(NearWakeRoute.Alert.createRoute(tripId))
+                },
             )
         }
         composable(NearWakeRoute.Alert.route) {
             AlertScreen(
                 onDismiss = { navController.navigate(NearWakeRoute.Home.route) },
-                onRecovery = { navController.navigate(NearWakeRoute.Recovery.route) },
+                onRecovery = { tripId ->
+                    navController.navigate(NearWakeRoute.Recovery.createRoute(tripId))
+                },
             )
         }
         composable(NearWakeRoute.Recovery.route) {
@@ -73,7 +82,17 @@ fun NearWakeNavHost() {
             )
         }
         composable(NearWakeRoute.History.route) {
-            HistoryScreen(onBack = { navController.popBackStack() })
+            HistoryScreen(
+                onBack = { navController.popBackStack() },
+                onTripSelected = { tripId ->
+                    navController.navigate(NearWakeRoute.TripSummary.createRoute(tripId))
+                },
+            )
+        }
+        composable(NearWakeRoute.TripSummary.route) {
+            TripSummaryScreen(
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(NearWakeRoute.Settings.route) {
             SettingsScreen(

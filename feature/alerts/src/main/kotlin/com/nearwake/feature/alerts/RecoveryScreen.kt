@@ -3,16 +3,18 @@ package com.nearwake.feature.alerts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
 
 @Composable
 fun RecoveryScreen(
     onEndTrip: () -> Unit,
-    viewModel: RecoveryViewModel = viewModel(),
+    viewModel: RecoveryViewModel = hiltViewModel(),
 ) {
-    val state = viewModel.state.value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     NearWakeScaffold(
         title = "You may have missed your stop",
         subtitle = "${state.destinationName} was ${state.missedByLabel}",
@@ -23,7 +25,7 @@ fun RecoveryScreen(
         )
         NearWakePrimaryButton(
             text = "End trip",
-            onClick = onEndTrip,
+            onClick = { viewModel.endTrip(onEndTrip) },
         )
     }
 }

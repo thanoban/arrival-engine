@@ -12,6 +12,9 @@ interface TripDao {
     fun observeTrips(): Flow<List<TripEntity>>
 
     @Query("SELECT * FROM trips WHERE id = :tripId LIMIT 1")
+    fun observeTripById(tripId: String): Flow<TripEntity?>
+
+    @Query("SELECT * FROM trips WHERE id = :tripId LIMIT 1")
     suspend fun getTripById(tripId: String): TripEntity?
 
     @Upsert

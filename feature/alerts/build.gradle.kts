@@ -10,4 +10,6 @@ dependencies {
     implementation(project(":domain:trip"))
     implementation(project(":core:database"))
     implementation(project(":data:alerts"))
+    implementation(libs.coroutines.android)
+    implementation(libs.kotlinx.datetime)
 }

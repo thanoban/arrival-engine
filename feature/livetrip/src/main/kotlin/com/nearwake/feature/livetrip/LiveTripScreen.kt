@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.ui.NearWakeCard
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
@@ -14,17 +16,17 @@ import com.nearwake.core.ui.NearWakeScaffold
 @Composable
 fun LiveTripScreen(
     onCancel: () -> Unit,
-    onSimulateAlert: () -> Unit,
-    viewModel: LiveTripViewModel = viewModel(),
+    onSimulateAlert: (String) -> Unit,
+    viewModel: LiveTripViewModel = hiltViewModel(),
 ) {
-    val state = viewModel.state.value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     NearWakeScaffold(
         title = state.destinationName,
         subtitle = "The app is armed and tracking quietly until it needs your attention.",
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = onCancel) { Text("Cancel trip") }
-            OutlinedButton(onClick = onSimulateAlert) { Text("Test alert") }
+            OutlinedButton(onClick = { viewModel.cancelTrip(onCancel) }) { Text("Cancel trip") }
+            OutlinedButton(onClick = { onSimulateAlert(state.tripId) }) { Text("Test alert") }
         }
 
         NearWakeCard {
@@ -43,7 +45,7 @@ fun LiveTripScreen(
 
         NearWakePrimaryButton(
             text = "Simulate approach alert",
-            onClick = onSimulateAlert,
+            onClick = { onSimulateAlert(state.tripId) },
         )
     }
 }

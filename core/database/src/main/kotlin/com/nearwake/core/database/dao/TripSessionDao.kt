@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TripSessionDao {
+    @Query("SELECT * FROM trip_sessions ORDER BY updated_at DESC")
+    fun observeTripSessions(): Flow<List<TripSessionEntity>>
+
     @Query("SELECT * FROM trip_sessions WHERE trip_id = :tripId LIMIT 1")
     fun observeTripSession(tripId: String): Flow<TripSessionEntity?>
 

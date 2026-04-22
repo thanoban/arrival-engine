@@ -6,18 +6,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
 
 @Composable
 fun AlertScreen(
     onDismiss: () -> Unit,
-    onRecovery: () -> Unit,
-    viewModel: AlertViewModel = viewModel(),
+    onRecovery: (String) -> Unit,
+    viewModel: AlertViewModel = hiltViewModel(),
 ) {
-    val state = viewModel.state.value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     NearWakeScaffold(
         title = "Approaching your stop",
         subtitle = state.destinationName,
@@ -29,11 +31,11 @@ fun AlertScreen(
         )
         NearWakePrimaryButton(
             text = "Dismiss",
-            onClick = onDismiss,
+            onClick = { viewModel.dismissTrip(onDismiss) },
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = onRecovery) { Text("Recovery") }
-            OutlinedButton(onClick = onDismiss) { Text("End trip") }
+            OutlinedButton(onClick = { onRecovery(state.tripId) }) { Text("Recovery") }
+            OutlinedButton(onClick = { viewModel.dismissTrip(onDismiss) }) { Text("End trip") }
         }
     }
 }

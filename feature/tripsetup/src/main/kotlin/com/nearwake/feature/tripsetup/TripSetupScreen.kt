@@ -9,9 +9,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.ui.NearWakeCard
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
@@ -19,11 +21,11 @@ import com.nearwake.domain.trip.model.AlertIntensity
 
 @Composable
 fun TripSetupScreen(
-    onStartTrip: () -> Unit,
+    onStartTrip: (String) -> Unit,
     onBack: () -> Unit,
-    viewModel: TripSetupViewModel = viewModel(),
+    viewModel: TripSetupViewModel = hiltViewModel(),
 ) {
-    val state = viewModel.state.value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     NearWakeScaffold(
         title = "Trip setup",
         subtitle = "Tune the lead time once, then let the monitoring engine do the quiet work.",
@@ -32,6 +34,9 @@ fun TripSetupScreen(
 
         NearWakeCard {
             Text("To: ${state.destinationName}", style = MaterialTheme.typography.titleLarge)
+            if (state.destinationAddress.isNotBlank()) {
+                Text(state.destinationAddress, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Text("ETA: ${state.etaLabel}", color = MaterialTheme.colorScheme.tertiary)
         }
 
@@ -69,13 +74,14 @@ fun TripSetupScreen(
             Text("Background monitoring", style = MaterialTheme.typography.titleLarge)
             Switch(
                 checked = state.backgroundMonitoringEnabled,
-                onCheckedChange = {},
+                onCheckedChange = viewModel::setBackgroundMonitoringEnabled,
             )
         }
 
         NearWakePrimaryButton(
             text = "Start trip",
-            onClick = onStartTrip,
+            onClick = { viewModel.startTrip(onStartTrip) },
+            enabled = state.canStart,
         )
     }
 }
