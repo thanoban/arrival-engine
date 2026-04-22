@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":data:motion"))
     implementation(project(":data:analytics"))
 
+    implementation(libs.androidx.core.ktx)
     implementation(libs.play.services.location)
     implementation(libs.workmanager.ktx)
     implementation(libs.hilt.work)
