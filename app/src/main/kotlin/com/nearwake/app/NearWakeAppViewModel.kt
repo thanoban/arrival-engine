@@ -1,4 +1,4 @@
-package com.nearwake.feature.onboarding
+package com.nearwake.app
 
 import androidx.lifecycle.ViewModel
 import com.nearwake.core.datastore.UserPreferencesDataStore
@@ -13,26 +13,29 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class OnboardingUiState(
-    val pages: List<String> = listOf(
-        "Set a destination fast",
-        "Monitor in the background",
-        "Wake up before you miss the stop",
-    ),
+data class NearWakeAppUiState(
+    val startDestination: String? = null,
 )
 
 @HiltViewModel
-class OnboardingViewModel @Inject constructor(
+class NearWakeAppViewModel @Inject constructor(
     private val userPreferencesDataStore: UserPreferencesDataStore,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val mutableState = MutableStateFlow(OnboardingUiState())
-    val state: StateFlow<OnboardingUiState> = mutableState.asStateFlow()
+    private val mutableState = MutableStateFlow(NearWakeAppUiState())
+    val state: StateFlow<NearWakeAppUiState> = mutableState.asStateFlow()
 
-    fun completeOnboarding(onCompleted: () -> Unit) {
+    init {
         scope.launch {
-            userPreferencesDataStore.setOnboardingCompleted(true)
-            onCompleted()
+            userPreferencesDataStore.preferences.collect { preferences ->
+                mutableState.value = NearWakeAppUiState(
+                    startDestination = if (preferences.onboardingCompleted) {
+                        NearWakeRoute.Home.route
+                    } else {
+                        NearWakeRoute.Onboarding.route
+                    },
+                )
+            }
         }
     }
 

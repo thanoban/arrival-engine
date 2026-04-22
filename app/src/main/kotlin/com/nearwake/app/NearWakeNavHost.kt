@@ -17,12 +17,14 @@ import com.nearwake.feature.settings.SettingsScreen
 import com.nearwake.feature.tripsetup.TripSetupScreen
 
 @Composable
-fun NearWakeNavHost() {
+fun NearWakeNavHost(
+    startDestination: String = NearWakeRoute.Onboarding.route,
+) {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = NearWakeRoute.Onboarding.route,
+        startDestination = startDestination,
     ) {
         composable(NearWakeRoute.Onboarding.route) {
             OnboardingScreen(

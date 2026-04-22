@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.ui.NearWakeCard
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
@@ -14,9 +16,9 @@ import com.nearwake.core.ui.NearWakeScaffold
 @Composable
 fun OnboardingScreen(
     onContinue: () -> Unit,
-    viewModel: OnboardingViewModel = viewModel(),
+    viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
-    val state = viewModel.state.value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     NearWakeScaffold(
         title = "Wake before your stop",
         subtitle = "NearWake arms in seconds and stays calm until it really matters.",
@@ -38,7 +40,7 @@ fun OnboardingScreen(
         }
         NearWakePrimaryButton(
             text = "Start setup",
-            onClick = onContinue,
+            onClick = { viewModel.completeOnboarding(onContinue) },
         )
     }
 }
