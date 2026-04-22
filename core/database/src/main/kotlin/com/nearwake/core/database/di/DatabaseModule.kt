@@ -1,0 +1,46 @@
+package com.nearwake.core.database.di
+
+import android.content.Context
+import androidx.room.Room
+import com.nearwake.core.database.NearWakeDatabase
+import com.nearwake.core.database.dao.AlertEventDao
+import com.nearwake.core.database.dao.DiagnosticsEventDao
+import com.nearwake.core.database.dao.SavedPlaceDao
+import com.nearwake.core.database.dao.TripDao
+import com.nearwake.core.database.dao.TripSessionDao
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+    @Provides
+    @Singleton
+    fun provideNearWakeDatabase(
+        @ApplicationContext context: Context,
+    ): NearWakeDatabase = Room.databaseBuilder(
+        context,
+        NearWakeDatabase::class.java,
+        NearWakeDatabase.DATABASE_NAME,
+    ).build()
+
+    @Provides
+    fun provideTripDao(database: NearWakeDatabase): TripDao = database.tripDao()
+
+    @Provides
+    fun provideTripSessionDao(database: NearWakeDatabase): TripSessionDao = database.tripSessionDao()
+
+    @Provides
+    fun provideSavedPlaceDao(database: NearWakeDatabase): SavedPlaceDao = database.savedPlaceDao()
+
+    @Provides
+    fun provideAlertEventDao(database: NearWakeDatabase): AlertEventDao = database.alertEventDao()
+
+    @Provides
+    fun provideDiagnosticsEventDao(database: NearWakeDatabase): DiagnosticsEventDao =
+        database.diagnosticsEventDao()
+}
