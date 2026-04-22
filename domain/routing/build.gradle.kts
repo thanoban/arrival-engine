@@ -8,6 +8,7 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.coroutines.test)
 }

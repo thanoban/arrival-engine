@@ -12,7 +12,8 @@ dependencies {
     implementation(project(":domain:trip"))
     implementation(project(":domain:location"))
 
-    api(libs.junit)
+    api(libs.junit.jupiter)
+    api(libs.junit.jupiter.engine)
     api(libs.mockk)
     api(libs.mockk.android)
     api(libs.turbine)

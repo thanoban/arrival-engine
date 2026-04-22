@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.timber)
     api(libs.kotlinx.datetime)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.coroutines.test)
 }

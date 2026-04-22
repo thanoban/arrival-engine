@@ -29,7 +29,8 @@ dependencies {
     implementation(libs.timber)
 
     testImplementation(project(":core:testing"))
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
 }

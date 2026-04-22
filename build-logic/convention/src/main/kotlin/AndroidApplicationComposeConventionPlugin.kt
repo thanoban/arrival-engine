@@ -3,7 +3,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
 
 class AndroidApplicationComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -14,9 +13,6 @@ class AndroidApplicationComposeConventionPlugin : Plugin<Project> {
             extensions.configure<ApplicationExtension> {
                 configureAndroidCompose(this)
             }
-
-            val libs = extensions.getByType<org.gradle.api.plugins.ExtraPropertiesExtension>()
-                .let { rootProject.extensions.getByType(org.gradle.api.artifacts.dsl.DependencyHandler::class) }
 
             dependencies {
                 val bom = project.dependencies.platform("androidx.compose:compose-bom:2024.12.01")

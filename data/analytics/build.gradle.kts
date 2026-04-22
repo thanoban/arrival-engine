@@ -15,5 +15,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coroutines.android)
     implementation(libs.timber)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }

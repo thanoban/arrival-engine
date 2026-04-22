@@ -18,12 +18,10 @@ kotlin {
 }
 
 dependencies {
-    compileOnly(libs.plugins.android.application.get().let { "${it.pluginId}:${it.version}" })
-    compileOnly(libs.plugins.android.library.get().let { "${it.pluginId}:${it.version}" })
-    compileOnly(libs.plugins.kotlin.android.get().let { "org.jetbrains.kotlin:kotlin-gradle-plugin:${it.version}" })
-    compileOnly(libs.plugins.kotlin.jvm.get().let { "org.jetbrains.kotlin:kotlin-gradle-plugin:${it.version}" })
-    compileOnly(libs.plugins.ksp.get().let { "com.google.devtools.ksp:symbol-processing-gradle-plugin:${it.version}" })
-    compileOnly(libs.plugins.hilt.get().let { "com.google.dagger:hilt-android-gradle-plugin:${it.version}" })
+    compileOnly("com.android.tools.build:gradle:${libs.plugins.android.application.get().version}")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.plugins.kotlin.android.get().version}")
+    compileOnly("com.google.devtools.ksp:symbol-processing-gradle-plugin:${libs.plugins.ksp.get().version}")
+    compileOnly("com.google.dagger:hilt-android-gradle-plugin:${libs.plugins.hilt.get().version}")
 }
 
 tasks {
