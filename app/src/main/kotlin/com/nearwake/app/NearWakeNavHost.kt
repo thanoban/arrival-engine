@@ -33,6 +33,7 @@ fun NearWakeNavHost() {
                 onSetDestination = { navController.navigate(NearWakeRoute.Places.route) },
                 onHistory = { navController.navigate(NearWakeRoute.History.route) },
                 onSettings = { navController.navigate(NearWakeRoute.Settings.route) },
+                onPermissions = { navController.navigate(NearWakeRoute.Permissions.route) },
             )
         }
         composable(NearWakeRoute.Permissions.route) {

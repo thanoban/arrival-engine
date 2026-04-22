@@ -18,6 +18,7 @@ fun HomeScreen(
     onSetDestination: () -> Unit,
     onHistory: () -> Unit,
     onSettings: () -> Unit,
+    onPermissions: () -> Unit,
 ) {
     NearWakeScaffold(
         title = "NearWake",
@@ -29,6 +30,7 @@ fun HomeScreen(
         ) {
             OutlinedButton(onClick = onSettings) { Text("Settings") }
             OutlinedButton(onClick = onHistory) { Text("History") }
+            OutlinedButton(onClick = onPermissions) { Text("Permissions") }
         }
 
         NearWakePrimaryButton(
