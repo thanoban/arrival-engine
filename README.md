@@ -2,6 +2,8 @@
 
 NearWake is an Android-first arrival alarm app for buses, trains, and transfers. The app is built around an offline-first monitoring flow: pick a destination, arm a trip quickly, let the background engine monitor quietly, and surface an alert before the user misses the stop.
 
+If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md) alongside `PLAN.md`.
+
 ## Current Status
 
 - Multi-module clean architecture is in place across `app`, `core`, `domain`, `data`, and `feature` modules.
