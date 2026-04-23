@@ -77,13 +77,21 @@ NearWake is an Android-first arrival alarm app for buses, trains, and transfers.
    .\gradlew.bat :app:assembleDebug
    ```
 
+5. Verify the release build path:
+
+   ```powershell
+   .\gradlew.bat :app:assembleRelease
+   ```
+
 ## Verified Commands
 
 - `.\gradlew.bat :domain:trip:test`
 - `.\gradlew.bat :app:assembleDebug`
+- `.\gradlew.bat :app:assembleRelease`
 
 ## Notes
 
 - `corrections.md` documents the build and consistency fixes that were applied during stabilization.
 - `data:routing` currently provides cache and stub implementations only; Google transit integration is a later phase.
 - The current UI is no longer just a shell: destination selection, trip setup, live trip, alert dismissal, and history/summary screens now flow through persisted Room data.
+- Release builds now enforce HTTPS-only networking and include baseline shrinker rules for Room, Hilt, WorkManager, and Kotlin serialization.
