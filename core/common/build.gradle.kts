@@ -10,7 +10,6 @@ android {
 dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
-    implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.timber)
     api(libs.kotlinx.datetime)
