@@ -22,7 +22,6 @@ dependencies {
     implementation(project(":domain:trip"))
 
     implementation(libs.okhttp)
-    implementation(libs.retrofit)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
     implementation(libs.coroutines.android)

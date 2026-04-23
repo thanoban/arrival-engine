@@ -28,7 +28,7 @@
 - feature/alerts, diagnostics, history, livetrip, onboarding, permissions, places, settings, tripsetup (all screens + ViewModels)
 
 **Still intentionally thin / future-facing:**
-- `core/network` source files (manifest exists, no Kotlin implementation yet)
+- `core/network` source files added with shared OkHttp/Retrofit wiring
 
 ---
 
@@ -43,7 +43,7 @@
 | C-005 | Duplicate `kotlinx-datetime` in `core/common` | Low | ✅ RESOLVED |
 | C-006 | Unnecessary `j2objc-annotations` in `feature/places` | Low | ✅ RESOLVED |
 | C-007 | `core/common` has no source files | Medium | ✅ RESOLVED |
-| C-008 | `core/network` has no source files | Low | Pending |
+| C-008 | `core/network` has no source files | Low | ✅ RESOLVED |
 | C-009 | No test source files written yet | Medium | ✅ RESOLVED |
 | C-010 | `local.properties.template` missing | Low | ✅ RESOLVED |
 
@@ -85,18 +85,17 @@ core/common/src/main/kotlin/com/nearwake/core/common/
 
 ---
 
-## C-008 — `core/network` has no source files
+## ✅ C-008 — RESOLVED
 
-**Severity:** Low — no feature currently depends on it (backend is deferred), but it's declared
-
-**What's needed when backend is added:**
+`core/network` now contains real Kotlin sources:
 ```
 core/network/src/main/kotlin/com/nearwake/core/network/
-├── NearWakeHttpClient.kt    ← OkHttpClient factory (logging, timeouts)
+├── NearWakeHttpClient.kt
 └── di/
-    └── NetworkModule.kt     ← Hilt module providing OkHttpClient + Retrofit
+    └── NetworkModule.kt
 ```
-Safe to leave empty until backend work begins.
+
+It now provides shared `OkHttpClient`, `Json`, and `Retrofit.Builder` instances for modules that need network access. `data:routing` consumes that shared wiring instead of creating its own duplicate client/json providers.
 
 ---
 

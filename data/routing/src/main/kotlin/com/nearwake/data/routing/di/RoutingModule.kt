@@ -12,8 +12,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import kotlinx.serialization.json.Json
-import okhttp3.OkHttpClient
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -28,16 +26,6 @@ object RoutingModule {
     } else {
         googleTransitDataSource
     }
-
-    @Provides
-    @Singleton
-    fun provideRoutingJson(): Json = Json {
-        ignoreUnknownKeys = true
-    }
-
-    @Provides
-    @Singleton
-    fun provideRoutingHttpClient(): OkHttpClient = OkHttpClient.Builder().build()
 }
 
 @Module
