@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(project(":domain:trip"))
+    implementation(project(":domain:routing"))
     implementation(project(":core:database"))
     implementation(libs.coroutines.android)
 }

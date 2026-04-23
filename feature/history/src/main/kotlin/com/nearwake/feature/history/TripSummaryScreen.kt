@@ -35,6 +35,15 @@ fun TripSummaryScreen(
         }
 
         NearWakeCard {
+            Text("Route snapshot", style = MaterialTheme.typography.titleMedium)
+            Text(state.routeSummary)
+            if (state.etaLabel.isNotBlank()) {
+                Text(state.etaLabel, color = MaterialTheme.colorScheme.tertiary)
+            }
+            Text(state.confidenceLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        NearWakeCard {
             Text("Alert setup", style = MaterialTheme.typography.titleMedium)
             Text(state.alertLeadLabel.ifBlank { "Lead time unavailable" })
             Text(state.alertIntensityLabel.ifBlank { "Alert intensity unavailable" })

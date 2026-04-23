@@ -7,6 +7,7 @@ import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.SavedPlaceEntity
 import com.nearwake.core.database.entity.TripEntity
+import com.nearwake.domain.routing.repository.RoutingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +39,9 @@ data class TripSummaryUiState(
     val alertLeadLabel: String = "",
     val alertIntensityLabel: String = "",
     val monitoringLabel: String = "",
+    val routeSummary: String = "Destination-only monitoring",
+    val etaLabel: String = "",
+    val confidenceLabel: String = "",
 )
 
 @HiltViewModel
@@ -85,6 +89,7 @@ class TripSummaryViewModel @Inject constructor(
     tripDao: TripDao,
     savedPlaceDao: SavedPlaceDao,
     tripSessionDao: TripSessionDao,
+    private val routingRepository: RoutingRepository,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
@@ -98,6 +103,7 @@ class TripSummaryViewModel @Inject constructor(
                 savedPlaceDao.observeSavedPlaces(),
                 tripSessionDao.observeTripSession(tripId),
             ) { trip, places, session ->
+                val routeSnapshot = routingRepository.getCachedRoute(tripId)
                 val place = trip?.destinationId?.let { destinationId -> places.firstOrNull { it.id == destinationId } }
                 TripSummaryUiState(
                     destinationName = place?.name ?: "Unknown destination",
@@ -114,6 +120,9 @@ class TripSummaryViewModel @Inject constructor(
                     }.orEmpty(),
                     alertIntensityLabel = trip?.alertIntensity?.name?.toDisplayLabel().orEmpty(),
                     monitoringLabel = session?.monitoringMode?.name?.toDisplayLabel() ?: "Not monitoring",
+                    routeSummary = routeSnapshot?.toRouteSummary() ?: "Destination-only monitoring",
+                    etaLabel = session?.lastEtaMinutes?.let { "~$it min at last check" }.orEmpty(),
+                    confidenceLabel = session?.confidence?.name?.toDisplayLabel() ?: "No confidence data",
                 )
             }.collect { uiState ->
                 mutableState.value = uiState
@@ -151,3 +160,9 @@ private fun String.toDisplayLabel(): String =
 
 private fun kotlinx.datetime.Instant.toReadableLabel(): String =
     toString().replace('T', ' ').take(16)
+
+private fun com.nearwake.domain.routing.model.RouteSnapshot.toRouteSummary(): String {
+    val stopLabel = if (stops.size == 1) "1 stop" else "${stops.size} stops"
+    val transferLabel = if (transfers.size == 1) "1 transfer" else "${transfers.size} transfers"
+    return "$stopLabel · $transferLabel"
+}
