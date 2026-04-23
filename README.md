@@ -4,6 +4,7 @@ NearWake is an Android-first arrival alarm app for buses, trains, and transfers.
 
 If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md) alongside `PLAN.md`.
 For the practical current-state checklist, env/API setup, and what is finished vs not finished, read [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md).
+For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md).
 
 ## Current Status
 
@@ -17,6 +18,7 @@ For the practical current-state checklist, env/API setup, and what is finished v
 ## Docs
 
 - [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md): exact current setup, required env/API values, and project condition
+- [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md): exact API keys, local updates, and later release-time configuration items
 - [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
 - [corrections.md](corrections.md): correction log and resolved repo issues
 
@@ -125,4 +127,5 @@ For the practical current-state checklist, env/API setup, and what is finished v
 - The current UI is no longer just a shell: destination selection, trip setup, live trip, alert dismissal, diagnostics, settings, and history/summary screens all flow through persisted app data.
 - `TripMonitoringService` now uses Room-backed `TripSession` restore/save behavior, which better matches the plan's recovery and process-death requirements.
 - `SETUP_AND_STATUS.md` now contains the detailed answer for what you need to provide to build/run the app and what is still unfinished.
+- `REQUIRED_UPDATES_AND_APIS.md` now contains the dedicated checklist of what you still need to update outside the codebase.
 - Release builds now enforce HTTPS-only networking and include baseline shrinker rules for Room, Hilt, WorkManager, and Kotlin serialization.
