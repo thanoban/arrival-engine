@@ -18,7 +18,6 @@ kotlinx-serialization = "1.7.3"
 kotlinx-datetime = "0.6.1"
 google-maps = "19.0.0"
 google-places = "4.1.0"
-j2objc = "2.8"
 play-services-location = "21.3.0"
 play-services-auth = "21.3.0"
 activity-recognition = "21.1.0"
@@ -87,7 +86,6 @@ play-services-location = { group = "com.google.android.gms", name = "play-servic
 # Google Maps + Places
 google-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version = "6.2.1" }
 google-places = { group = "com.google.android.libraries.places", name = "places", version.ref = "google-places" }
-j2objc-annotations = { group = "com.google.j2objc", name = "j2objc-annotations", version.ref = "j2objc" }
 
 # Coroutines
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
