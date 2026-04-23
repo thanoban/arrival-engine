@@ -66,6 +66,8 @@ dependencies {
     implementation(libs.androidx.splash)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.workmanager.ktx)
+    implementation(libs.hilt.work)
     implementation(libs.hilt.navigation.compose)
 
     // Logging

@@ -5,6 +5,14 @@
             android:name=".AlertReminderReceiver"
             android:enabled="true"
             android:exported="false" />
+        <receiver
+            android:name=".worker.TripRecoveryBootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         <service
             android:name=".TripMonitoringService"
             android:enabled="true"
