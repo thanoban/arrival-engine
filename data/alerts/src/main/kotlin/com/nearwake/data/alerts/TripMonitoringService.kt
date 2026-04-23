@@ -6,22 +6,36 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofenceStatusCodes
+import com.nearwake.core.database.dao.SavedPlaceDao
+import com.nearwake.core.database.dao.TripDao
 import com.nearwake.data.analytics.DiagnosticsLogger
+import com.nearwake.data.location.GeofenceDataSource
+import com.nearwake.data.location.LocationStrategyOrchestrator
 import com.nearwake.data.location.receivers.GeofenceEventBus
+import com.nearwake.data.motion.ActivityRecognitionDataSource
 import com.nearwake.data.motion.receivers.ActivityTransitionEventBus
+import com.nearwake.domain.location.model.LatLng
+import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.engine.TripEngine
-import com.nearwake.domain.trip.engine.TripEvent
 import com.nearwake.domain.trip.engine.TripEngineResult
+import com.nearwake.domain.trip.engine.TripEvent
+import com.nearwake.domain.trip.engine.TripSideEffect
+import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
+import com.nearwake.domain.trip.model.TripState
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -32,9 +46,19 @@ class TripMonitoringService : Service() {
     @Inject lateinit var diagnosticsLogger: DiagnosticsLogger
     @Inject lateinit var tripEngine: TripEngine
     @Inject lateinit var tripSessionStore: TripSessionStore
+    @Inject lateinit var tripMonitoringRuntime: TripMonitoringRuntime
+    @Inject lateinit var tripDao: TripDao
+    @Inject lateinit var savedPlaceDao: SavedPlaceDao
+    @Inject lateinit var routingRepository: RoutingRepository
+    @Inject lateinit var geofenceDataSource: GeofenceDataSource
+    @Inject lateinit var activityRecognitionDataSource: ActivityRecognitionDataSource
+    @Inject lateinit var locationStrategyOrchestrator: LocationStrategyOrchestrator
+    @Inject lateinit var alertOrchestrator: AlertOrchestrator
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var activeSession: TripSession? = null
+    private var activeContext: MonitoredTripContext? = null
+    private var locationJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -51,20 +75,7 @@ class TripMonitoringService : Service() {
                 )
                 val tripId = intent.getStringExtra(EXTRA_TRIP_ID) ?: return START_STICKY
                 serviceScope.launch {
-                    val restoredSession = tripSessionStore.loadOrCreate(tripId)
-                    activeSession = restoredSession
-                    notificationHelper.notify(
-                        NOTIFICATION_ID_MONITORING,
-                        notificationHelper.buildMonitoringNotification(restoredSession.monitoringMode),
-                    )
-                    diagnosticsLogger.log(
-                        eventType = "monitoring_service_started",
-                        tripId = tripId,
-                        payload = buildJsonObject {
-                            put("state", restoredSession.state.name)
-                            put("mode", restoredSession.monitoringMode.name)
-                        },
-                    )
+                    startMonitoring(tripId)
                 }
             }
 
@@ -75,6 +86,7 @@ class TripMonitoringService : Service() {
 
     override fun onDestroy() {
         runBlocking {
+            locationJob?.cancel()
             tripCleanupUseCase()
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -84,58 +96,347 @@ class TripMonitoringService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    private suspend fun startMonitoring(tripId: String) {
+        val context = loadTripContext(tripId)
+        if (context == null) {
+            diagnosticsLogger.log(
+                eventType = "monitoring_service_missing_trip_context",
+                tripId = tripId,
+                payload = buildJsonObject {},
+            )
+            stopSelf()
+            return
+        }
+
+        activeContext = context
+        val restoredSession = tripSessionStore.loadOrCreate(tripId)
+            .withInitialEta(context.initialEtaMinutes)
+        val preparedSession = registerPrerequisites(restoredSession, context)
+        persistSession(preparedSession)
+
+        val restorationResult = tripEngine.restoreSession(preparedSession)
+        applyEngineResult(
+            result = restorationResult,
+            eventName = "RestoreMonitoring",
+            context = context,
+        )
+        diagnosticsLogger.log(
+            eventType = "monitoring_service_started",
+            tripId = tripId,
+            payload = buildJsonObject {
+                put("state", restorationResult.session.state.name)
+                put("mode", restorationResult.session.monitoringMode.name)
+                put("route_cached", context.hasCachedRoute)
+            },
+        )
+    }
+
     private fun observeSignals() {
         serviceScope.launch {
             GeofenceEventBus.events.collect { event ->
+                val context = activeContext ?: return@collect
                 val session = activeSession ?: return@collect
-                if (event.transitionType == Geofence.GEOFENCE_TRANSITION_ENTER) {
-                    val result = tripEngine.onEvent(session, TripEvent.ApproachGeofenceEntered)
-                    persistSession(result)
-                    notificationHelper.notify(
-                        NOTIFICATION_ID_MONITORING,
-                        notificationHelper.buildMonitoringNotification(result.session.monitoringMode),
-                    )
+
+                if (event.errorCode == GeofenceStatusCodes.GEOFENCE_NOT_AVAILABLE) {
                     diagnosticsLogger.log(
-                        eventType = "trip_state_transition",
+                        eventType = "geofence_not_available",
                         tripId = session.tripId,
-                        payload = buildJsonObject {
-                            put("event", "ApproachGeofenceEntered")
-                            put("from_state", session.state.name)
-                            put("to_state", result.session.state.name)
+                        payload = buildJsonObject {},
+                    )
+                    startTracking(MonitoringMode.BALANCED)
+                    return@collect
+                }
+
+                if (event.transitionType != Geofence.GEOFENCE_TRANSITION_ENTER) {
+                    return@collect
+                }
+
+                when (tripMonitoringRuntime.classifySignal(event.geofenceIds)) {
+                    GeofenceSignal.APPROACH -> applyEngineResult(
+                        result = tripEngine.onEvent(session, TripEvent.ApproachGeofenceEntered),
+                        eventName = "ApproachGeofenceEntered",
+                        context = context,
+                        extraPayload = buildJsonObject {
                             put("ids", event.geofenceIds.joinToString(","))
                         },
                     )
+
+                    GeofenceSignal.DESTINATION -> handleDestinationReached(context)
+                    null -> Unit
                 }
             }
         }
 
         serviceScope.launch {
             ActivityTransitionEventBus.events.collect { motion ->
+                val context = activeContext ?: return@collect
                 val session = activeSession ?: return@collect
-                val result = tripEngine.onEvent(session, TripEvent.MotionDetected)
-                persistSession(result)
-                notificationHelper.notify(
-                    NOTIFICATION_ID_MONITORING,
-                    notificationHelper.buildMonitoringNotification(result.session.monitoringMode),
-                )
-                diagnosticsLogger.log(
-                    eventType = "trip_state_transition",
-                    tripId = session.tripId,
-                    payload = buildJsonObject {
-                        put("event", "MotionDetected")
+                applyEngineResult(
+                    result = tripEngine.onEvent(session, TripEvent.MotionDetected),
+                    eventName = "MotionDetected",
+                    context = context,
+                    extraPayload = buildJsonObject {
                         put("motion_type", motion.type.name)
-                        put("from_state", session.state.name)
-                        put("to_state", result.session.state.name)
                     },
                 )
             }
         }
     }
 
-    private suspend fun persistSession(result: TripEngineResult) {
-        tripSessionStore.save(result.session)
-        activeSession = result.session
+    private suspend fun handleDestinationReached(context: MonitoredTripContext) {
+        val session = activeSession ?: return
+        val location = context.destination
+        val etaMinutes = session.lastEtaMinutes ?: context.initialEtaMinutes
+        val update = tripMonitoringRuntime.applyLocationUpdate(
+            context = context,
+            session = session,
+            location = location,
+            etaMinutes = etaMinutes,
+            destinationGeofenceEntered = true,
+        )
+        applyLocationUpdate(
+            update = update,
+            eventName = "DestinationGeofenceEntered",
+            context = context,
+        )
     }
+
+    private suspend fun registerPrerequisites(
+        session: TripSession,
+        context: MonitoredTripContext,
+    ): TripSession {
+        val geofences = tripMonitoringRuntime.buildGeofences(context)
+        geofenceDataSource.removeGeofences(context.geofenceIds)
+        geofenceDataSource.registerGeofences(geofences)
+            .onFailure { error ->
+                diagnosticsLogger.log(
+                    eventType = "geofence_registration_failed",
+                    tripId = session.tripId,
+                    payload = buildJsonObject {
+                        put("message", error.message.orEmpty())
+                    },
+                )
+            }
+            .getOrThrow()
+
+        runCatching {
+            activityRecognitionDataSource.registerVehicleTransitions()
+        }.onFailure { error ->
+            diagnosticsLogger.log(
+                eventType = "activity_transition_registration_failed",
+                tripId = session.tripId,
+                payload = buildJsonObject {
+                    put("message", error.message.orEmpty())
+                },
+            )
+        }
+
+        return session.copy(geofenceIds = context.geofenceIds)
+    }
+
+    private suspend fun startTracking(mode: MonitoringMode) {
+        locationJob?.cancel()
+        if (mode == MonitoringMode.GEOFENCE_ONLY) {
+            locationStrategyOrchestrator.stop()
+            return
+        }
+
+        val context = activeContext ?: return
+        val updates = locationStrategyOrchestrator.escalate(mode)
+        locationJob = serviceScope.launch {
+            updates.collectLatest { location ->
+                handleLocationUpdate(context, location)
+            }
+        }
+    }
+
+    private suspend fun handleLocationUpdate(
+        context: MonitoredTripContext,
+        location: LatLng,
+    ) {
+        var session = activeSession ?: return
+        val etaResult = if (context.hasCachedRoute) {
+            routingRepository.refreshEta(context.tripId, location)
+        } else {
+            Result.failure(IllegalStateException("No cached route is available for this trip."))
+        }
+
+        if (context.hasCachedRoute) {
+            session = when {
+                etaResult.isSuccess && session.confidence == Confidence.OFFLINE -> {
+                    val result = tripEngine.onEvent(session, TripEvent.NetworkRestored())
+                    applyEngineResult(
+                        result = result,
+                        eventName = "NetworkRestored",
+                        context = context,
+                    )
+                    activeSession ?: result.session
+                }
+
+                etaResult.isFailure && session.confidence != Confidence.OFFLINE -> {
+                    val result = tripEngine.onEvent(session, TripEvent.NetworkLost)
+                    applyEngineResult(
+                        result = result,
+                        eventName = "NetworkLost",
+                        context = context,
+                        extraPayload = buildJsonObject {
+                            put("message", etaResult.exceptionOrNull()?.message.orEmpty())
+                        },
+                    )
+                    activeSession ?: result.session
+                }
+
+                else -> session
+            }
+        }
+
+        val update = tripMonitoringRuntime.applyLocationUpdate(
+            context = context,
+            session = session,
+            location = location,
+            etaMinutes = etaResult.getOrNull() ?: session.lastEtaMinutes,
+        )
+        applyLocationUpdate(
+            update = update,
+            eventName = "LocationUpdate",
+            context = context,
+        )
+    }
+
+    private suspend fun applyLocationUpdate(
+        update: TripMonitoringUpdate,
+        eventName: String,
+        context: MonitoredTripContext,
+    ) {
+        if (update.engineResult == null) {
+            persistSession(update.session)
+            refreshMonitoringNotification(update.session.monitoringMode)
+            diagnosticsLogger.log(
+                eventType = "trip_location_sampled",
+                tripId = update.session.tripId,
+                payload = buildJsonObject {
+                    put("event", eventName)
+                    put("distance_meters", update.distanceMeters)
+                    put("eta_minutes", update.etaMinutes ?: -1)
+                    put("state", update.session.state.name)
+                },
+            )
+            return
+        }
+
+        applyEngineResult(
+            result = update.engineResult,
+            eventName = eventName,
+            context = context,
+            extraPayload = buildJsonObject {
+                put("distance_meters", update.distanceMeters)
+                put("eta_minutes", update.etaMinutes ?: -1)
+            },
+        )
+    }
+
+    private suspend fun applyEngineResult(
+        result: TripEngineResult,
+        eventName: String,
+        context: MonitoredTripContext,
+        extraPayload: kotlinx.serialization.json.JsonObject? = null,
+    ) {
+        persistSession(result.session)
+        refreshMonitoringNotification(result.session.monitoringMode)
+        diagnosticsLogger.log(
+            eventType = "trip_state_transition",
+            tripId = result.session.tripId,
+            payload = buildJsonObject {
+                put("event", eventName)
+                put("from_state", result.transition.fromState.name)
+                put("to_state", result.session.state.name)
+                put("mode", result.session.monitoringMode.name)
+                put("ignored", result.transition.ignored)
+                extraPayload?.forEach { (key, value) -> put(key, value) }
+            },
+        )
+        handleSideEffects(result, context)
+    }
+
+    private suspend fun handleSideEffects(
+        result: TripEngineResult,
+        context: MonitoredTripContext,
+    ) {
+        result.transition.sideEffects.forEach { sideEffect ->
+            when (sideEffect) {
+                TripSideEffect.StartBalancedTracking,
+                TripSideEffect.StartRecoveryChecks,
+                TripSideEffect.RestartMonitoring -> startTracking(MonitoringMode.BALANCED)
+
+                TripSideEffect.StartPreciseBurst -> startTracking(MonitoringMode.PRECISE_BURST)
+
+                TripSideEffect.StopLocationTracking -> {
+                    locationJob?.cancel()
+                    locationStrategyOrchestrator.stop()
+                }
+
+                TripSideEffect.FireArrivalAlert -> {
+                    alertOrchestrator.fireAlert(
+                        tripId = context.tripId,
+                        intensity = context.alertIntensity,
+                    )
+                }
+
+                TripSideEffect.CleanupMonitoring -> {
+                    tripCleanupUseCase()
+                    stopSelf()
+                }
+
+                TripSideEffect.RestorePersistedMonitoring -> startTracking(result.session.monitoringMode)
+
+                TripSideEffect.LogTripCompletion -> {
+                    tripDao.getTripById(context.tripId)?.let { trip ->
+                        tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
+                    }
+                }
+
+                TripSideEffect.PersistSession,
+                TripSideEffect.RegisterGeofences,
+                TripSideEffect.RegisterActivityTransitions,
+                TripSideEffect.PromptForMovement,
+                TripSideEffect.ApplyOfflineBias,
+                TripSideEffect.ClearOfflineBias -> Unit
+            }
+        }
+    }
+
+    private suspend fun loadTripContext(tripId: String): MonitoredTripContext? {
+        val trip = tripDao.getTripById(tripId) ?: return null
+        val destination = savedPlaceDao.getSavedPlaceById(trip.destinationId) ?: return null
+        val cachedRoute = routingRepository.getCachedRoute(tripId)
+        return tripMonitoringRuntime.buildContext(
+            tripId = trip.id,
+            alertLeadMinutes = trip.alertLeadMinutes,
+            alertIntensity = trip.alertIntensity,
+            destination = LatLng(lat = destination.lat, lng = destination.lng),
+            hasCachedRoute = cachedRoute != null,
+            initialEtaMinutes = cachedRoute?.totalDurationMinutes,
+        )
+    }
+
+    private suspend fun persistSession(session: TripSession) {
+        tripSessionStore.save(session)
+        activeSession = session
+    }
+
+    private fun refreshMonitoringNotification(mode: MonitoringMode) {
+        notificationHelper.notify(
+            NOTIFICATION_ID_MONITORING,
+            notificationHelper.buildMonitoringNotification(mode),
+        )
+    }
+
+    private fun TripSession.withInitialEta(initialEtaMinutes: Int?): TripSession =
+        if (lastEtaMinutes == null && initialEtaMinutes != null) {
+            copy(lastEtaMinutes = initialEtaMinutes)
+        } else {
+            this
+        }
 
     companion object {
         private const val NOTIFICATION_ID_MONITORING = 41
