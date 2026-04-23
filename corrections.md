@@ -6,7 +6,7 @@
 
 ## Project Status Snapshot (2026-04-23)
 
-**Overall:** Build system complete. All modules have source files. Core implementation done.
+**Overall:** Build system complete. All modules have source files. Core implementation is substantial and buildable.
 
 **Completed:**
 - build-logic (all 7 convention plugins)
@@ -14,6 +14,7 @@
 - core/database (DB, 6 entities, 6 DAOs, 3 converters, DI)
 - core/datastore (UserPreferences, DI)
 - core/designsystem (Theme, Colors)
+- core/network (shared OkHttp, Json, Retrofit builder, tests)
 - core/testing (5 fakes: Location, Geofence, Activity, Routing, Fixtures)
 - core/ui (Card, PrimaryButton, Scaffold)
 - domain/location (4 models, 3 repository interfaces)
@@ -23,12 +24,14 @@
 - data/analytics (DiagnosticsLogger)
 - data/location (FLP, Geofence, 2 repos, EventBus, 2 receivers, DI)
 - data/motion (ActivityRecognition, repo, EventBus, receiver, DI)
-- data/routing (NoOp fallback, GoogleTransit provider, Room-backed LocalRouteCache, repo, DI)
+- data/routing (NoOp fallback, GoogleTransit provider, Room-backed LocalRouteCache, repo, DI, route preview/live summary wiring)
 - core/common (dispatchers, result wrapper, extensions, DI)
 - feature/alerts, diagnostics, history, livetrip, onboarding, permissions, places, settings, tripsetup (all screens + ViewModels)
 
-**Still intentionally thin / future-facing:**
-- `core/network` source files added with shared OkHttp/Retrofit wiring
+**Recent slices now reflected in code:**
+- route preview is shown during trip setup and cached per trip
+- live trip and trip summary show route/session data from persistence
+- monitoring service restores and saves `TripSession` state through Room while active
 
 ---
 

@@ -7,10 +7,19 @@ If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md
 ## Current Status
 
 - Multi-module clean architecture is in place across `app`, `core`, `domain`, `data`, and `feature` modules.
-- The trip engine, Room database, DataStore, and background monitoring foundations are implemented.
-- The app now persists selected places and trip sessions through Room-backed feature flows.
+- The trip engine, Room database, DataStore, and background monitoring stack are implemented and wired together.
+- The app persists selected places, trips, route snapshots, and trip sessions through Room-backed flows.
 - The Android toolchain is bootstrapped in-repo with the Gradle wrapper.
-- Routing remains intentionally stubbed for MVP destination-only mode.
+- `data:routing` now includes a working Google Transit provider, Room-backed route cache, and shared network wiring in `core:network`.
+- Trip setup, live trip, monitoring service recovery, and trip summary screens now surface real persisted route/session data instead of only placeholder values.
+
+## Recent Implemented Slices
+
+- Google transit route fetching and ETA refresh support were added in `data:routing`.
+- Route snapshots are cached per trip and shown in trip setup, live trip, and trip summary flows.
+- `core:network` now provides shared `OkHttpClient`, shared `Json`, and a `Retrofit.Builder`.
+- `TripMonitoringService` now restores and persists `TripSession` state through Room while it runs.
+- History/detail UI now shows route summary, last ETA, and confidence information from persisted session data.
 
 ## Module Layout
 
@@ -73,13 +82,21 @@ If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md
    .\gradlew.bat :domain:trip:test
    ```
 
-4. Verify the Android app build:
+4. Verify routing and networking slices:
+
+   ```powershell
+   .\gradlew.bat :core:network:test
+   .\gradlew.bat :data:routing:test
+   .\gradlew.bat :data:alerts:test
+   ```
+
+5. Verify the Android app build:
 
    ```powershell
    .\gradlew.bat :app:assembleDebug
    ```
 
-5. Verify the release build path:
+6. Verify the release build path:
 
    ```powershell
    .\gradlew.bat :app:assembleRelease
@@ -88,12 +105,16 @@ If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md
 ## Verified Commands
 
 - `.\gradlew.bat :domain:trip:test`
+- `.\gradlew.bat :core:network:test`
+- `.\gradlew.bat :data:routing:test`
+- `.\gradlew.bat :data:alerts:test`
 - `.\gradlew.bat :app:assembleDebug`
 - `.\gradlew.bat :app:assembleRelease`
 
 ## Notes
 
 - `corrections.md` documents the build and consistency fixes that were applied during stabilization.
-- `data:routing` currently provides cache and stub implementations only; Google transit integration is a later phase.
-- The current UI is no longer just a shell: destination selection, trip setup, live trip, alert dismissal, and history/summary screens now flow through persisted Room data.
+- If `MAPS_API_KEY` is present, trip setup can fetch a Google transit preview and cache it against the trip; if not, the app falls back gracefully to destination-only monitoring.
+- The current UI is no longer just a shell: destination selection, trip setup, live trip, alert dismissal, diagnostics, settings, and history/summary screens all flow through persisted app data.
+- `TripMonitoringService` now uses Room-backed `TripSession` restore/save behavior, which better matches the plan's recovery and process-death requirements.
 - Release builds now enforce HTTPS-only networking and include baseline shrinker rules for Room, Hilt, WorkManager, and Kotlin serialization.

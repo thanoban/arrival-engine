@@ -207,15 +207,19 @@ Why it exists:
 
 Purpose:
 
-- future HTTP/network support
+- shared HTTP/network support
 
 Current state:
 
-- architecture placeholder/foundation
+- shared `OkHttpClient`
+- shared `Json`
+- shared `Retrofit.Builder`
+- used by routing
 
 Why keep it now:
 
-- route-aware and backend work can plug into it later
+- route-aware work already plugs into it
+- future backend/API work can reuse the same foundation
 
 ### `:core:testing`
 
@@ -286,7 +290,8 @@ Purpose:
 
 Current state:
 
-- mostly stub-ready for MVP destination-only mode
+- route models and contracts are real and already used by feature flows
+- route snapshots are cached per trip and shown in multiple screens
 
 Why it exists:
 
@@ -321,8 +326,9 @@ Purpose:
 
 Current state:
 
-- MVP uses stubs and cache support
-- real Google Transit route behavior is still a later step
+- includes a Google Transit data source
+- includes a Room-backed local route cache
+- provides graceful destination-only fallback when an API key or route data is unavailable
 
 ### `:data:alerts`
 
@@ -483,6 +489,16 @@ That chosen place feeds the `tripsetup` feature.
 
 The trip setup flow stores trip data and starts monitoring.
 
+If a last known location is available and routing succeeds:
+
+- the app fetches a transit preview
+- caches the route snapshot against the new trip
+- seeds the first ETA shown in live trip/history
+
+If routing is unavailable:
+
+- the app still starts in destination-only mode without blocking the user
+
 The app then moves to the live trip screen.
 
 ### Step 5: Background monitoring happens
@@ -531,6 +547,12 @@ Why a foreground service:
 - monitoring must remain reliable
 - the user must know the app is actively doing background work
 - Android gives foreground services more permission to keep running
+
+Current implementation note:
+
+- the service now restores a `TripSession` from Room on start
+- it persists updated `TripSession` state back to Room as geofence and motion events move the trip through the engine
+- that lets the live trip and history detail screens read real monitoring state instead of only startup defaults
 
 ### WorkManager recovery
 
@@ -739,6 +761,7 @@ Why used:
 
 - store trips
 - store sessions
+- store cached route snapshots
 - store diagnostics/history
 - survive process death
 
@@ -915,10 +938,15 @@ At a high level, the repo already has these major pieces:
 - Room database foundations
 - DataStore preferences
 - location/motion/alerts foundations
+- shared network foundation in `core:network`
+- Google transit route fetching and Room-backed route cache
 - persisted trip flow across UI screens
+- route preview wiring in trip setup
+- route summary wiring in live trip and trip history detail
 - onboarding persistence
 - settings and diagnostics backed by stored data
 - WorkManager-based trip recovery wiring
+- monitoring service session persistence through Room
 - release build hardening
 
 This means the project is no longer just a scaffold.
@@ -928,7 +956,7 @@ It already has real architecture and working flows.
 
 Important future work still remaining from the broader plan includes:
 
-- real Google Transit route integration
+- deeper live ETA refresh logic during active monitoring
 - broader end-to-end scenario testing
 - more UI/design polish
 - more production hardening and store-launch prep
