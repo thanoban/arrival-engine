@@ -3,15 +3,18 @@ package com.nearwake.feature.diagnostics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nearwake.core.ui.NearWakeCard
+import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeScaffold
+import com.nearwake.core.ui.NearWakeSecondaryButton
+import com.nearwake.core.ui.NearWakeSectionHeader
+import com.nearwake.core.ui.NearWakeStateChip
+import com.nearwake.core.ui.SurfaceCard
 
 @Composable
 fun DiagnosticsScreen(
@@ -22,12 +25,21 @@ fun DiagnosticsScreen(
     NearWakeScaffold(
         title = "Diagnostics",
         subtitle = "QA visibility into current state, registered geofences, and recent engine events.",
+        topBarActions = {
+            NearWakeSecondaryButton(text = "Back", onClick = onBack)
+        },
     ) {
-        NearWakeCard {
-            Text("Current trip state: ${state.stateLabel}")
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Services")
+            NearWakeStateChip(
+                label = state.stateLabel.replace('_', ' ').lowercase().replaceFirstChar(Char::uppercase),
+                state = if (state.stateLabel == "No active trip") NearWakeChipState.Neutral else NearWakeChipState.Monitoring,
+            )
         }
-        NearWakeCard {
-            Text("Registered geofences")
+
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Location")
+            Text("Registered geofences", style = MaterialTheme.typography.titleMedium)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (state.registeredGeofences.isEmpty()) {
                     Text("No geofences registered", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -36,8 +48,10 @@ fun DiagnosticsScreen(
                 }
             }
         }
-        NearWakeCard {
-            Text("Recent events")
+
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Last session")
+            Text("Recent events", style = MaterialTheme.typography.titleMedium)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (state.recentEvents.isEmpty()) {
                     Text("No diagnostics events recorded yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -46,6 +60,5 @@ fun DiagnosticsScreen(
                 }
             }
         }
-        OutlinedButton(onClick = onBack) { Text("Back") }
     }
 }

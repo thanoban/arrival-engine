@@ -1,23 +1,28 @@
 package com.nearwake.feature.settings
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nearwake.core.ui.NearWakeCard
+import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.ui.NearWakeScaffold
+import com.nearwake.core.ui.NearWakeSecondaryButton
+import com.nearwake.core.ui.NearWakeSectionHeader
+import com.nearwake.core.ui.NearWakeSelectableChip
+import com.nearwake.core.ui.SurfaceCard
 import com.nearwake.domain.trip.model.AlertIntensity
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -25,60 +30,89 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val spacing = LocalSpacing.current
     NearWakeScaffold(
         title = "Settings",
         subtitle = "Preferences for default alert timing, intensity, and diagnostics.",
+        topBarActions = {
+            NearWakeSecondaryButton(text = "Diagnostics", onClick = onDiagnostics)
+            NearWakeSecondaryButton(text = "Back", onClick = onBack)
+        },
     ) {
-        OutlinedButton(onClick = onBack) { Text("Back") }
-        OutlinedButton(onClick = onDiagnostics) { Text("Diagnostics") }
-
-        NearWakeCard {
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Alerts")
             Text("Default alert lead", style = MaterialTheme.typography.titleMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
             ) {
                 listOf(5, 10, 15, 0).forEach { minutes ->
-                    FilterChip(
+                    NearWakeSelectableChip(
                         selected = state.defaultAlertLeadMinutes == minutes,
                         onClick = { viewModel.updateLeadMinutes(minutes) },
-                        label = {
-                            Text(if (minutes == 0) "Nearby" else "${minutes}m")
-                        },
+                        label = if (minutes == 0) "Nearby" else "${minutes} min",
                     )
                 }
             }
-        }
-
-        NearWakeCard {
             Text("Default intensity", style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
                 AlertIntensity.entries.forEach { intensity ->
-                    FilterChip(
+                    NearWakeSelectableChip(
                         selected = state.alertIntensity == intensity,
                         onClick = { viewModel.updateAlertIntensity(intensity) },
-                        label = {
-                            Text(intensity.name.lowercase().replaceFirstChar(Char::uppercase))
-                        },
+                        label = intensity.name.lowercase().replaceFirstChar(Char::uppercase),
                     )
                 }
             }
         }
 
-        NearWakeCard {
-            Text("Background monitoring", style = MaterialTheme.typography.titleMedium)
-            Switch(
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Monitoring")
+            SettingSwitchRow(
+                title = "Background monitoring",
+                subtitle = "Keeps trip monitoring alive while the phone is locked.",
                 checked = state.backgroundMonitoringEnabled,
                 onCheckedChange = viewModel::setBackgroundMonitoringEnabled,
             )
-        }
-
-        NearWakeCard {
-            Text("Diagnostics", style = MaterialTheme.typography.titleMedium)
-            Switch(
+            SettingSwitchRow(
+                title = "Diagnostics",
+                subtitle = "Stores recent engine events for troubleshooting.",
                 checked = state.diagnosticsEnabled,
                 onCheckedChange = viewModel::setDiagnosticsEnabled,
             )
         }
+    }
+}
+
+@Composable
+private fun SettingSwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val spacing = LocalSpacing.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(spacing.xs),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+        )
     }
 }
