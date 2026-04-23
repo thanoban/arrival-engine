@@ -12,6 +12,8 @@ The goal is to explain:
 
 If you study this file together with `PLAN.md`, the repo will make much more sense.
 
+For the practical machine-setup and API-key view, also read `SETUP_AND_STATUS.md`.
+
 ## 1. What This Project Is
 
 NearWake is an Android app that helps a user avoid missing a stop or destination.
@@ -963,6 +965,36 @@ Important future work still remaining from the broader plan includes:
 - privacy policy / distribution / final release prep
 
 So the repo is substantial, but not feature-complete.
+
+## 13.1 What You Need To Provide To Run It
+
+At the moment, you do not need a backend secret set or server environment.
+
+The main things you need are:
+
+- Android SDK path via `sdk.dir`
+- optionally `MAPS_API_KEY`
+
+Why `sdk.dir` matters:
+
+- Gradle cannot build the Android app without the Android SDK path
+
+Why `MAPS_API_KEY` matters:
+
+- current route preview uses Google Directions transit calls
+- without the key, the app falls back to destination-only mode
+- with the key, trip setup/live/history can show richer route data
+
+What API should be enabled first:
+
+- `Directions API`
+
+What is not fully wired yet:
+
+- real Google Places-backed search flow
+- map-heavy UI
+
+So one Google key with `Directions API` enabled is the most useful current addition.
 
 ## 14. Beginner Reading Order
 

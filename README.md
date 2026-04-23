@@ -3,6 +3,7 @@
 NearWake is an Android-first arrival alarm app for buses, trains, and transfers. The app is built around an offline-first monitoring flow: pick a destination, arm a trip quickly, let the background engine monitor quietly, and surface an alert before the user misses the stop.
 
 If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md) alongside `PLAN.md`.
+For the practical current-state checklist, env/API setup, and what is finished vs not finished, read [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md).
 
 ## Current Status
 
@@ -12,6 +13,12 @@ If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md
 - The Android toolchain is bootstrapped in-repo with the Gradle wrapper.
 - `data:routing` now includes a working Google Transit provider, Room-backed route cache, and shared network wiring in `core:network`.
 - Trip setup, live trip, monitoring service recovery, and trip summary screens now surface real persisted route/session data instead of only placeholder values.
+
+## Docs
+
+- [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md): exact current setup, required env/API values, and project condition
+- [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
+- [corrections.md](corrections.md): correction log and resolved repo issues
 
 ## Recent Implemented Slices
 
@@ -59,7 +66,7 @@ If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md
 - JDK 17
 - Android SDK 35
 - A valid `sdk.dir` entry in `local.properties`
-- Optional: Google Maps / Places API key for future map and search integrations
+- Optional but recommended: `MAPS_API_KEY` for current Google transit route preview support
 
 ## Setup
 
@@ -117,4 +124,5 @@ If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md
 - If `MAPS_API_KEY` is present, trip setup can fetch a Google transit preview and cache it against the trip; if not, the app falls back gracefully to destination-only monitoring.
 - The current UI is no longer just a shell: destination selection, trip setup, live trip, alert dismissal, diagnostics, settings, and history/summary screens all flow through persisted app data.
 - `TripMonitoringService` now uses Room-backed `TripSession` restore/save behavior, which better matches the plan's recovery and process-death requirements.
+- `SETUP_AND_STATUS.md` now contains the detailed answer for what you need to provide to build/run the app and what is still unfinished.
 - Release builds now enforce HTTPS-only networking and include baseline shrinker rules for Room, Hilt, WorkManager, and Kotlin serialization.

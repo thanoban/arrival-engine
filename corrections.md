@@ -32,6 +32,7 @@
 - route preview is shown during trip setup and cached per trip
 - live trip and trip summary show route/session data from persistence
 - monitoring service restores and saves `TripSession` state through Room while active
+- all tracked correction items in this file are currently resolved
 
 ---
 
