@@ -7,6 +7,7 @@ import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.data.alerts.TripMonitoringService
+import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +27,7 @@ data class LiveTripUiState(
     val tripId: String = "",
     val destinationName: String = "Live trip",
     val etaLabel: String = "~22 min",
+    val routeSummary: String = "Destination-only monitoring",
     val elapsedTimeLabel: String = "",
     val monitoringMode: MonitoringMode = MonitoringMode.GEOFENCE_ONLY,
     val confidence: Confidence = Confidence.HIGH,
@@ -39,6 +41,7 @@ class LiveTripViewModel @Inject constructor(
     tripDao: TripDao,
     savedPlaceDao: SavedPlaceDao,
     private val tripSessionDao: TripSessionDao,
+    private val routingRepository: RoutingRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -53,12 +56,18 @@ class LiveTripViewModel @Inject constructor(
                 savedPlaceDao.observeSavedPlaces(),
                 tripSessionDao.observeTripSession(tripId),
             ) { trip, places, session ->
+                val routeSnapshot = routingRepository.getCachedRoute(tripId)
                 val place = trip?.destinationId?.let { destinationId -> places.firstOrNull { it.id == destinationId } }
                 val minutes = session?.lastEtaMinutes ?: 22
                 LiveTripUiState(
                     tripId = tripId,
                     destinationName = place?.name ?: "Live trip",
                     etaLabel = "~${minutes} min",
+                    routeSummary = routeSnapshot?.let { snapshot ->
+                        val stopLabel = if (snapshot.stops.size == 1) "1 stop" else "${snapshot.stops.size} stops"
+                        val transferLabel = if (snapshot.transfers.size == 1) "1 transfer" else "${snapshot.transfers.size} transfers"
+                        "$stopLabel · $transferLabel"
+                    } ?: "Destination-only monitoring",
                     elapsedTimeLabel = trip?.createdAt?.toString()?.replace('T', ' ')?.take(16).orEmpty(),
                     monitoringMode = session?.monitoringMode ?: MonitoringMode.GEOFENCE_ONLY,
                     confidence = session?.confidence ?: Confidence.HIGH,

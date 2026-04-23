@@ -39,6 +39,7 @@ fun LiveTripScreen(
             monitoringMode = state.monitoringMode,
             confidence = state.confidence,
             alertSummary = state.alertSummary,
+            routeSummary = state.routeSummary,
         )
 
         BatteryStatusCard(batteryImpact = state.batteryImpact)

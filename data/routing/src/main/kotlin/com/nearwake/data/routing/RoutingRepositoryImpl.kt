@@ -20,6 +20,15 @@ class RoutingRepositoryImpl @Inject constructor(
             localRouteCache.put(snapshot)
         }
 
+    override suspend fun cacheRouteForTrip(
+        tripId: String,
+        routeSnapshot: RouteSnapshot,
+    ): RouteSnapshot {
+        val tripScopedSnapshot = routeSnapshot.copy(tripId = tripId)
+        localRouteCache.put(tripScopedSnapshot)
+        return tripScopedSnapshot
+    }
+
     override suspend fun refreshEta(tripId: String, currentLocation: LatLng): Result<Int> =
         routingDataSource.refreshEta(tripId, currentLocation)
 

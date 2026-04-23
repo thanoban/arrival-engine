@@ -38,6 +38,7 @@ fun TripSetupScreen(
                 Text(state.destinationAddress, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text("ETA: ${state.etaLabel}", color = MaterialTheme.colorScheme.tertiary)
+            Text(state.routeSummary, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         NearWakeCard {

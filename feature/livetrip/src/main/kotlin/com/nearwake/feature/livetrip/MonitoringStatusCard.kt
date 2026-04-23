@@ -12,11 +12,13 @@ fun MonitoringStatusCard(
     monitoringMode: MonitoringMode,
     confidence: Confidence,
     alertSummary: String,
+    routeSummary: String,
 ) {
     NearWakeCard {
         Text("Status", style = MaterialTheme.typography.titleLarge)
         Text("Mode: ${monitoringMode.name}")
         Text("Confidence: ${confidence.name}")
+        Text("Route: $routeSummary")
         Text("Alert: $alertSummary")
     }
 }
