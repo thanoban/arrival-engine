@@ -5,6 +5,7 @@ NearWake is an Android-first arrival alarm app for buses, trains, and transfers.
 If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md) alongside `PLAN.md`.
 For the practical current-state checklist, env/API setup, and what is finished vs not finished, read [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md).
 For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md).
+For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md).
 
 ## Current Status
 
@@ -19,6 +20,7 @@ For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.
 
 - [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md): exact current setup, required env/API values, and project condition
 - [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md): exact API keys, local updates, and later release-time configuration items
+- [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md): dedicated plan for the upcoming modern UI/frontend pass
 - [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
 - [corrections.md](corrections.md): correction log and resolved repo issues
 
@@ -128,4 +130,5 @@ For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.
 - `TripMonitoringService` now uses Room-backed `TripSession` restore/save behavior, which better matches the plan's recovery and process-death requirements.
 - `SETUP_AND_STATUS.md` now contains the detailed answer for what you need to provide to build/run the app and what is still unfinished.
 - `REQUIRED_UPDATES_AND_APIS.md` now contains the dedicated checklist of what you still need to update outside the codebase.
+- `UI_MODERNIZATION_PLAN.md` now contains the screen-by-screen plan for the future visual redesign pass.
 - Release builds now enforce HTTPS-only networking and include baseline shrinker rules for Room, Hilt, WorkManager, and Kotlin serialization.
