@@ -2,9 +2,12 @@ package com.nearwake.core.database.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.nearwake.core.database.NearWakeDatabase
 import com.nearwake.core.database.dao.AlertEventDao
 import com.nearwake.core.database.dao.DiagnosticsEventDao
+import com.nearwake.core.database.dao.RouteSnapshotDao
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
@@ -26,7 +29,8 @@ object DatabaseModule {
         context,
         NearWakeDatabase::class.java,
         NearWakeDatabase.DATABASE_NAME,
-    ).build()
+    ).addMigrations(MIGRATION_1_2)
+        .build()
 
     @Provides
     fun provideTripDao(database: NearWakeDatabase): TripDao = database.tripDao()
@@ -43,4 +47,26 @@ object DatabaseModule {
     @Provides
     fun provideDiagnosticsEventDao(database: NearWakeDatabase): DiagnosticsEventDao =
         database.diagnosticsEventDao()
+
+    @Provides
+    fun provideRouteSnapshotDao(database: NearWakeDatabase): RouteSnapshotDao =
+        database.routeSnapshotDao()
+
+    private val MIGRATION_1_2 = object : Migration(1, 2) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `route_snapshots` (
+                    `trip_id` TEXT NOT NULL,
+                    `stops_json` TEXT NOT NULL,
+                    `transfers_json` TEXT NOT NULL,
+                    `total_duration_minutes` INTEGER NOT NULL,
+                    `fetched_at` TEXT NOT NULL,
+                    `is_stale` INTEGER NOT NULL,
+                    PRIMARY KEY(`trip_id`)
+                )
+                """.trimIndent(),
+            )
+        }
+    }
 }

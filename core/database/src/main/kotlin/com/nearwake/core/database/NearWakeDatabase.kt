@@ -8,11 +8,13 @@ import com.nearwake.core.database.converter.ListConverter
 import com.nearwake.core.database.converter.TripStateConverter
 import com.nearwake.core.database.dao.AlertEventDao
 import com.nearwake.core.database.dao.DiagnosticsEventDao
+import com.nearwake.core.database.dao.RouteSnapshotDao
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.AlertEventEntity
 import com.nearwake.core.database.entity.DiagnosticsEventEntity
+import com.nearwake.core.database.entity.RouteSnapshotEntity
 import com.nearwake.core.database.entity.SavedPlaceEntity
 import com.nearwake.core.database.entity.TripEntity
 import com.nearwake.core.database.entity.TripSessionEntity
@@ -24,8 +26,9 @@ import com.nearwake.core.database.entity.TripSessionEntity
         SavedPlaceEntity::class,
         AlertEventEntity::class,
         DiagnosticsEventEntity::class,
+        RouteSnapshotEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(
@@ -43,6 +46,8 @@ abstract class NearWakeDatabase : RoomDatabase() {
     abstract fun alertEventDao(): AlertEventDao
 
     abstract fun diagnosticsEventDao(): DiagnosticsEventDao
+
+    abstract fun routeSnapshotDao(): RouteSnapshotDao
 
     companion object {
         const val DATABASE_NAME = "nearwake.db"

@@ -4,116 +4,126 @@
 
 ---
 
-## C-001 — Dead/broken code in `AndroidApplicationComposeConventionPlugin.kt`
+## Project Status Snapshot (2026-04-23)
 
-**File:** `build-logic/convention/src/main/kotlin/AndroidApplicationComposeConventionPlugin.kt`  
-**Lines:** 18–19  
-**Severity:** Compile error — will break build-logic compilation
+**Overall:** Build system complete. All modules have source files. Core implementation done.
 
-**Problem:**
-```kotlin
-val libs = extensions.getByType<org.gradle.api.plugins.ExtraPropertiesExtension>()
-    .let { rootProject.extensions.getByType(org.gradle.api.artifacts.dsl.DependencyHandler::class) }
-```
-- `DependencyHandler` is not registered as a project extension — `extensions.getByType()` will throw at runtime
-- The variable `libs` is never used anywhere in the function
-- The `getByType` import is also unused after this is removed
+**Completed:**
+- build-logic (all 7 convention plugins)
+- app (MainActivity, NavHost, Routes, HomeScreen)
+- core/database (DB, 6 entities, 6 DAOs, 3 converters, DI)
+- core/datastore (UserPreferences, DI)
+- core/designsystem (Theme, Colors)
+- core/testing (5 fakes: Location, Geofence, Activity, Routing, Fixtures)
+- core/ui (Card, PrimaryButton, Scaffold)
+- domain/location (4 models, 3 repository interfaces)
+- domain/routing (RoutingDataSource interface, 3 models, repository interface)
+- domain/trip (9 models, 4 engine files, 9 use cases)
+- data/alerts (Service, Orchestrator, NotificationHelper, CleanupUseCase, Worker, DI)
+- data/analytics (DiagnosticsLogger)
+- data/location (FLP, Geofence, 2 repos, EventBus, 2 receivers, DI)
+- data/motion (ActivityRecognition, repo, EventBus, receiver, DI)
+- data/routing (NoOp fallback, GoogleTransit provider, Room-backed LocalRouteCache, repo, DI)
+- core/common (dispatchers, result wrapper, extensions, DI)
+- feature/alerts, diagnostics, history, livetrip, onboarding, permissions, places, settings, tripsetup (all screens + ViewModels)
 
-**Fix:** Delete lines 18–19 and remove the unused `import org.gradle.kotlin.dsl.getByType` import.
-
-**Result after fix:**
-```kotlin
-import com.android.build.api.dsl.ApplicationExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.dependencies
-
-class AndroidApplicationComposeConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            pluginManager.apply("nearwake.android.application")
-            pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
-
-            extensions.configure<ApplicationExtension> {
-                configureAndroidCompose(this)
-            }
-
-            dependencies {
-                val bom = project.dependencies.platform("androidx.compose:compose-bom:2024.12.01")
-                add("implementation", bom)
-                add("implementation", "androidx.compose.ui:ui")
-                add("implementation", "androidx.compose.ui:ui-graphics")
-                add("implementation", "androidx.compose.ui:ui-tooling-preview")
-                add("implementation", "androidx.compose.material3:material3")
-                add("debugImplementation", "androidx.compose.ui:ui-tooling")
-                add("debugImplementation", "androidx.compose.ui:ui-test-manifest")
-            }
-        }
-    }
-}
-```
+**Still intentionally thin / future-facing:**
+- `core/network` source files (manifest exists, no Kotlin implementation yet)
 
 ---
 
-## C-002 — JUnit version inconsistency across modules
+## Status Table
 
-**Severity:** Test configuration mismatch — some modules use JUnit 4, some use JUnit 5
-
-**Situation:**
-- `domain/trip`, `core/database`, `core/datastore`, `data/routing` → switched to **JUnit 5** (`libs.junit.jupiter`)
-- `core/common`, `core/testing`, `data/location`, `data/motion`, `data/analytics` → still on **JUnit 4** (`libs.junit`)
-- `KotlinLibraryConventionPlugin.kt` already has `useJUnitPlatform()` → JUnit 5 works for `:domain:*` modules
-- Android library modules use `testInstrumentationRunner` — JUnit 5 on Android requires an additional runner dependency
-
-**Decision needed (pick one):**
-- **Option A (Recommended):** Standardize all modules on JUnit 5. Add `useJUnitPlatform()` to Android test tasks in `AndroidLibraryConventionPlugin`. Add `junit-jupiter-engine` to all test runtimes.
-- **Option B:** Standardize all modules back on JUnit 4. Simpler for Android instrumentation tests.
-
-**Fix for Option A — update `AndroidLibraryConventionPlugin.kt`:**
-```kotlin
-// Add inside configureAndroidCommon or in the plugin body:
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
-```
-And update remaining modules (`core/common`, `data/location`, etc.) to use `libs.junit.jupiter` + `libs.junit.jupiter.engine`.
+| ID | Description | Severity | Status |
+|----|-------------|----------|--------|
+| C-001 | Dead code in `AndroidApplicationComposeConventionPlugin` | Compile error | ✅ RESOLVED |
+| C-002 | JUnit 5 consistency across modules | Medium | ✅ RESOLVED |
+| C-003 | `core/testing` JUnit 4 remnant | Low | ✅ RESOLVED |
+| C-004 | JUnit engine split pattern | Informational | ✅ RESOLVED |
+| C-005 | Duplicate `kotlinx-datetime` in `core/common` | Low | ✅ RESOLVED |
+| C-006 | Unnecessary `j2objc-annotations` in `feature/places` | Low | ✅ RESOLVED |
+| C-007 | `core/common` has no source files | Medium | ✅ RESOLVED |
+| C-008 | `core/network` has no source files | Low | Pending |
+| C-009 | No test source files written yet | Medium | ✅ RESOLVED |
+| C-010 | `local.properties.template` missing | Low | ✅ RESOLVED |
 
 ---
 
-## C-003 — `core/testing` still references JUnit 4
+## ✅ C-001 — RESOLVED
+Dead/broken code removed from `AndroidApplicationComposeConventionPlugin.kt`.
 
-**File:** `core/testing/build.gradle.kts`  
-**Line:** `api(libs.junit)`  
-**Severity:** Low — functional but inconsistent if choosing JUnit 5 (C-002 Option A)
+## ✅ C-002 — RESOLVED
+All modules on JUnit 5. `AndroidLibraryConventionPlugin` has `useJUnitPlatform()`.
 
-**Fix (if Option A chosen):** Replace `api(libs.junit)` with:
-```kotlin
-api(libs.junit.jupiter)
-api(libs.junit.jupiter.engine)
-```
+## ✅ C-003 — RESOLVED
+`core/testing` uses `api(libs.junit.jupiter)` + `api(libs.junit.jupiter.engine)`.
 
----
+## ✅ C-004 — RESOLVED
+All modules use `testRuntimeOnly` for engine, `testImplementation` for API.
 
-## C-004 — `data/routing` references `libs.junit.jupiter.engine` but uses `testRuntimeOnly`
+## ✅ C-005 — RESOLVED
+`core/common` duplicate `implementation(libs.kotlinx.datetime)` removed. Only `api` declaration remains.
 
-**File:** `data/routing/build.gradle.kts`  
-**Lines:** 25–26  
-**Severity:** Informational — correct pattern for JUnit 5, but needs to be applied consistently
-
-```kotlin
-testImplementation(libs.junit.jupiter)
-testRuntimeOnly(libs.junit.jupiter.engine)   // ← correct: engine is runtime-only
-```
-This is the correct JUnit 5 split. Apply the same pattern to all modules when standardizing.
+## ✅ C-006 — RESOLVED
+`j2objc-annotations` removed from `feature/places` and from `libs.versions.toml`.
 
 ---
 
-## Status
+## ✅ C-007 — RESOLVED
 
-| ID | File | Severity | Status |
-|----|------|----------|--------|
-| C-001 | `AndroidApplicationComposeConventionPlugin.kt` | **Compile error** | Pending fix |
-| C-002 | Multiple modules | Medium | Decision needed |
-| C-003 | `core/testing/build.gradle.kts` | Low | Depends on C-002 |
-| C-004 | `data/routing/build.gradle.kts` | Informational | Correct pattern to follow |
+`core/common` now contains real Kotlin sources:
+```
+core/common/src/main/kotlin/com/nearwake/core/common/
+├── AppDispatchers.kt
+├── Result.kt
+├── Extensions.kt
+└── di/
+    └── DispatchersModule.kt
+```
+
+`core/common/build.gradle.kts` also now applies the Hilt convention so dispatcher bindings are injectable.
+
+---
+
+## C-008 — `core/network` has no source files
+
+**Severity:** Low — no feature currently depends on it (backend is deferred), but it's declared
+
+**What's needed when backend is added:**
+```
+core/network/src/main/kotlin/com/nearwake/core/network/
+├── NearWakeHttpClient.kt    ← OkHttpClient factory (logging, timeouts)
+└── di/
+    └── NetworkModule.kt     ← Hilt module providing OkHttpClient + Retrofit
+```
+Safe to leave empty until backend work begins.
+
+---
+
+## ✅ C-009 — RESOLVED
+
+Test sources now exist in the repo, including:
+- `domain/trip/src/test/.../TripStateMachineTest.kt`
+- `domain/trip/src/test/.../ApproachEvaluatorTest.kt`
+- `domain/trip/src/test/.../AlertDecisionEngineTest.kt`
+- `data/location/src/test/.../LocationStrategyOrchestratorTest.kt`
+- `data/routing/src/test/.../RoutingStubsTest.kt`
+- `data/alerts/src/test/...`
+
+---
+
+## ✅ C-010 — RESOLVED
+
+`local.properties.template` exists at project root and documents both `sdk.dir` and `MAPS_API_KEY`.
+
+---
+
+## Architecture Notes (observed during scan)
+
+**Event bus pattern added (not in original plan — good call):**
+- `data/location/receivers/GeofenceEventBus.kt` — `SharedFlow` bridge between `GeofenceBroadcastReceiver` and `TripMonitoringService`
+- `data/motion/receivers/ActivityTransitionEventBus.kt` — same pattern for activity transitions
+
+This is the correct approach: BroadcastReceivers can't inject into Services directly, so a singleton SharedFlow acts as the bridge. No change needed.
+
+**`TripMonitoringStarter.kt` added in `data/alerts`** — helper to start/stop the foreground service. Clean separation. No change needed.

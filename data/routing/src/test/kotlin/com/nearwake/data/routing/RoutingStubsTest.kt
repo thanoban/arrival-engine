@@ -1,6 +1,8 @@
 package com.nearwake.data.routing
 
 import com.google.common.truth.Truth.assertThat
+import com.nearwake.core.database.dao.RouteSnapshotDao
+import com.nearwake.core.database.entity.RouteSnapshotEntity
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.model.Stop
@@ -32,7 +34,7 @@ class RoutingStubsTest {
         val dataSource = GoogleTransitDataSource(
             okHttpClient = clientReturning("{}"),
             json = Json { ignoreUnknownKeys = true },
-            localRouteCache = LocalRouteCache(),
+            localRouteCache = LocalRouteCache(FakeRouteSnapshotDao()),
             apiKey = "",
             directionsBaseUrl = "https://maps.googleapis.com/".toHttpUrl(),
         )
@@ -48,7 +50,7 @@ class RoutingStubsTest {
 
     @Test
     fun `local route cache stores updates and removals`() = runTest {
-        val cache = LocalRouteCache()
+        val cache = LocalRouteCache(FakeRouteSnapshotDao())
         val snapshot = RouteSnapshot(
             tripId = "trip-123",
             stops = listOf(
@@ -126,7 +128,7 @@ class RoutingStubsTest {
                 """.trimIndent(),
             ),
             json = Json { ignoreUnknownKeys = true },
-            localRouteCache = LocalRouteCache(),
+            localRouteCache = LocalRouteCache(FakeRouteSnapshotDao()),
             apiKey = "test-key",
             directionsBaseUrl = "https://maps.googleapis.com/".toHttpUrl(),
         )
@@ -148,7 +150,7 @@ class RoutingStubsTest {
 
     @Test
     fun `google transit data source refreshes eta from cached destination`() = runTest {
-        val cache = LocalRouteCache()
+        val cache = LocalRouteCache(FakeRouteSnapshotDao())
         val capturedUrls = mutableListOf<String>()
         val dataSource = GoogleTransitDataSource(
             okHttpClient = clientReturning(
@@ -199,7 +201,7 @@ class RoutingStubsTest {
         val dataSource = GoogleTransitDataSource(
             okHttpClient = clientReturning("{}"),
             json = Json { ignoreUnknownKeys = true },
-            localRouteCache = LocalRouteCache(),
+            localRouteCache = LocalRouteCache(FakeRouteSnapshotDao()),
             apiKey = "test-key",
             directionsBaseUrl = "https://maps.googleapis.com/".toHttpUrl(),
         )
@@ -228,4 +230,19 @@ class RoutingStubsTest {
                 .build()
         }
         .build()
+
+    private class FakeRouteSnapshotDao : RouteSnapshotDao {
+        private val snapshots = mutableMapOf<String, RouteSnapshotEntity>()
+
+        override suspend fun getRouteSnapshotByTripId(tripId: String): RouteSnapshotEntity? =
+            snapshots[tripId]
+
+        override suspend fun upsertRouteSnapshot(snapshot: RouteSnapshotEntity) {
+            snapshots[snapshot.tripId] = snapshot
+        }
+
+        override suspend fun deleteRouteSnapshotByTripId(tripId: String) {
+            snapshots.remove(tripId)
+        }
+    }
 }

@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.nearwake.android.library)
+    alias(libs.plugins.nearwake.android.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
 
