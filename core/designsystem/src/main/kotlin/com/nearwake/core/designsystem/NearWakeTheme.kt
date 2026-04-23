@@ -1,75 +1,55 @@
 package com.nearwake.core.designsystem
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+
+val LocalStateAccent = staticCompositionLocalOf { NearWakeColors.SafeBase }
 
 private val NearWakeColorScheme = darkColorScheme(
-    primary = NearWakeColors.Primary,
+    primary = NearWakeColors.SafeBase,
     onPrimary = Color.Black,
-    secondary = NearWakeColors.Accent,
-    tertiary = NearWakeColors.OnApproach,
-    background = NearWakeColors.BackgroundDark,
-    surface = NearWakeColors.SurfaceDark,
-    surfaceVariant = NearWakeColors.SurfaceRaised,
-    error = NearWakeColors.Alert,
+    secondary = NearWakeColors.MonitoringBase,
+    tertiary = NearWakeColors.ApproachBase,
+    background = NearWakeColors.BgBase,
+    surface = NearWakeColors.BgSurface,
+    surfaceVariant = NearWakeColors.BgElevated,
+    error = NearWakeColors.AlertBase,
+    outline = NearWakeColors.BorderDefault,
+    outlineVariant = NearWakeColors.BorderSubtle,
     onBackground = NearWakeColors.TextPrimary,
     onSurface = NearWakeColors.TextPrimary,
-)
-
-private val NearWakeTypography = androidx.compose.material3.Typography(
-    displayLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Black,
-        fontSize = 38.sp,
-        lineHeight = 42.sp,
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        lineHeight = 34.sp,
-    ),
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        lineHeight = 26.sp,
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 22.sp,
-    ),
-    labelLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 14.sp,
-        letterSpacing = 0.4.sp,
-    ),
+    onSurfaceVariant = NearWakeColors.TextSecondary,
+    onError = NearWakeColors.TextPrimary,
 )
 
 @Composable
 fun NearWakeTheme(
     darkTheme: Boolean = true,
+    stateAccent: Color = NearWakeColors.SafeBase,
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme || isSystemInDarkTheme()) NearWakeColorScheme else NearWakeColorScheme,
-        typography = NearWakeTypography,
-        content = content,
-    )
+    val colorScheme = NearWakeColorScheme.copy(primary = stateAccent)
+    CompositionLocalProvider(
+        LocalSpacing provides NearWakeSpacing(),
+        LocalRadius provides NearWakeRadius(),
+        LocalStateAccent provides stateAccent,
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = NearWakeTypography,
+            content = content,
+        )
+    }
+}
+
+@Composable
+fun ProvideNearWakeStateAccent(
+    accent: Color,
+    content: @Composable () -> Unit,
+) {
+    CompositionLocalProvider(LocalStateAccent provides accent, content = content)
 }

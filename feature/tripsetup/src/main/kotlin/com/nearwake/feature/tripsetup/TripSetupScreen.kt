@@ -1,24 +1,33 @@
 package com.nearwake.feature.tripsetup
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nearwake.core.ui.NearWakeCard
+import com.nearwake.core.designsystem.LocalSpacing
+import com.nearwake.core.ui.ElevatedCard
+import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
+import com.nearwake.core.ui.NearWakeSecondaryButton
+import com.nearwake.core.ui.NearWakeSectionHeader
+import com.nearwake.core.ui.NearWakeSelectableChip
+import com.nearwake.core.ui.NearWakeStateChip
+import com.nearwake.core.ui.SurfaceCard
 import com.nearwake.domain.trip.model.AlertIntensity
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TripSetupScreen(
     onStartTrip: (String) -> Unit,
@@ -26,61 +35,118 @@ fun TripSetupScreen(
     viewModel: TripSetupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val spacing = LocalSpacing.current
+    val routeReady = state.etaLabel.startsWith("~")
     NearWakeScaffold(
-        title = "Trip setup",
-        subtitle = "Tune the lead time once, then let the monitoring engine do the quiet work.",
+        title = "Set up trip",
+        subtitle = "Tune the lead time, preview the route, then arm the trip when you are ready.",
+        topBarActions = {
+            NearWakeSecondaryButton(text = "Back", onClick = onBack)
+        },
     ) {
-        OutlinedButton(onClick = onBack) { Text("Back") }
-
-        NearWakeCard {
-            Text("To: ${state.destinationName}", style = MaterialTheme.typography.titleLarge)
+        ElevatedCard {
+            NearWakeSectionHeader(text = "Destination")
+            Text(state.destinationName, style = MaterialTheme.typography.titleLarge)
             if (state.destinationAddress.isNotBlank()) {
-                Text(state.destinationAddress, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    state.destinationAddress,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Text("ETA: ${state.etaLabel}", color = MaterialTheme.colorScheme.tertiary)
-            Text(state.routeSummary, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-
-        NearWakeCard {
-            Text("Alert me", style = MaterialTheme.typography.titleLarge)
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
             ) {
-                listOf(5, 10, 15, 0).forEach { minutes ->
-                    val label = if (minutes == 0) "Nearby" else "${minutes}m"
-                    FilterChip(
-                        selected = state.alertLeadMinutes == minutes,
-                        onClick = { viewModel.selectLeadMinutes(minutes) },
-                        label = { Text(label) },
-                    )
-                }
+                NearWakeStateChip(
+                    label = if (routeReady) "Route ready" else "Destination-only",
+                    state = if (routeReady) NearWakeChipState.Safe else NearWakeChipState.Neutral,
+                )
+                NearWakeStateChip(
+                    label = state.etaLabel,
+                    state = if (routeReady) NearWakeChipState.Monitoring else NearWakeChipState.Approaching,
+                )
             }
         }
 
-        NearWakeCard {
-            Text("Alert intensity", style = MaterialTheme.typography.titleLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AlertIntensity.entries.forEach { intensity ->
-                    FilterChip(
-                        selected = state.alertIntensity == intensity,
-                        onClick = { viewModel.selectIntensity(intensity) },
-                        label = { Text(intensity.name.lowercase().replaceFirstChar(Char::uppercase)) },
-                    )
-                }
-            }
-        }
-
-        NearWakeCard {
-            Text("Background monitoring", style = MaterialTheme.typography.titleLarge)
-            Switch(
-                checked = state.backgroundMonitoringEnabled,
-                onCheckedChange = viewModel::setBackgroundMonitoringEnabled,
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Route preview")
+            Text(
+                text = state.routeSummary,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = "NearWake will keep monitoring even if route data disappears after the trip starts.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+            NearWakeSectionHeader(text = "Alert me")
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                listOf(2, 5, 10, 15).forEach { minutes ->
+                    NearWakeSelectableChip(
+                        selected = state.alertLeadMinutes == minutes,
+                        label = "${minutes} min",
+                        onClick = { viewModel.selectLeadMinutes(minutes) },
+                    )
+                }
+                NearWakeSelectableChip(
+                    selected = state.alertLeadMinutes == 0,
+                    label = "Nearby",
+                    onClick = { viewModel.selectLeadMinutes(0) },
+                )
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+            NearWakeSectionHeader(text = "Alert style")
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                AlertIntensity.entries.forEach { intensity ->
+                    NearWakeSelectableChip(
+                        selected = state.alertIntensity == intensity,
+                        label = intensity.name.lowercase().replaceFirstChar(Char::uppercase),
+                        onClick = { viewModel.selectIntensity(intensity) },
+                    )
+                }
+            }
+        }
+
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Monitoring")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(spacing.xs),
+                ) {
+                    Text("Background monitoring", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Keeps the service alive while you lock the screen or switch apps.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = state.backgroundMonitoringEnabled,
+                    onCheckedChange = viewModel::setBackgroundMonitoringEnabled,
+                )
+            }
+        }
+
         NearWakePrimaryButton(
-            text = "Start trip",
+            modifier = Modifier.padding(top = spacing.md),
+            text = "Arm trip",
             onClick = { viewModel.startTrip(onStartTrip) },
             enabled = state.canStart,
         )

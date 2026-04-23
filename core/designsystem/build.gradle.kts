@@ -9,5 +9,6 @@ android {
 dependencies {
     implementation(libs.compose.material.icons)
     implementation(libs.compose.animation)
+    implementation(libs.compose.ui.text.google.fonts)
     api(libs.compose.material3)
 }
