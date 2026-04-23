@@ -11,9 +11,9 @@ import com.nearwake.data.location.receivers.GeofenceEventBus
 import com.nearwake.data.motion.receivers.ActivityTransitionEventBus
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEvent
+import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
-import com.nearwake.domain.trip.model.TripState
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +22,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -32,6 +31,7 @@ class TripMonitoringService : Service() {
     @Inject lateinit var tripCleanupUseCase: TripCleanupUseCase
     @Inject lateinit var diagnosticsLogger: DiagnosticsLogger
     @Inject lateinit var tripEngine: TripEngine
+    @Inject lateinit var tripSessionStore: TripSessionStore
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var activeSession: TripSession? = null
@@ -50,17 +50,20 @@ class TripMonitoringService : Service() {
                     notificationHelper.buildMonitoringNotification(MonitoringMode.GEOFENCE_ONLY),
                 )
                 val tripId = intent.getStringExtra(EXTRA_TRIP_ID) ?: return START_STICKY
-                activeSession = TripSession(
-                    tripId = tripId,
-                    state = TripState.Armed,
-                    monitoringMode = MonitoringMode.GEOFENCE_ONLY,
-                    updatedAt = Clock.System.now(),
-                )
                 serviceScope.launch {
+                    val restoredSession = tripSessionStore.loadOrCreate(tripId)
+                    activeSession = restoredSession
+                    notificationHelper.notify(
+                        NOTIFICATION_ID_MONITORING,
+                        notificationHelper.buildMonitoringNotification(restoredSession.monitoringMode),
+                    )
                     diagnosticsLogger.log(
-                        eventType = "trip_started",
+                        eventType = "monitoring_service_started",
                         tripId = tripId,
-                        payload = buildJsonObject {},
+                        payload = buildJsonObject {
+                            put("state", restoredSession.state.name)
+                            put("mode", restoredSession.monitoringMode.name)
+                        },
                     )
                 }
             }
@@ -87,15 +90,18 @@ class TripMonitoringService : Service() {
                 val session = activeSession ?: return@collect
                 if (event.transitionType == Geofence.GEOFENCE_TRANSITION_ENTER) {
                     val result = tripEngine.onEvent(session, TripEvent.ApproachGeofenceEntered)
-                    activeSession = result.session
+                    persistSession(result)
                     notificationHelper.notify(
                         NOTIFICATION_ID_MONITORING,
                         notificationHelper.buildMonitoringNotification(result.session.monitoringMode),
                     )
                     diagnosticsLogger.log(
-                        eventType = "geofence_fired",
+                        eventType = "trip_state_transition",
                         tripId = session.tripId,
                         payload = buildJsonObject {
+                            put("event", "ApproachGeofenceEntered")
+                            put("from_state", session.state.name)
+                            put("to_state", result.session.state.name)
                             put("ids", event.geofenceIds.joinToString(","))
                         },
                     )
@@ -107,20 +113,28 @@ class TripMonitoringService : Service() {
             ActivityTransitionEventBus.events.collect { motion ->
                 val session = activeSession ?: return@collect
                 val result = tripEngine.onEvent(session, TripEvent.MotionDetected)
-                activeSession = result.session
+                persistSession(result)
                 notificationHelper.notify(
                     NOTIFICATION_ID_MONITORING,
                     notificationHelper.buildMonitoringNotification(result.session.monitoringMode),
                 )
                 diagnosticsLogger.log(
-                    eventType = "motion_transition",
+                    eventType = "trip_state_transition",
                     tripId = session.tripId,
                     payload = buildJsonObject {
-                        put("type", motion.type.name)
+                        put("event", "MotionDetected")
+                        put("motion_type", motion.type.name)
+                        put("from_state", session.state.name)
+                        put("to_state", result.session.state.name)
                     },
                 )
             }
         }
+    }
+
+    private suspend fun persistSession(result: TripEngineResult) {
+        tripSessionStore.save(result.session)
+        activeSession = result.session
     }
 
     companion object {
