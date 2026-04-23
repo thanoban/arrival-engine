@@ -6,6 +6,11 @@ plugins {
 
 android {
     namespace = "com.nearwake.data.routing"
+
+    defaultConfig {
+        val mapsApiKey = project.findProperty("MAPS_API_KEY")?.toString().orEmpty()
+        buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+    }
 }
 
 dependencies {
@@ -16,6 +21,7 @@ dependencies {
     implementation(project(":domain:routing"))
     implementation(project(":domain:trip"))
 
+    implementation(libs.okhttp)
     implementation(libs.retrofit)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
