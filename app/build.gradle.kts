@@ -80,4 +80,6 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
+
+    ksp(libs.hilt.work.compiler)
 }

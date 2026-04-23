@@ -49,6 +49,9 @@
 | C-008 | `core/network` has no source files | Low | ✅ RESOLVED |
 | C-009 | No test source files written yet | Medium | ✅ RESOLVED |
 | C-010 | `local.properties.template` missing | Low | ✅ RESOLVED |
+| C-011 | Missing `ksp(libs.hilt.work.compiler)` in `app/build.gradle.kts` | Compile Error | ✅ RESOLVED |
+| C-012 | `AlertReminderReceiver` directly constructs Hilt-managed `NotificationHelper` | Runtime Crash | ✅ RESOLVED |
+| C-013 | `BootReceiver` (data/location) not declared in AndroidManifest | Medium | ✅ RESOLVED |
 
 ---
 
@@ -117,6 +120,55 @@ Test sources now exist in the repo, including:
 ## ✅ C-010 — RESOLVED
 
 `local.properties.template` exists at project root and documents both `sdk.dir` and `MAPS_API_KEY`.
+
+---
+
+## ✅ C-011 — RESOLVED
+
+**Severity:** Compile Error
+**File:** `app/build.gradle.kts`
+
+`app/build.gradle.kts` now includes:
+```kotlin
+ksp(libs.hilt.work.compiler)
+```
+
+This keeps the app module aligned with the Hilt WorkManager setup already used by the repo.
+
+---
+
+## ✅ C-012 — RESOLVED
+
+**Severity:** Runtime Crash
+**File:** `data/alerts/src/main/kotlin/com/nearwake/data/alerts/AlertReminderReceiver.kt`
+
+`AlertReminderReceiver` now uses Hilt field injection:
+```kotlin
+@AndroidEntryPoint
+class AlertReminderReceiver : BroadcastReceiver() {
+    @Inject lateinit var notificationHelper: NotificationHelper
+}
+```
+
+---
+
+## ✅ C-013 — RESOLVED
+
+**Severity:** Medium — boot recovery silently never fires
+**File:** `data/location/src/main/AndroidManifest.xml`
+
+`BootReceiver` is now declared in `data/location/src/main/AndroidManifest.xml`:
+```xml
+<receiver
+    android:name=".receivers.BootReceiver"
+    android:enabled="true"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+    </intent-filter>
+</receiver>
+```
+`RECEIVE_BOOT_COMPLETED` was already present in the app manifest.
 
 ---
 
