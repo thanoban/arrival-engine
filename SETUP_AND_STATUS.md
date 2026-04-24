@@ -11,6 +11,8 @@ Use it when you want to know:
 - what works even without keys
 - how to verify the project on your machine
 
+If you want the product-side reference for competitor comparison, scope decisions, and technology choices, read [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md).
+
 ## 1. Current Project Condition
 
 The project is no longer a scaffold.
@@ -75,6 +77,16 @@ These are the main remaining gaps before calling the project fully finished:
 - release/store readiness items such as privacy/distribution/final hardening
 
 So the app is substantial and usable for development, but not fully production-finished.
+
+## 3.1 Problem And Scope Reference
+
+If you are comparing this project with competitor apps, use [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md) for:
+
+- the exact problem NearWake is trying to solve
+- what the product is and is not
+- current scope versus future scope
+- implemented features versus planned work
+- the technology stack and why those choices were made
 
 ## 4. What You Must Provide
 
