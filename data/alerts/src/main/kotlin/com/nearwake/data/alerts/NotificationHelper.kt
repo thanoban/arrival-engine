@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertStage
+import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -63,12 +64,36 @@ class NotificationHelper @Inject constructor(
     fun buildMonitoringNotification(
         mode: MonitoringMode,
         stage: AlertStage = AlertStage.MONITORING,
+        destinationName: String? = null,
+        etaMinutes: Int? = null,
+        confidence: Confidence? = null,
+        alertMode: AlertMode? = null,
     ): Notification =
         NotificationCompat.Builder(context, CHANNEL_MONITORING)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentTitle("NearWake active")
-            .setContentText("${stage.monitoringLabel} | ${mode.label}")
+            .setContentTitle(destinationName?.let { "NearWake guarding $it" } ?: "NearWake active")
+            .setContentText(
+                buildList {
+                    add(stage.monitoringLabel)
+                    etaMinutes?.let { add("~${it} min") }
+                    confidence?.let { add(it.label) }
+                }.joinToString(" | "),
+            )
+            .setStyle(
+                NotificationCompat.BigTextStyle().bigText(
+                    buildList {
+                        destinationName?.let { add("Destination: $it") }
+                        add("Stage: ${stage.monitoringLabel}")
+                        add("Monitoring: ${mode.label}")
+                        etaMinutes?.let { add("ETA: about $it minutes") }
+                        confidence?.let { add("Confidence: ${it.label}") }
+                        alertMode?.let { add("Mode: ${it.label}") }
+                    }.joinToString("  •  "),
+                ),
+            )
             .setOngoing(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setContentIntent(contentIntent())
             .build()
 
@@ -165,6 +190,13 @@ private val AlertStage.monitoringLabel: String
         AlertStage.IMMINENT -> "Imminent stage"
         AlertStage.ARRIVAL -> "Arrival stage"
         AlertStage.RECOVERY -> "Recovery stage"
+    }
+
+private val Confidence.label: String
+    get() = when (this) {
+        Confidence.HIGH -> "High confidence"
+        Confidence.DEGRADED -> "Medium confidence"
+        Confidence.OFFLINE -> "Low confidence"
     }
 
 private fun AlertStage.notificationTitle(destinationName: String): String = when (this) {

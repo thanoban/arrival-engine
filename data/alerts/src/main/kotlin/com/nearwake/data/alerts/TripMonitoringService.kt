@@ -456,11 +456,17 @@ class TripMonitoringService : Service() {
         mode: MonitoringMode,
         stage: AlertStage,
     ) {
+        val session = activeSession
+        val context = activeContext
         notificationHelper.notify(
             NOTIFICATION_ID_MONITORING,
             notificationHelper.buildMonitoringNotification(
                 mode = mode,
                 stage = stage,
+                destinationName = context?.destinationName,
+                etaMinutes = session?.lastEtaMinutes,
+                confidence = session?.confidence,
+                alertMode = context?.alertMode,
             ),
         )
     }
