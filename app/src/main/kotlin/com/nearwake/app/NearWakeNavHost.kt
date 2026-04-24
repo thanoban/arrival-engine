@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.nearwake.feature.alerts.AlertScreen
 import com.nearwake.feature.alerts.RecoveryScreen
+import com.nearwake.feature.companion.CompanionScreen
 import com.nearwake.feature.diagnostics.DiagnosticsScreen
 import com.nearwake.feature.history.HistoryScreen
 import com.nearwake.feature.history.TripSummaryScreen
@@ -119,6 +120,14 @@ fun NearWakeNavHost(
         composable(NearWakeRoute.WalkFinish.route) {
             WalkFinishScreen(
                 onArrived = { navController.navigate(NearWakeRoute.Home.route) },
+                onShareArrival = { tripId ->
+                    navController.navigate(NearWakeRoute.Companion.createRoute(tripId))
+                },
+            )
+        }
+        composable(NearWakeRoute.Companion.route) {
+            CompanionScreen(
+                onDone = { navController.navigate(NearWakeRoute.Home.route) },
             )
         }
     }

@@ -116,12 +116,16 @@ class WalkFinishViewModel @Inject constructor(
     fun confirmArrival(onArrived: () -> Unit) {
         if (!mutableState.value.canConfirmArrival) return
         scope.launch {
-            tripDao.getTripById(tripId)?.let { trip ->
-                tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
-            }
-            tripSessionDao.deleteTripSession(tripId)
-            TripMonitoringService.stop(appContext)
+            completeTrip()
             onArrived()
+        }
+    }
+
+    fun confirmArrivalAndShare(onReadyToShare: (String) -> Unit) {
+        if (!mutableState.value.canConfirmArrival) return
+        scope.launch {
+            completeTrip()
+            onReadyToShare(tripId)
         }
     }
 
@@ -168,5 +172,13 @@ class WalkFinishViewModel @Inject constructor(
         const val TRIP_ID_ARG = "tripId"
         private const val EARTH_RADIUS_METERS = 6_371_000.0
         private const val ARRIVAL_RADIUS_METERS = 30.0
+    }
+
+    private suspend fun completeTrip() {
+        tripDao.getTripById(tripId)?.let { trip ->
+            tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
+        }
+        tripSessionDao.deleteTripSession(tripId)
+        TripMonitoringService.stop(appContext)
     }
 }

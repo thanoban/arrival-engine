@@ -24,6 +24,7 @@ import com.nearwake.core.ui.SurfaceCard
 @Composable
 fun WalkFinishScreen(
     onArrived: () -> Unit,
+    onShareArrival: (String) -> Unit,
     viewModel: WalkFinishViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -107,6 +108,15 @@ fun WalkFinishScreen(
             modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
             accent = NearWakeColors.SafeBase,
             onClick = { viewModel.confirmArrival(onArrived) },
+        )
+
+        NearWakePrimaryButton(
+            text = "Confirm and share",
+            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+            accent = NearWakeColors.MonitoringBase,
+            onClick = {
+                viewModel.confirmArrivalAndShare(onShareArrival)
+            },
         )
     }
 }
