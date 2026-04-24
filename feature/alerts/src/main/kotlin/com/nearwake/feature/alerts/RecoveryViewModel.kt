@@ -7,17 +7,15 @@ import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.data.alerts.TripMonitoringService
+import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.isTerminal
+import com.nearwake.domain.trip.engine.RecoveryGuidanceMode
+import com.nearwake.domain.trip.engine.RecoveryPlanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import kotlin.math.asin
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,6 +34,8 @@ data class RecoveryUiState(
     val routeSummary: String = "Destination-only monitoring",
     val lastEtaLabel: String = "Last ETA unavailable",
     val confidenceLabel: String = "Confidence unknown",
+    val recoveryGuidanceLabel: String = "Resume monitoring and check the next safe stop.",
+    val returnStopLabel: String? = null,
     val walkBackLabel: String? = null,
     val canResumeMonitoring: Boolean = false,
 )
@@ -50,6 +50,7 @@ class RecoveryViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val recoveryPlanner = RecoveryPlanner()
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(RecoveryUiState(tripId = tripId))
     val state: StateFlow<RecoveryUiState> = mutableState.asStateFlow()
@@ -63,6 +64,18 @@ class RecoveryViewModel @Inject constructor(
             ) { trip, places, session ->
                 val place = trip?.destinationId?.let { destinationId -> places.firstOrNull { it.id == destinationId } }
                 val routeSnapshot = routingRepository.getCachedRoute(tripId)
+                val currentLocation = session?.lastKnownLat?.let { lat ->
+                    session.lastKnownLng?.let { lng ->
+                        LatLng(lat = lat, lng = lng)
+                    }
+                }
+                val recoveryPlan = place?.let { destination ->
+                    recoveryPlanner.plan(
+                        currentLocation = currentLocation,
+                        destinationLocation = LatLng(destination.lat, destination.lng),
+                        routeSnapshot = routeSnapshot,
+                    )
+                }
                 RecoveryUiState(
                     tripId = tripId,
                     destinationName = place?.name ?: "Recovery",
@@ -78,24 +91,20 @@ class RecoveryViewModel @Inject constructor(
                         Confidence.DEGRADED -> "Medium confidence"
                         Confidence.OFFLINE -> "Low confidence"
                     },
-                    walkBackLabel = session?.let { currentSession ->
-                        val lastKnownLat = currentSession.lastKnownLat
-                        val lastKnownLng = currentSession.lastKnownLng
-                        if (place != null && lastKnownLat != null && lastKnownLng != null) {
-                        val distance = distanceMeters(
-                            firstLat = lastKnownLat,
-                            firstLng = lastKnownLng,
-                            secondLat = place.lat,
-                            secondLng = place.lng,
-                        )
-                        if (distance < 400.0) {
-                            "You are about ${distance.toInt()}m from ${place.name}. If it is safe, stop now and walk back."
-                        } else {
-                            null
-                        }
-                        } else {
-                            null
-                        }
+                    recoveryGuidanceLabel = when (recoveryPlan?.guidanceMode) {
+                        RecoveryGuidanceMode.WALK_BACK -> "You are still close enough to recover on foot."
+                        RecoveryGuidanceMode.RETURN_STOP -> "Get off at the next safe moment and head for the nearest return stop."
+                        RecoveryGuidanceMode.RESUME_MONITORING, null ->
+                            "Resume monitoring and check the next safe stop."
+                    },
+                    returnStopLabel = recoveryPlan?.returnStopName?.let { stopName ->
+                        val distanceLabel = recoveryPlan.returnStopDistanceMeters?.let { distance ->
+                            "about ${distance}m away"
+                        } ?: "nearby"
+                        "Nearest return stop: $stopName ($distanceLabel)"
+                    },
+                    walkBackLabel = recoveryPlan?.walkBackDistanceMeters?.let { distance ->
+                        "You are about ${distance}m from ${place?.name ?: "the destination"}. If it is safe, stop now and walk back."
                     },
                     canResumeMonitoring = session != null && !session.state.isTerminal,
                 )
@@ -130,21 +139,4 @@ class RecoveryViewModel @Inject constructor(
     companion object {
         const val TRIP_ID_ARG = "tripId"
     }
-}
-
-private fun distanceMeters(
-    firstLat: Double,
-    firstLng: Double,
-    secondLat: Double,
-    secondLng: Double,
-): Double {
-    val latDistance = Math.toRadians(secondLat - firstLat)
-    val lngDistance = Math.toRadians(secondLng - firstLng)
-    val startLat = Math.toRadians(firstLat)
-    val endLat = Math.toRadians(secondLat)
-
-    val haversine = sin(latDistance / 2).pow(2.0) +
-        sin(lngDistance / 2).pow(2.0) * cos(startLat) * cos(endLat)
-    val arc = 2 * asin(sqrt(haversine))
-    return 6_371_000.0 * arc
 }

@@ -70,6 +70,24 @@ fun RecoveryScreen(
             }
         }
 
+        SurfaceCard {
+            NearWakeSectionHeader(text = "Best recovery move")
+            Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                Text(
+                    text = state.recoveryGuidanceLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                state.returnStopLabel?.let { returnStopLabel ->
+                    Text(
+                        text = returnStopLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         state.walkBackLabel?.let { walkBackLabel ->
             SurfaceCard {
                 NearWakeSectionHeader(text = "Walk-back note")

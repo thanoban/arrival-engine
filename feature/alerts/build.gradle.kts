@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain:location"))
     implementation(project(":domain:trip"))
     implementation(project(":domain:routing"))
     implementation(project(":core:database"))
