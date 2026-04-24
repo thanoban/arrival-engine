@@ -7,6 +7,7 @@ import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.data.alerts.TripMonitoringService
+import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertStage
@@ -37,6 +38,7 @@ data class LiveTripUiState(
     val alertSummary: String = "",
     val alertMode: AlertMode = AlertMode.ACTIVE,
     val alertStage: AlertStage = AlertStage.MONITORING,
+    val transferSteps: List<TransferProgressUiState> = emptyList(),
 )
 
 @HiltViewModel
@@ -82,6 +84,13 @@ class LiveTripViewModel @Inject constructor(
                     },
                     alertMode = trip?.alertMode ?: AlertMode.ACTIVE,
                     alertStage = session?.alertStage ?: AlertStage.MONITORING,
+                    transferSteps = routeSnapshot?.let { snapshot ->
+                        buildTransferProgress(
+                            routeSnapshot = snapshot,
+                            etaMinutes = minutes,
+                            destinationName = place?.name ?: "Destination",
+                        )
+                    }.orEmpty(),
                     alertSummary = trip?.let { configuredTrip ->
                         val lead = if (configuredTrip.alertLeadMinutes == 0) "Nearby" else "${configuredTrip.alertLeadMinutes} min early"
                         "$lead · ${configuredTrip.alertIntensity.name.lowercase().replaceFirstChar(Char::uppercase)} · ${configuredTrip.alertMode.name.lowercase().replaceFirstChar(Char::uppercase)} mode"
@@ -116,4 +125,60 @@ class LiveTripViewModel @Inject constructor(
     companion object {
         const val TRIP_ID_ARG = "tripId"
     }
+}
+
+data class TransferProgressUiState(
+    val title: String,
+    val subtitle: String,
+    val timingLabel: String,
+    val status: TransferProgressStatus,
+)
+
+enum class TransferProgressStatus {
+    Completed,
+    Soon,
+    Upcoming,
+    Final,
+}
+
+internal fun buildTransferProgress(
+    routeSnapshot: RouteSnapshot,
+    etaMinutes: Int,
+    destinationName: String,
+): List<TransferProgressUiState> {
+    val elapsedMinutes = (routeSnapshot.totalDurationMinutes - etaMinutes).coerceAtLeast(0)
+    val transferSteps = routeSnapshot.transfers
+        .sortedBy { transfer -> transfer.arrivalMinutes }
+        .map { transfer ->
+            val remainingMinutes = transfer.arrivalMinutes - elapsedMinutes
+            when {
+                remainingMinutes <= 0 -> TransferProgressUiState(
+                    title = "Changed to ${transfer.lineName}",
+                    subtitle = transfer.stop.name,
+                    timingLabel = "Passed",
+                    status = TransferProgressStatus.Completed,
+                )
+
+                remainingMinutes <= 3 -> TransferProgressUiState(
+                    title = "Change to ${transfer.lineName}",
+                    subtitle = transfer.stop.name,
+                    timingLabel = if (remainingMinutes <= 1) "Now" else "in $remainingMinutes min",
+                    status = TransferProgressStatus.Soon,
+                )
+
+                else -> TransferProgressUiState(
+                    title = "Change to ${transfer.lineName}",
+                    subtitle = transfer.stop.name,
+                    timingLabel = "in $remainingMinutes min",
+                    status = TransferProgressStatus.Upcoming,
+                )
+            }
+        }
+
+    return transferSteps + TransferProgressUiState(
+        title = "Arrive at $destinationName",
+        subtitle = "Final stop",
+        timingLabel = if (etaMinutes <= 1) "Now" else "in $etaMinutes min",
+        status = TransferProgressStatus.Final,
+    )
 }

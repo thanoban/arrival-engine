@@ -138,6 +138,10 @@ fun LiveTripScreen(
                 routeSummary = state.routeSummary,
             )
 
+            TransferProgressCard(
+                transferSteps = state.transferSteps,
+            )
+
             if (trust.biasEarlyMessage != null) {
                 HeroCard(accent = trust.biasCardAccent) {
                     NearWakeStateChip(
