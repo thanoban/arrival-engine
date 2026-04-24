@@ -15,6 +15,7 @@ import com.nearwake.feature.permissions.PermissionsScreen
 import com.nearwake.feature.places.PlaceSearchScreen
 import com.nearwake.feature.settings.SettingsScreen
 import com.nearwake.feature.tripsetup.TripSetupScreen
+import com.nearwake.feature.walkfinish.WalkFinishScreen
 
 @Composable
 fun NearWakeNavHost(
@@ -75,7 +76,9 @@ fun NearWakeNavHost(
         }
         composable(NearWakeRoute.Alert.route) {
             AlertScreen(
-                onDismiss = { navController.navigate(NearWakeRoute.Home.route) },
+                onDismiss = { tripId ->
+                    navController.navigate(NearWakeRoute.WalkFinish.createRoute(tripId))
+                },
                 onRecovery = { tripId ->
                     navController.navigate(NearWakeRoute.Recovery.createRoute(tripId))
                 },
@@ -111,6 +114,11 @@ fun NearWakeNavHost(
         composable(NearWakeRoute.Diagnostics.route) {
             DiagnosticsScreen(
                 onBack = { navController.popBackStack() },
+            )
+        }
+        composable(NearWakeRoute.WalkFinish.route) {
+            WalkFinishScreen(
+                onArrived = { navController.navigate(NearWakeRoute.Home.route) },
             )
         }
     }

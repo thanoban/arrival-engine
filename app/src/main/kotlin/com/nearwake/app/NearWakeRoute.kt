@@ -25,6 +25,11 @@ sealed class NearWakeRoute(val route: String) {
 
         fun createRoute(tripId: String): String = "recovery/$tripId"
     }
+    data object WalkFinish : NearWakeRoute("walk_finish/{tripId}") {
+        const val TRIP_ID_ARG = "tripId"
+
+        fun createRoute(tripId: String): String = "walk_finish/$tripId"
+    }
     data object History : NearWakeRoute("history")
     data object TripSummary : NearWakeRoute("trip_summary/{tripId}") {
         const val TRIP_ID_ARG = "tripId"

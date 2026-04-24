@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 data class AlertUiState(
     val tripId: String = "",
@@ -59,14 +58,10 @@ class AlertViewModel @Inject constructor(
         }
     }
 
-    fun dismissTrip(onDismissed: () -> Unit) {
+    fun enterWalkFinish(onDismissed: (String) -> Unit) {
         scope.launch {
-            tripDao.getTripById(tripId)?.let { trip ->
-                tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
-            }
-            tripSessionDao.deleteTripSession(tripId)
             TripMonitoringService.stop(appContext)
-            onDismissed()
+            onDismissed(tripId)
         }
     }
 

@@ -30,7 +30,7 @@ import com.nearwake.core.ui.PulseRing
 
 @Composable
 fun AlertScreen(
-    onDismiss: () -> Unit,
+    onDismiss: (String) -> Unit,
     onRecovery: (String) -> Unit,
     viewModel: AlertViewModel = hiltViewModel(),
 ) {
@@ -101,7 +101,7 @@ fun AlertScreen(
                 verticalArrangement = Arrangement.spacedBy(spacing.lg),
             ) {
                 Button(
-                    onClick = { viewModel.dismissTrip(onDismiss) },
+                    onClick = { viewModel.enterWalkFinish(onDismiss) },
                     modifier = Modifier.size(spacing.massive * 2 + spacing.xl),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
@@ -110,7 +110,7 @@ fun AlertScreen(
                     ),
                 ) {
                     Text(
-                        text = "Dismiss",
+                        text = "Walk",
                         style = MaterialTheme.typography.titleLarge,
                     )
                 }

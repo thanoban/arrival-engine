@@ -60,6 +60,7 @@ dependencies {
     implementation(project(":feature:history"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:diagnostics"))
+    implementation(project(":feature:walkfinish"))
 
     // AndroidX
     implementation(libs.androidx.core.ktx)
