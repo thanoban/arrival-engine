@@ -37,6 +37,9 @@ fun NearWakeNavHost(
                 onHistory = { navController.navigate(NearWakeRoute.History.route) },
                 onSettings = { navController.navigate(NearWakeRoute.Settings.route) },
                 onPermissions = { navController.navigate(NearWakeRoute.Permissions.route) },
+                onOpenTrip = { tripId ->
+                    navController.navigate(NearWakeRoute.LiveTrip.createRoute(tripId))
+                },
             )
         }
         composable(NearWakeRoute.Permissions.route) {
@@ -81,6 +84,9 @@ fun NearWakeNavHost(
         composable(NearWakeRoute.Recovery.route) {
             RecoveryScreen(
                 onEndTrip = { navController.navigate(NearWakeRoute.Home.route) },
+                onResumeMonitoring = { tripId ->
+                    navController.navigate(NearWakeRoute.LiveTrip.createRoute(tripId))
+                },
             )
         }
         composable(NearWakeRoute.History.route) {

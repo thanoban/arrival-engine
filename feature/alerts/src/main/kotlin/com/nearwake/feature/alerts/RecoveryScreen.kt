@@ -15,12 +15,15 @@ import com.nearwake.core.ui.HeroCard
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
+import com.nearwake.core.ui.NearWakeSecondaryButton
 import com.nearwake.core.ui.NearWakeSectionHeader
 import com.nearwake.core.ui.NearWakeStateChip
+import com.nearwake.core.ui.SurfaceCard
 
 @Composable
 fun RecoveryScreen(
     onEndTrip: () -> Unit,
+    onResumeMonitoring: (String) -> Unit,
     viewModel: RecoveryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -44,22 +47,45 @@ fun RecoveryScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Text(
+                text = state.confidenceLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         ElevatedCard {
-            NearWakeSectionHeader(text = "What to do next")
+            NearWakeSectionHeader(text = "Last known trip state")
             Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 Text(
-                    text = "End the trip once you have re-oriented yourself.",
+                    text = state.routeSummary,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
-                    text = "Diagnostics and richer resume controls can build on this screen later, but the current flow stays honest to the available data and actions.",
+                    text = state.lastEtaLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+
+        state.walkBackLabel?.let { walkBackLabel ->
+            SurfaceCard {
+                NearWakeSectionHeader(text = "Walk-back note")
+                Text(
+                    text = walkBackLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+        }
+
+        if (state.canResumeMonitoring) {
+            NearWakeSecondaryButton(
+                text = "Resume monitoring",
+                onClick = { viewModel.resumeMonitoring(onResumeMonitoring) },
+            )
         }
 
         NearWakePrimaryButton(
