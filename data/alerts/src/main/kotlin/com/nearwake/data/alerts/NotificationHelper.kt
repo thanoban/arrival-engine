@@ -114,6 +114,29 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(contentIntent(tripId))
             .build()
 
+    fun buildTransferNotification(
+        tripId: String,
+        stopName: String,
+        lineName: String,
+        remainingMinutes: Int,
+    ): Notification =
+        NotificationCompat.Builder(context, CHANNEL_STAGE)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Transfer coming up")
+            .setContentText(
+                if (remainingMinutes <= 1) {
+                    "Change to $lineName at $stopName now."
+                } else {
+                    "Change to $lineName at $stopName in $remainingMinutes min."
+                },
+            )
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent(tripId))
+            .build()
+
     fun buildAlertNotification(
         tripId: String,
         intensity: AlertIntensity,

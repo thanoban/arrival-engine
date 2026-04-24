@@ -7,6 +7,9 @@ import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.data.alerts.TripMonitoringService
+import com.nearwake.domain.trip.engine.TransferCheckpointType
+import com.nearwake.domain.trip.engine.TransferMonitor
+import com.nearwake.domain.trip.engine.TransferProgressStatus as DomainTransferProgressStatus
 import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertMode
@@ -146,39 +149,39 @@ internal fun buildTransferProgress(
     etaMinutes: Int,
     destinationName: String,
 ): List<TransferProgressUiState> {
-    val elapsedMinutes = (routeSnapshot.totalDurationMinutes - etaMinutes).coerceAtLeast(0)
-    val transferSteps = routeSnapshot.transfers
-        .sortedBy { transfer -> transfer.arrivalMinutes }
-        .map { transfer ->
-            val remainingMinutes = transfer.arrivalMinutes - elapsedMinutes
-            when {
-                remainingMinutes <= 0 -> TransferProgressUiState(
-                    title = "Changed to ${transfer.lineName}",
-                    subtitle = transfer.stop.name,
-                    timingLabel = "Passed",
-                    status = TransferProgressStatus.Completed,
-                )
-
-                remainingMinutes <= 3 -> TransferProgressUiState(
-                    title = "Change to ${transfer.lineName}",
-                    subtitle = transfer.stop.name,
-                    timingLabel = if (remainingMinutes <= 1) "Now" else "in $remainingMinutes min",
-                    status = TransferProgressStatus.Soon,
-                )
-
-                else -> TransferProgressUiState(
-                    title = "Change to ${transfer.lineName}",
-                    subtitle = transfer.stop.name,
-                    timingLabel = "in $remainingMinutes min",
-                    status = TransferProgressStatus.Upcoming,
-                )
-            }
-        }
-
-    return transferSteps + TransferProgressUiState(
-        title = "Arrive at $destinationName",
-        subtitle = "Final stop",
-        timingLabel = if (etaMinutes <= 1) "Now" else "in $etaMinutes min",
-        status = TransferProgressStatus.Final,
+    val transferState = TransferMonitor().evaluate(
+        routeSnapshot = routeSnapshot,
+        etaMinutes = etaMinutes,
+        destinationName = destinationName,
     )
+
+    return transferState.checkpoints.map { checkpoint ->
+        when (checkpoint.type) {
+            TransferCheckpointType.TRANSFER -> TransferProgressUiState(
+                title = if (checkpoint.status == DomainTransferProgressStatus.COMPLETED) {
+                    "Changed to ${checkpoint.lineName.orEmpty()}"
+                } else {
+                    "Change to ${checkpoint.lineName.orEmpty()}"
+                },
+                subtitle = checkpoint.stopName,
+                timingLabel = when {
+                    checkpoint.status == DomainTransferProgressStatus.COMPLETED -> "Passed"
+                    checkpoint.remainingMinutes <= 1 -> "Now"
+                    else -> "in ${checkpoint.remainingMinutes} min"
+                },
+                status = when (checkpoint.status) {
+                    DomainTransferProgressStatus.COMPLETED -> TransferProgressStatus.Completed
+                    DomainTransferProgressStatus.SOON -> TransferProgressStatus.Soon
+                    DomainTransferProgressStatus.UPCOMING -> TransferProgressStatus.Upcoming
+                },
+            )
+
+            TransferCheckpointType.DESTINATION -> TransferProgressUiState(
+                title = "Arrive at ${checkpoint.stopName}",
+                subtitle = "Final stop",
+                timingLabel = if (checkpoint.remainingMinutes <= 1) "Now" else "in ${checkpoint.remainingMinutes} min",
+                status = TransferProgressStatus.Final,
+            )
+        }
+    }
 }

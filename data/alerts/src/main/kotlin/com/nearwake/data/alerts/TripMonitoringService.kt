@@ -21,6 +21,8 @@ import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.engine.TripEvent
 import com.nearwake.domain.trip.engine.TripSideEffect
+import com.nearwake.domain.trip.engine.TransferMonitor
+import com.nearwake.domain.trip.engine.TransferProgressStatus
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.MonitoringMode
@@ -57,9 +59,11 @@ class TripMonitoringService : Service() {
     @Inject lateinit var alertOrchestrator: AlertOrchestrator
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val transferMonitor = TransferMonitor()
     private var activeSession: TripSession? = null
     private var activeContext: MonitoredTripContext? = null
     private var locationJob: Job? = null
+    private var lastTransferCueKey: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -113,6 +117,7 @@ class TripMonitoringService : Service() {
         }
 
         activeContext = context
+        lastTransferCueKey = null
         val restoredSession = tripSessionStore.loadOrCreate(tripId)
             .withInitialEta(context.initialEtaMinutes)
         val preparedSession = registerPrerequisites(restoredSession, context)
@@ -325,6 +330,10 @@ class TripMonitoringService : Service() {
                 currentSession = update.session,
                 context = context,
             )
+            maybeNotifyTransferCue(
+                session = update.session,
+                context = context,
+            )
             diagnosticsLogger.log(
                 eventType = "trip_location_sampled",
                 tripId = update.session.tripId,
@@ -365,6 +374,10 @@ class TripMonitoringService : Service() {
         maybeNotifyStageAdvance(
             previousSession = previousSession,
             currentSession = result.session,
+            context = context,
+        )
+        maybeNotifyTransferCue(
+            session = result.session,
             context = context,
         )
         diagnosticsLogger.log(
@@ -443,6 +456,7 @@ class TripMonitoringService : Service() {
             alertMode = trip.alertMode,
             destination = LatLng(lat = destination.lat, lng = destination.lng),
             hasCachedRoute = cachedRoute != null,
+            routeSnapshot = cachedRoute,
             initialEtaMinutes = cachedRoute?.totalDurationMinutes,
         )
     }
@@ -495,6 +509,48 @@ class TripMonitoringService : Service() {
         )
     }
 
+    private suspend fun maybeNotifyTransferCue(
+        session: TripSession,
+        context: MonitoredTripContext,
+    ) {
+        val routeSnapshot = context.routeSnapshot ?: return
+        val etaMinutes = session.lastEtaMinutes ?: return
+        val nextTransfer = transferMonitor.evaluate(
+            routeSnapshot = routeSnapshot,
+            etaMinutes = etaMinutes,
+            destinationName = context.destinationName,
+        ).nextTransfer ?: return
+
+        if (nextTransfer.status != TransferProgressStatus.SOON) {
+            return
+        }
+
+        val cueKey = "${nextTransfer.stopName}:${nextTransfer.lineName.orEmpty()}"
+        if (lastTransferCueKey == cueKey) {
+            return
+        }
+        lastTransferCueKey = cueKey
+
+        notificationHelper.notify(
+            NOTIFICATION_ID_TRANSFER,
+            notificationHelper.buildTransferNotification(
+                tripId = context.tripId,
+                stopName = nextTransfer.stopName,
+                lineName = nextTransfer.lineName.orEmpty(),
+                remainingMinutes = nextTransfer.remainingMinutes,
+            ),
+        )
+        diagnosticsLogger.log(
+            eventType = "transfer_alert_fired",
+            tripId = context.tripId,
+            payload = buildJsonObject {
+                put("stop_name", nextTransfer.stopName)
+                put("line_name", nextTransfer.lineName.orEmpty())
+                put("remaining_minutes", nextTransfer.remainingMinutes)
+            },
+        )
+    }
+
     private fun TripSession.withInitialEta(initialEtaMinutes: Int?): TripSession =
         if (lastEtaMinutes == null && initialEtaMinutes != null) {
             copy(lastEtaMinutes = initialEtaMinutes)
@@ -505,6 +561,7 @@ class TripMonitoringService : Service() {
     companion object {
         private const val NOTIFICATION_ID_MONITORING = 41
         private const val NOTIFICATION_ID_STAGE = 43
+        private const val NOTIFICATION_ID_TRANSFER = 44
         const val ACTION_START_MONITORING = "com.nearwake.data.alerts.START_MONITORING"
         const val ACTION_STOP_MONITORING = "com.nearwake.data.alerts.STOP_MONITORING"
         const val EXTRA_TRIP_ID = "extra_trip_id"

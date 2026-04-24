@@ -3,6 +3,7 @@ package com.nearwake.data.alerts
 import com.nearwake.domain.location.model.GeofenceSpec
 import com.nearwake.domain.location.model.GeofenceType
 import com.nearwake.domain.location.model.LatLng
+import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.trip.engine.AlertStageEvaluator
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEngineResult
@@ -29,6 +30,7 @@ data class MonitoredTripContext(
     val tripRule: TripRule,
     val geofenceIds: List<String>,
     val hasCachedRoute: Boolean,
+    val routeSnapshot: RouteSnapshot? = null,
     val initialEtaMinutes: Int? = null,
 )
 
@@ -58,6 +60,7 @@ class TripMonitoringRuntime @Inject constructor(
         alertMode: AlertMode = AlertMode.ACTIVE,
         destination: LatLng,
         hasCachedRoute: Boolean,
+        routeSnapshot: RouteSnapshot? = null,
         initialEtaMinutes: Int? = null,
     ): MonitoredTripContext =
         MonitoredTripContext(
@@ -69,6 +72,7 @@ class TripMonitoringRuntime @Inject constructor(
             tripRule = TripRule(alertLeadMinutes = alertLeadMinutes),
             geofenceIds = buildGeofenceIds(tripId),
             hasCachedRoute = hasCachedRoute,
+            routeSnapshot = routeSnapshot,
             initialEtaMinutes = initialEtaMinutes,
         )
 
