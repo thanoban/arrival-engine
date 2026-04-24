@@ -137,6 +137,21 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(contentIntent(tripId))
             .build()
 
+    fun buildBoardingWarningNotification(
+        tripId: String,
+        destinationName: String,
+    ): Notification =
+        NotificationCompat.Builder(context, CHANNEL_STAGE)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("Check the route direction")
+            .setContentText("This vehicle may be heading away from $destinationName.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent(tripId))
+            .build()
+
     fun buildAlertNotification(
         tripId: String,
         intensity: AlertIntensity,

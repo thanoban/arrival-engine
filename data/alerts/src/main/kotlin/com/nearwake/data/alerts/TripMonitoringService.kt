@@ -17,6 +17,8 @@ import com.nearwake.data.motion.ActivityRecognitionDataSource
 import com.nearwake.data.motion.receivers.ActivityTransitionEventBus
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.routing.repository.RoutingRepository
+import com.nearwake.domain.trip.engine.BoardingAlignment
+import com.nearwake.domain.trip.engine.BoardingValidator
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.engine.TripEvent
@@ -59,10 +61,12 @@ class TripMonitoringService : Service() {
     @Inject lateinit var alertOrchestrator: AlertOrchestrator
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val boardingValidator = BoardingValidator()
     private val transferMonitor = TransferMonitor()
     private var activeSession: TripSession? = null
     private var activeContext: MonitoredTripContext? = null
     private var locationJob: Job? = null
+    private var boardingValidationComplete: Boolean = false
     private var lastTransferCueKey: String? = null
 
     override fun onCreate() {
@@ -117,6 +121,7 @@ class TripMonitoringService : Service() {
         }
 
         activeContext = context
+        boardingValidationComplete = false
         lastTransferCueKey = null
         val restoredSession = tripSessionStore.loadOrCreate(tripId)
             .withInitialEta(context.initialEtaMinutes)
@@ -310,6 +315,8 @@ class TripMonitoringService : Service() {
             update = update,
             eventName = "LocationUpdate",
             context = context,
+            sampleLocation = location,
+            previousSession = session,
         )
     }
 
@@ -317,19 +324,29 @@ class TripMonitoringService : Service() {
         update: TripMonitoringUpdate,
         eventName: String,
         context: MonitoredTripContext,
+        sampleLocation: LatLng? = null,
+        previousSession: TripSession? = null,
     ) {
         if (update.engineResult == null) {
-            val previousSession = activeSession
+            val priorSession = previousSession ?: activeSession
             persistSession(update.session)
             refreshMonitoringNotification(
                 mode = update.session.monitoringMode,
                 stage = update.session.alertStage,
             )
             maybeNotifyStageAdvance(
-                previousSession = previousSession,
+                previousSession = priorSession,
                 currentSession = update.session,
                 context = context,
             )
+            if (sampleLocation != null && priorSession != null) {
+                maybeNotifyBoardingMismatch(
+                    previousSession = priorSession,
+                    currentSession = update.session,
+                    currentLocation = sampleLocation,
+                    context = context,
+                )
+            }
             maybeNotifyTransferCue(
                 session = update.session,
                 context = context,
@@ -551,6 +568,70 @@ class TripMonitoringService : Service() {
         )
     }
 
+    private suspend fun maybeNotifyBoardingMismatch(
+        previousSession: TripSession,
+        currentSession: TripSession,
+        currentLocation: LatLng,
+        context: MonitoredTripContext,
+    ) {
+        if (boardingValidationComplete) {
+            return
+        }
+        if (currentSession.alertStage != AlertStage.MONITORING &&
+            currentSession.alertStage != AlertStage.APPROACH
+        ) {
+            boardingValidationComplete = true
+            return
+        }
+
+        val previousLocation = previousSession.lastKnownLat?.let { lat ->
+            previousSession.lastKnownLng?.let { lng ->
+                LatLng(lat = lat, lng = lng)
+            }
+        } ?: return
+
+        val routeSnapshot = context.routeSnapshot ?: return
+        val result = boardingValidator.evaluate(
+            routeSnapshot = routeSnapshot,
+            previousLocation = previousLocation,
+            currentLocation = currentLocation,
+        )
+
+        when (result.alignment) {
+            BoardingAlignment.UNDETERMINED -> Unit
+            BoardingAlignment.ALIGNED -> {
+                boardingValidationComplete = true
+                diagnosticsLogger.log(
+                    eventType = "boarding_direction_confirmed",
+                    tripId = currentSession.tripId,
+                    payload = buildJsonObject {
+                        put("heading_delta_degrees", result.headingDeltaDegrees ?: -1.0)
+                    },
+                )
+            }
+
+            BoardingAlignment.WRONG_DIRECTION -> {
+                boardingValidationComplete = true
+                notificationHelper.notify(
+                    NOTIFICATION_ID_BOARDING_WARNING,
+                    notificationHelper.buildBoardingWarningNotification(
+                        tripId = context.tripId,
+                        destinationName = context.destinationName,
+                    ),
+                )
+                diagnosticsLogger.log(
+                    eventType = "boarding_direction_warning",
+                    tripId = currentSession.tripId,
+                    payload = buildJsonObject {
+                        put("expected_heading_degrees", result.expectedHeadingDegrees ?: -1.0)
+                        put("actual_heading_degrees", result.actualHeadingDegrees ?: -1.0)
+                        put("heading_delta_degrees", result.headingDeltaDegrees ?: -1.0)
+                    },
+                )
+            }
+        }
+    }
+
     private fun TripSession.withInitialEta(initialEtaMinutes: Int?): TripSession =
         if (lastEtaMinutes == null && initialEtaMinutes != null) {
             copy(lastEtaMinutes = initialEtaMinutes)
@@ -562,6 +643,7 @@ class TripMonitoringService : Service() {
         private const val NOTIFICATION_ID_MONITORING = 41
         private const val NOTIFICATION_ID_STAGE = 43
         private const val NOTIFICATION_ID_TRANSFER = 44
+        private const val NOTIFICATION_ID_BOARDING_WARNING = 45
         const val ACTION_START_MONITORING = "com.nearwake.data.alerts.START_MONITORING"
         const val ACTION_STOP_MONITORING = "com.nearwake.data.alerts.STOP_MONITORING"
         const val EXTRA_TRIP_ID = "extra_trip_id"
