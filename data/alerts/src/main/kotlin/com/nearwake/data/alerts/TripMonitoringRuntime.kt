@@ -5,6 +5,7 @@ import com.nearwake.domain.location.model.GeofenceType
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEngineResult
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.TripRule
 import com.nearwake.domain.trip.model.TripSession
@@ -20,6 +21,7 @@ import kotlin.math.sqrt
 data class MonitoredTripContext(
     val tripId: String,
     val alertIntensity: AlertIntensity,
+    val alertMode: AlertMode,
     val destination: LatLng,
     val tripRule: TripRule,
     val geofenceIds: List<String>,
@@ -47,6 +49,7 @@ class TripMonitoringRuntime @Inject constructor(
         tripId: String,
         alertLeadMinutes: Int,
         alertIntensity: AlertIntensity,
+        alertMode: AlertMode,
         destination: LatLng,
         hasCachedRoute: Boolean,
         initialEtaMinutes: Int? = null,
@@ -54,6 +57,7 @@ class TripMonitoringRuntime @Inject constructor(
         MonitoredTripContext(
             tripId = tripId,
             alertIntensity = alertIntensity,
+            alertMode = alertMode,
             destination = destination,
             tripRule = TripRule(alertLeadMinutes = alertLeadMinutes),
             geofenceIds = buildGeofenceIds(tripId),

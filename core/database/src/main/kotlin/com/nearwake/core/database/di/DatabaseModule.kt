@@ -30,6 +30,7 @@ object DatabaseModule {
         NearWakeDatabase::class.java,
         NearWakeDatabase.DATABASE_NAME,
     ).addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_2_3)
         .build()
 
     @Provides
@@ -65,6 +66,17 @@ object DatabaseModule {
                     `is_stale` INTEGER NOT NULL,
                     PRIMARY KEY(`trip_id`)
                 )
+                """.trimIndent(),
+            )
+        }
+    }
+
+    private val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
+                ALTER TABLE `trips`
+                ADD COLUMN `alert_mode` TEXT NOT NULL DEFAULT 'ACTIVE'
                 """.trimIndent(),
             )
         }

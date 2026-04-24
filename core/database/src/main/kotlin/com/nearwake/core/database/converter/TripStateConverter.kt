@@ -2,6 +2,7 @@ package com.nearwake.core.database.converter
 
 import androidx.room.TypeConverter
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertType
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
@@ -31,6 +32,12 @@ class TripStateConverter {
 
     @TypeConverter
     fun toAlertIntensity(value: String): AlertIntensity = AlertIntensity.valueOf(value)
+
+    @TypeConverter
+    fun fromAlertMode(value: AlertMode): String = value.name
+
+    @TypeConverter
+    fun toAlertMode(value: String): AlertMode = AlertMode.valueOf(value)
 
     @TypeConverter
     fun fromAlertType(value: AlertType): String = value.name

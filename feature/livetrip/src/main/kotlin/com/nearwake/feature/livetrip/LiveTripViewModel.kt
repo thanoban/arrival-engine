@@ -8,6 +8,7 @@ import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.data.alerts.TripMonitoringService
 import com.nearwake.domain.routing.repository.RoutingRepository
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,12 +34,13 @@ data class LiveTripUiState(
     val confidence: Confidence = Confidence.HIGH,
     val batteryImpact: String = "Very Low",
     val alertSummary: String = "",
+    val alertMode: AlertMode = AlertMode.ACTIVE,
 )
 
 @HiltViewModel
 class LiveTripViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    tripDao: TripDao,
+    private val tripDao: TripDao,
     savedPlaceDao: SavedPlaceDao,
     private val tripSessionDao: TripSessionDao,
     private val routingRepository: RoutingRepository,
@@ -76,14 +78,22 @@ class LiveTripViewModel @Inject constructor(
                         MonitoringMode.BALANCED -> "Low"
                         MonitoringMode.PRECISE_BURST -> "Temporary spike"
                     },
+                    alertMode = trip?.alertMode ?: AlertMode.ACTIVE,
                     alertSummary = trip?.let { configuredTrip ->
                         val lead = if (configuredTrip.alertLeadMinutes == 0) "Nearby" else "${configuredTrip.alertLeadMinutes} min early"
-                        "$lead · ${configuredTrip.alertIntensity.name.lowercase().replaceFirstChar(Char::uppercase)}"
+                        "$lead · ${configuredTrip.alertIntensity.name.lowercase().replaceFirstChar(Char::uppercase)} · ${configuredTrip.alertMode.name.lowercase().replaceFirstChar(Char::uppercase)} mode"
                     }.orEmpty(),
                 )
             }.collect { uiState ->
                 mutableState.value = uiState
             }
+        }
+    }
+
+    fun updateAlertMode(mode: AlertMode) {
+        scope.launch {
+            val trip = tripDao.getTripById(tripId) ?: return@launch
+            tripDao.upsertTrip(trip.copy(alertMode = mode))
         }
     }
 

@@ -3,6 +3,7 @@ package com.nearwake.feature.tripsetup
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
@@ -14,6 +15,7 @@ import com.nearwake.domain.location.repository.LocationRepository
 import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
@@ -25,6 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +41,7 @@ data class TripSetupUiState(
     val routeSummary: String = "NearWake will fall back to destination-only monitoring if a transit route is unavailable.",
     val alertLeadMinutes: Int = 10,
     val alertIntensity: AlertIntensity = AlertIntensity.STANDARD,
+    val alertMode: AlertMode = AlertMode.ACTIVE,
     val backgroundMonitoringEnabled: Boolean = true,
     val canStart: Boolean = false,
 )
@@ -50,6 +54,7 @@ class TripSetupViewModel @Inject constructor(
     private val tripSessionDao: TripSessionDao,
     private val locationRepository: LocationRepository,
     private val routingRepository: RoutingRepository,
+    private val userPreferencesDataStore: UserPreferencesDataStore,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -59,6 +64,15 @@ class TripSetupViewModel @Inject constructor(
     private var previewRouteSnapshot: RouteSnapshot? = null
 
     init {
+        scope.launch {
+            val preferences = userPreferencesDataStore.preferences.first()
+            mutableState.value = mutableState.value.copy(
+                alertLeadMinutes = preferences.defaultAlertLeadMinutes,
+                alertIntensity = preferences.defaultAlertIntensity,
+                alertMode = preferences.defaultAlertMode,
+                backgroundMonitoringEnabled = preferences.backgroundMonitoringEnabled,
+            )
+        }
         scope.launch {
             val place = savedPlaceDao.getSavedPlaceById(placeId)
             mutableState.value = mutableState.value.copy(
@@ -85,6 +99,10 @@ class TripSetupViewModel @Inject constructor(
         mutableState.value = mutableState.value.copy(alertIntensity = intensity)
     }
 
+    fun selectAlertMode(mode: AlertMode) {
+        mutableState.value = mutableState.value.copy(alertMode = mode)
+    }
+
     fun setBackgroundMonitoringEnabled(enabled: Boolean) {
         mutableState.value = mutableState.value.copy(backgroundMonitoringEnabled = enabled)
     }
@@ -106,6 +124,7 @@ class TripSetupViewModel @Inject constructor(
                     destinationId = place.id,
                     alertLeadMinutes = uiState.alertLeadMinutes,
                     alertIntensity = uiState.alertIntensity,
+                    alertMode = uiState.alertMode,
                     createdAt = now,
                 ),
             )

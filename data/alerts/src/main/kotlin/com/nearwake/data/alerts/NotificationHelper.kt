@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.MonitoringMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -62,6 +63,7 @@ class NotificationHelper @Inject constructor(
     fun buildAlertNotification(
         tripId: String,
         intensity: AlertIntensity,
+        mode: AlertMode,
         recovery: Boolean = false,
     ): Notification {
         val channelId = if (recovery) CHANNEL_RECOVERY else CHANNEL_ALERT
@@ -69,7 +71,7 @@ class NotificationHelper @Inject constructor(
         val body = if (recovery) {
             "We think you may have passed your stop."
         } else {
-            "You're near your destination. Alert intensity: ${intensity.name.lowercase()}."
+            "You're near your destination. ${mode.label} mode with ${intensity.name.lowercase()} intensity."
         }
         return NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
@@ -119,3 +121,9 @@ class NotificationHelper @Inject constructor(
         const val EXTRA_TRIP_ID = "extra_trip_id"
     }
 }
+
+private val AlertMode.label: String
+    get() = when (this) {
+        AlertMode.ACTIVE -> "Active"
+        AlertMode.SLEEP -> "Sleep"
+    }

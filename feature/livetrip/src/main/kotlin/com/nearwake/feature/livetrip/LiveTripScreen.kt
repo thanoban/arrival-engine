@@ -24,10 +24,12 @@ import com.nearwake.core.designsystem.NearWakeMotion
 import com.nearwake.core.ui.HeroCard
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeNumericText
+import com.nearwake.core.ui.NearWakeSelectableChip
 import com.nearwake.core.ui.NearWakeSecondaryButton
 import com.nearwake.core.ui.NearWakeStateChip
 import com.nearwake.core.ui.NearWakeTextButton
 import com.nearwake.core.ui.PulseRing
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 
@@ -167,6 +169,22 @@ fun LiveTripScreen(
                     NearWakeStateChip(
                         label = "Underground mode",
                         state = NearWakeChipState.Alert,
+                    )
+                }
+            }
+
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                AlertMode.entries.forEach { mode ->
+                    NearWakeSelectableChip(
+                        selected = state.alertMode == mode,
+                        label = when (mode) {
+                            AlertMode.ACTIVE -> "Active"
+                            AlertMode.SLEEP -> "Sleep"
+                        },
+                        onClick = { viewModel.updateAlertMode(mode) },
                     )
                 }
             }

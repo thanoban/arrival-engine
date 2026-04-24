@@ -379,6 +379,7 @@ class TripMonitoringService : Service() {
                     alertOrchestrator.fireAlert(
                         tripId = context.tripId,
                         intensity = context.alertIntensity,
+                        mode = context.alertMode,
                     )
                 }
 
@@ -413,6 +414,7 @@ class TripMonitoringService : Service() {
             tripId = trip.id,
             alertLeadMinutes = trip.alertLeadMinutes,
             alertIntensity = trip.alertIntensity,
+            alertMode = trip.alertMode,
             destination = LatLng(lat = destination.lat, lng = destination.lng),
             hasCachedRoute = cachedRoute != null,
             initialEtaMinutes = cachedRoute?.totalDurationMinutes,

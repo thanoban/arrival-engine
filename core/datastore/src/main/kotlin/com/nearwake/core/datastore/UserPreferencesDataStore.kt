@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nearwake.core.datastore.model.UserPreferences
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,6 +21,9 @@ class UserPreferencesDataStore(
             defaultAlertIntensity = preferences[DEFAULT_ALERT_INTENSITY]
                 ?.let(AlertIntensity::valueOf)
                 ?: AlertIntensity.STANDARD,
+            defaultAlertMode = preferences[DEFAULT_ALERT_MODE]
+                ?.let(AlertMode::valueOf)
+                ?: AlertMode.ACTIVE,
             backgroundMonitoringEnabled = preferences[BACKGROUND_MONITORING_ENABLED] ?: true,
             onboardingCompleted = preferences[ONBOARDING_COMPLETED] ?: false,
             diagnosticsEnabled = preferences[DIAGNOSTICS_ENABLED] ?: false,
@@ -36,6 +40,12 @@ class UserPreferencesDataStore(
     suspend fun updateDefaultAlertIntensity(intensity: AlertIntensity) {
         dataStore.edit { preferences ->
             preferences[DEFAULT_ALERT_INTENSITY] = intensity.name
+        }
+    }
+
+    suspend fun updateDefaultAlertMode(mode: AlertMode) {
+        dataStore.edit { preferences ->
+            preferences[DEFAULT_ALERT_MODE] = mode.name
         }
     }
 
@@ -67,6 +77,7 @@ class UserPreferencesDataStore(
         dataStore.edit { preferences ->
             preferences[DEFAULT_ALERT_LEAD_MINUTES] = values.defaultAlertLeadMinutes
             preferences[DEFAULT_ALERT_INTENSITY] = values.defaultAlertIntensity.name
+            preferences[DEFAULT_ALERT_MODE] = values.defaultAlertMode.name
             preferences[BACKGROUND_MONITORING_ENABLED] = values.backgroundMonitoringEnabled
             preferences[ONBOARDING_COMPLETED] = values.onboardingCompleted
             preferences[DIAGNOSTICS_ENABLED] = values.diagnosticsEnabled
@@ -77,6 +88,7 @@ class UserPreferencesDataStore(
     companion object {
         private val DEFAULT_ALERT_LEAD_MINUTES = intPreferencesKey("default_alert_lead_minutes")
         private val DEFAULT_ALERT_INTENSITY = stringPreferencesKey("default_alert_intensity")
+        private val DEFAULT_ALERT_MODE = stringPreferencesKey("default_alert_mode")
         private val BACKGROUND_MONITORING_ENABLED = booleanPreferencesKey("background_monitoring_enabled")
         private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val DIAGNOSTICS_ENABLED = booleanPreferencesKey("diagnostics_enabled")

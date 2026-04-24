@@ -3,6 +3,7 @@ package com.nearwake.feature.settings
 import androidx.lifecycle.ViewModel
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val defaultAlertLeadMinutes: Int = 10,
     val alertIntensity: AlertIntensity = AlertIntensity.STANDARD,
+    val alertMode: AlertMode = AlertMode.ACTIVE,
     val backgroundMonitoringEnabled: Boolean = true,
     val diagnosticsEnabled: Boolean = false,
 )
@@ -35,6 +37,7 @@ class SettingsViewModel @Inject constructor(
                 mutableState.value = SettingsUiState(
                     defaultAlertLeadMinutes = preferences.defaultAlertLeadMinutes,
                     alertIntensity = preferences.defaultAlertIntensity,
+                    alertMode = preferences.defaultAlertMode,
                     backgroundMonitoringEnabled = preferences.backgroundMonitoringEnabled,
                     diagnosticsEnabled = preferences.diagnosticsEnabled,
                 )
@@ -51,6 +54,12 @@ class SettingsViewModel @Inject constructor(
     fun updateAlertIntensity(intensity: AlertIntensity) {
         scope.launch {
             userPreferencesDataStore.updateDefaultAlertIntensity(intensity)
+        }
+    }
+
+    fun updateAlertMode(mode: AlertMode) {
+        scope.launch {
+            userPreferencesDataStore.updateDefaultAlertMode(mode)
         }
     }
 

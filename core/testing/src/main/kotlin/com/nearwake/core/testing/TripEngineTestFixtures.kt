@@ -10,6 +10,7 @@ import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.model.Stop
 import com.nearwake.domain.routing.model.TransferPoint
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.Trip
@@ -41,6 +42,7 @@ object TripEngineTestFixtures {
         destination: SavedPlace = savedPlace(),
         alertLeadMinutes: Int = 10,
         alertIntensity: AlertIntensity = AlertIntensity.STANDARD,
+        alertMode: AlertMode = AlertMode.ACTIVE,
         routeSnapshot: RouteSnapshot? = null,
         createdAt: Instant = fixedInstant,
     ): Trip = Trip(
@@ -48,6 +50,7 @@ object TripEngineTestFixtures {
         destination = destination,
         alertLeadMinutes = alertLeadMinutes,
         alertIntensity = alertIntensity,
+        alertMode = alertMode,
         routeSnapshot = routeSnapshot,
         createdAt = createdAt,
     )

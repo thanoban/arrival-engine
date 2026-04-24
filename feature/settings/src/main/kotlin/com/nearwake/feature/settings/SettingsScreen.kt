@@ -26,6 +26,7 @@ import com.nearwake.core.ui.NearWakeSelectableChip
 import com.nearwake.core.ui.NearWakeStateChip
 import com.nearwake.core.ui.SurfaceCard
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -73,6 +74,19 @@ fun SettingsScreen(
                         selected = state.alertIntensity == intensity,
                         onClick = { viewModel.updateAlertIntensity(intensity) },
                         label = intensity.name.lowercase().replaceFirstChar(Char::uppercase),
+                    )
+                }
+            }
+            Text("Default mode", style = MaterialTheme.typography.titleMedium)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                AlertMode.entries.forEach { mode ->
+                    NearWakeSelectableChip(
+                        selected = state.alertMode == mode,
+                        onClick = { viewModel.updateAlertMode(mode) },
+                        label = mode.label,
                     )
                 }
             }
@@ -131,6 +145,12 @@ fun SettingsScreen(
         }
     }
 }
+
+private val AlertMode.label: String
+    get() = when (this) {
+        AlertMode.ACTIVE -> "Active"
+        AlertMode.SLEEP -> "Sleep"
+    }
 
 @Composable
 private fun SettingSwitchRow(

@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import kotlinx.datetime.Instant
 
 @Entity(
@@ -29,6 +30,8 @@ data class TripEntity(
     val alertLeadMinutes: Int,
     @ColumnInfo(name = "alert_intensity")
     val alertIntensity: AlertIntensity,
+    @ColumnInfo(name = "alert_mode")
+    val alertMode: AlertMode = AlertMode.ACTIVE,
     @ColumnInfo(name = "created_at")
     val createdAt: Instant,
     @ColumnInfo(name = "completed_at")

@@ -26,6 +26,7 @@ import com.nearwake.core.ui.NearWakeSelectableChip
 import com.nearwake.core.ui.NearWakeStateChip
 import com.nearwake.core.ui.SurfaceCard
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -120,6 +121,30 @@ fun TripSetupScreen(
             }
         }
 
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+            NearWakeSectionHeader(text = "Trip mode")
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                AlertMode.entries.forEach { mode ->
+                    NearWakeSelectableChip(
+                        selected = state.alertMode == mode,
+                        label = mode.label,
+                        onClick = { viewModel.selectAlertMode(mode) },
+                    )
+                }
+            }
+            Text(
+                text = when (state.alertMode) {
+                    AlertMode.ACTIVE -> "Active mode keeps alerts concise while you stay awake and distracted."
+                    AlertMode.SLEEP -> "Sleep mode prepares stronger alerts for naps and locked-screen travel."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         SurfaceCard {
             NearWakeSectionHeader(text = "Monitoring")
             Row(
@@ -152,3 +177,9 @@ fun TripSetupScreen(
         )
     }
 }
+
+private val AlertMode.label: String
+    get() = when (this) {
+        AlertMode.ACTIVE -> "Active"
+        AlertMode.SLEEP -> "Sleep"
+    }

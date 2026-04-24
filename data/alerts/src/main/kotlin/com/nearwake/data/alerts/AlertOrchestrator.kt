@@ -13,6 +13,7 @@ import com.nearwake.core.database.dao.AlertEventDao
 import com.nearwake.core.database.entity.AlertEventEntity
 import com.nearwake.data.analytics.DiagnosticsLogger
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
@@ -37,6 +38,7 @@ class AlertOrchestrator @Inject constructor(
     suspend fun fireAlert(
         tripId: String,
         intensity: AlertIntensity,
+        mode: AlertMode,
         type: AlertType = AlertType.ARRIVAL,
     ) {
         notificationHelper.ensureChannels()
@@ -57,12 +59,20 @@ class AlertOrchestrator @Inject constructor(
             notificationHelper.buildAlertNotification(
                 tripId = tripId,
                 intensity = intensity,
+                mode = mode,
                 recovery = type == AlertType.RECOVERY,
             ),
         )
         startSound()
-        vibrate(intensity)
-        scheduleRepeatingReminder(tripId, type == AlertType.RECOVERY)
+        vibrate(
+            intensity = intensity,
+            mode = mode,
+        )
+        scheduleRepeatingReminder(
+            tripId = tripId,
+            mode = mode,
+            recovery = type == AlertType.RECOVERY,
+        )
 
         diagnosticsLogger.log(
             eventType = "alert_fired",
@@ -70,6 +80,7 @@ class AlertOrchestrator @Inject constructor(
             payload = buildJsonObject {
                 put("type", type.name)
                 put("intensity", intensity.name)
+                put("mode", mode.name)
             },
         )
     }
@@ -113,11 +124,28 @@ class AlertOrchestrator @Inject constructor(
         }
     }
 
-    private fun vibrate(intensity: AlertIntensity) {
+    private fun vibrate(
+        intensity: AlertIntensity,
+        mode: AlertMode,
+    ) {
         val pattern = when (intensity) {
-            AlertIntensity.GENTLE -> longArrayOf(0L, 250L, 200L, 250L)
-            AlertIntensity.STANDARD -> longArrayOf(0L, 400L, 200L, 400L, 200L, 400L)
-            AlertIntensity.LOUD -> longArrayOf(0L, 700L, 150L, 700L, 150L, 700L)
+            AlertIntensity.GENTLE -> if (mode == AlertMode.SLEEP) {
+                longArrayOf(0L, 250L, 150L, 350L, 150L, 450L)
+            } else {
+                longArrayOf(0L, 250L, 200L, 250L)
+            }
+
+            AlertIntensity.STANDARD -> if (mode == AlertMode.SLEEP) {
+                longArrayOf(0L, 300L, 150L, 450L, 150L, 600L)
+            } else {
+                longArrayOf(0L, 400L, 200L, 400L, 200L, 400L)
+            }
+
+            AlertIntensity.LOUD -> if (mode == AlertMode.SLEEP) {
+                longArrayOf(0L, 800L, 120L, 800L, 120L, 950L)
+            } else {
+                longArrayOf(0L, 700L, 150L, 700L, 150L, 700L)
+            }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
@@ -127,22 +155,35 @@ class AlertOrchestrator @Inject constructor(
         }
     }
 
-    private fun scheduleRepeatingReminder(tripId: String, recovery: Boolean) {
+    private fun scheduleRepeatingReminder(
+        tripId: String,
+        mode: AlertMode,
+        recovery: Boolean,
+    ) {
         alarmManager.setRepeating(
             AlarmManager.RTC_WAKEUP,
             System.currentTimeMillis() + REMINDER_INTERVAL_MS,
             REMINDER_INTERVAL_MS,
-            reminderPendingIntent(tripId, recovery),
+            reminderPendingIntent(
+                tripId = tripId,
+                mode = mode,
+                recovery = recovery,
+            ),
         )
     }
 
-    private fun reminderPendingIntent(tripId: String, recovery: Boolean = false): PendingIntent =
+    private fun reminderPendingIntent(
+        tripId: String,
+        mode: AlertMode = AlertMode.ACTIVE,
+        recovery: Boolean = false,
+    ): PendingIntent =
         PendingIntent.getBroadcast(
             context,
             tripId.hashCode(),
             Intent(context, AlertReminderReceiver::class.java).apply {
                 putExtra(NotificationHelper.EXTRA_TRIP_ID, tripId)
                 putExtra(EXTRA_RECOVERY, recovery)
+                putExtra(EXTRA_MODE, mode.name)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -150,6 +191,7 @@ class AlertOrchestrator @Inject constructor(
     companion object {
         const val ALERT_NOTIFICATION_ID = 42
         const val EXTRA_RECOVERY = "extra_recovery"
+        const val EXTRA_MODE = "extra_mode"
         private const val REMINDER_INTERVAL_MS = 30_000L
     }
 }

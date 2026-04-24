@@ -11,6 +11,7 @@ data class Trip(
     val destination: SavedPlace,
     val alertLeadMinutes: Int,
     val alertIntensity: AlertIntensity,
+    val alertMode: AlertMode,
     val routeSnapshot: RouteSnapshot? = null,
     val createdAt: Instant,
     val completedAt: Instant? = null,

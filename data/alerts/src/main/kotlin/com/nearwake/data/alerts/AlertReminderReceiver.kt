@@ -3,6 +3,8 @@ package com.nearwake.data.alerts
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertMode
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -14,12 +16,16 @@ class AlertReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val tripId = intent.getStringExtra(NotificationHelper.EXTRA_TRIP_ID) ?: return
         val recovery = intent.getBooleanExtra(AlertOrchestrator.EXTRA_RECOVERY, false)
+        val mode = intent.getStringExtra(AlertOrchestrator.EXTRA_MODE)
+            ?.let(AlertMode::valueOf)
+            ?: AlertMode.ACTIVE
         notificationHelper.ensureChannels()
         notificationHelper.notify(
             AlertOrchestrator.ALERT_NOTIFICATION_ID,
             notificationHelper.buildAlertNotification(
                 tripId = tripId,
-                intensity = com.nearwake.domain.trip.model.AlertIntensity.STANDARD,
+                intensity = AlertIntensity.STANDARD,
+                mode = mode,
                 recovery = recovery,
             ),
         )
