@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -21,7 +23,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
+import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeNumericText
+import com.nearwake.core.ui.NearWakeStateChip
+import com.nearwake.core.ui.PulseRing
 
 @Composable
 fun AlertScreen(
@@ -43,9 +48,32 @@ fun AlertScreen(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                NearWakeStateChip(
+                    label = "Stage C - Arrival",
+                    state = NearWakeChipState.Alert,
+                )
+                Text(
+                    text = "Exit now",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = NearWakeColors.TextPrimary.copy(alpha = 0.85f),
+                )
+            }
+
+            Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(spacing.md),
             ) {
+                Box(contentAlignment = Alignment.Center) {
+                    PulseRing(
+                        color = NearWakeColors.TextPrimary.copy(alpha = 0.35f),
+                        diameter = spacing.massive * 4,
+                    )
+                    Spacer(modifier = Modifier.size(spacing.massive * 3))
+                }
                 Text(
                     text = "ARRIVING",
                     style = MaterialTheme.typography.displayLarge,
@@ -62,7 +90,7 @@ fun AlertScreen(
                     style = MaterialTheme.typography.displayMedium,
                 )
                 Text(
-                    text = "minutes remaining",
+                    text = if (state.etaLabel.any { it.isDigit() }) "minutes remaining" else "arriving now",
                     style = MaterialTheme.typography.titleLarge,
                     color = NearWakeColors.TextPrimary.copy(alpha = 0.85f),
                 )
@@ -93,7 +121,7 @@ fun AlertScreen(
                     ),
                 ) {
                     Text(
-                        text = "Recovery",
+                        text = "Need recovery?",
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }

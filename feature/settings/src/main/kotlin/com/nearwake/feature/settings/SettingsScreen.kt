@@ -1,5 +1,6 @@
 package com.nearwake.feature.settings
 
+import android.os.Build
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
@@ -15,10 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
+import com.nearwake.core.designsystem.NearWakeColors
+import com.nearwake.core.ui.ElevatedCard
+import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeScaffold
 import com.nearwake.core.ui.NearWakeSecondaryButton
 import com.nearwake.core.ui.NearWakeSectionHeader
 import com.nearwake.core.ui.NearWakeSelectableChip
+import com.nearwake.core.ui.NearWakeStateChip
 import com.nearwake.core.ui.SurfaceCard
 import com.nearwake.domain.trip.model.AlertIntensity
 
@@ -31,6 +36,10 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
+    val guidance = oemReliabilityGuidance(
+        manufacturer = Build.MANUFACTURER,
+        backgroundMonitoringEnabled = state.backgroundMonitoringEnabled,
+    )
     NearWakeScaffold(
         title = "Settings",
         subtitle = "Preferences for default alert timing, intensity, and diagnostics.",
@@ -82,6 +91,42 @@ fun SettingsScreen(
                 subtitle = "Stores recent engine events for troubleshooting.",
                 checked = state.diagnosticsEnabled,
                 onCheckedChange = viewModel::setDiagnosticsEnabled,
+            )
+        }
+
+        ElevatedCard {
+            NearWakeSectionHeader(text = "Reliability")
+            NearWakeStateChip(
+                label = guidance.statusLabel,
+                state = when (guidance.statusTone) {
+                    OemReliabilityTone.Stable -> NearWakeChipState.Safe
+                    OemReliabilityTone.Review -> NearWakeChipState.Approaching
+                    OemReliabilityTone.Degraded -> NearWakeChipState.Alert
+                },
+            )
+            Text(
+                text = "${guidance.manufacturerLabel} device",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = guidance.summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                guidance.steps.forEachIndexed { index, step ->
+                    Text(
+                        text = "${index + 1}. $step",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+            }
+            Text(
+                text = "NearWake does not verify OEM battery exemptions yet, so this section stays honest about what it can and cannot know today.",
+                style = MaterialTheme.typography.bodySmall,
+                color = NearWakeColors.TextSecondary,
             )
         }
     }
