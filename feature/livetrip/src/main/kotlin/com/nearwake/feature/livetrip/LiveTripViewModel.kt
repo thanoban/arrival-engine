@@ -9,6 +9,7 @@ import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.data.alerts.TripMonitoringService
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +36,7 @@ data class LiveTripUiState(
     val batteryImpact: String = "Very Low",
     val alertSummary: String = "",
     val alertMode: AlertMode = AlertMode.ACTIVE,
+    val alertStage: AlertStage = AlertStage.MONITORING,
 )
 
 @HiltViewModel
@@ -79,6 +81,7 @@ class LiveTripViewModel @Inject constructor(
                         MonitoringMode.PRECISE_BURST -> "Temporary spike"
                     },
                     alertMode = trip?.alertMode ?: AlertMode.ACTIVE,
+                    alertStage = session?.alertStage ?: AlertStage.MONITORING,
                     alertSummary = trip?.let { configuredTrip ->
                         val lead = if (configuredTrip.alertLeadMinutes == 0) "Nearby" else "${configuredTrip.alertLeadMinutes} min early"
                         "$lead · ${configuredTrip.alertIntensity.name.lowercase().replaceFirstChar(Char::uppercase)} · ${configuredTrip.alertMode.name.lowercase().replaceFirstChar(Char::uppercase)} mode"

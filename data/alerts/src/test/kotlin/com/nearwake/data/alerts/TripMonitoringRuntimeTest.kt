@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
@@ -54,14 +55,15 @@ class TripMonitoringRuntimeTest {
         val update = runtime.applyLocationUpdate(
             context = context,
             session = session,
-            location = LatLng(lat = 6.9269, lng = 79.8610),
+            location = LatLng(lat = 6.9000, lng = 79.8300),
             etaMinutes = 8,
         )
 
         assertThat(update.engineResult).isNotNull()
         assertThat(update.session.state).isEqualTo(TripState.MonitoringApproach)
         assertThat(update.session.monitoringMode).isEqualTo(MonitoringMode.PRECISE_BURST)
-        assertThat(update.session.lastKnownLat).isWithin(0.000001).of(6.9269)
+        assertThat(update.session.alertStage).isEqualTo(AlertStage.MONITORING)
+        assertThat(update.session.lastKnownLat).isWithin(0.000001).of(6.9000)
         assertThat(update.session.lastEtaMinutes).isEqualTo(8)
     }
 
@@ -92,6 +94,7 @@ class TripMonitoringRuntimeTest {
         assertThat(update.engineResult).isNotNull()
         assertThat(update.session.state).isEqualTo(TripState.Alerting)
         assertThat(update.session.monitoringMode).isEqualTo(MonitoringMode.GEOFENCE_ONLY)
+        assertThat(update.session.alertStage).isEqualTo(AlertStage.ARRIVAL)
         assertThat(update.distanceMeters).isLessThan(300.0)
     }
 }

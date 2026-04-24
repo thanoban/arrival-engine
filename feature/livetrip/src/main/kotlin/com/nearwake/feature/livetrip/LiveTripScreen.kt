@@ -30,6 +30,7 @@ import com.nearwake.core.ui.NearWakeStateChip
 import com.nearwake.core.ui.NearWakeTextButton
 import com.nearwake.core.ui.PulseRing
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 
@@ -42,13 +43,13 @@ fun LiveTripScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
     val trust = rememberTrustPresentation(
-        etaLabel = state.etaLabel,
+        alertStage = state.alertStage,
         monitoringMode = state.monitoringMode,
         confidence = state.confidence,
     )
     val targetAccent = liveTripAccent(
         monitoringMode = state.monitoringMode,
-        etaLabel = state.etaLabel,
+        alertStage = state.alertStage,
     )
     val accent by animateColorAsState(
         targetValue = targetAccent,
@@ -213,20 +214,23 @@ private data class TrustPresentation(
 
 @Composable
 private fun rememberTrustPresentation(
-    etaLabel: String,
+    alertStage: AlertStage,
     monitoringMode: MonitoringMode,
     confidence: Confidence,
 ): TrustPresentation {
-    val etaMinutes = etaLabel.filter { it.isDigit() }.toIntOrNull()
-    val stageLabel = when {
-        etaMinutes != null && etaMinutes <= 1 -> "Arrival"
-        etaMinutes != null && etaMinutes <= 10 -> "Approaching"
-        monitoringMode == MonitoringMode.PRECISE_BURST -> "Approaching"
-        else -> "Monitoring"
+    val stageLabel = when (alertStage) {
+        AlertStage.MONITORING -> "Monitoring"
+        AlertStage.APPROACH -> "Approach"
+        AlertStage.IMMINENT -> "Imminent"
+        AlertStage.ARRIVAL -> "Arrival"
+        AlertStage.RECOVERY -> "Recovery"
     }
     val stageChipState = when (stageLabel) {
         "Arrival" -> NearWakeChipState.Alert
+        "Imminent" -> NearWakeChipState.Alert
         "Approaching" -> NearWakeChipState.Approaching
+        "Approach" -> NearWakeChipState.Approaching
+        "Recovery" -> NearWakeChipState.Approaching
         else -> NearWakeChipState.Monitoring
     }
     return when (confidence) {
@@ -235,7 +239,13 @@ private fun rememberTrustPresentation(
             stageChipState = stageChipState,
             confidenceLabel = "High confidence",
             confidenceChipState = NearWakeChipState.Safe,
-            heroMessage = "Tracking quietly while you ride.",
+            heroMessage = when (alertStage) {
+                AlertStage.MONITORING -> "Tracking quietly while you ride."
+                AlertStage.APPROACH -> "NearWake has entered the approach window."
+                AlertStage.IMMINENT -> "Your stop is close. Get ready to move."
+                AlertStage.ARRIVAL -> "It is time to exit now."
+                AlertStage.RECOVERY -> "NearWake is helping you recover the missed stop."
+            },
             biasLabel = "On track",
             biasChipState = NearWakeChipState.Safe,
             biasCardAccent = NearWakeColors.SafeBase,
@@ -248,7 +258,13 @@ private fun rememberTrustPresentation(
             stageChipState = stageChipState,
             confidenceLabel = "Medium confidence",
             confidenceChipState = NearWakeChipState.Approaching,
-            heroMessage = "Monitoring closely and biasing earlier.",
+            heroMessage = when (alertStage) {
+                AlertStage.MONITORING -> "Monitoring closely and biasing earlier."
+                AlertStage.APPROACH -> "Approach started a little early to stay safe."
+                AlertStage.IMMINENT -> "Your stop is close, so NearWake is leaning conservative."
+                AlertStage.ARRIVAL -> "NearWake is treating this as arrival now."
+                AlertStage.RECOVERY -> "Recovery mode is active with conservative timing."
+            },
             biasLabel = "Alerting earlier",
             biasChipState = NearWakeChipState.Approaching,
             biasCardAccent = NearWakeColors.ApproachBase,
@@ -261,7 +277,13 @@ private fun rememberTrustPresentation(
             stageChipState = NearWakeChipState.Approaching,
             confidenceLabel = "Low confidence",
             confidenceChipState = NearWakeChipState.Alert,
-            heroMessage = "Signal dropped, but NearWake is still guarding your stop.",
+            heroMessage = when (alertStage) {
+                AlertStage.MONITORING -> "Signal dropped, but NearWake is still guarding your stop."
+                AlertStage.APPROACH -> "Signal is weak, so NearWake moved into approach early."
+                AlertStage.IMMINENT -> "NearWake is treating this like an imminent stop to stay safe."
+                AlertStage.ARRIVAL -> "NearWake is assuming arrival now because confidence is low."
+                AlertStage.RECOVERY -> "Recovery mode is active while signal stays weak."
+            },
             biasLabel = "Alerting much earlier",
             biasChipState = NearWakeChipState.Alert,
             biasCardAccent = NearWakeColors.AlertBase,
@@ -273,11 +295,11 @@ private fun rememberTrustPresentation(
 
 private fun liveTripAccent(
     monitoringMode: MonitoringMode,
-    etaLabel: String,
+    alertStage: AlertStage,
 ): androidx.compose.ui.graphics.Color {
-    val etaMinutes = etaLabel.filter { it.isDigit() }.toIntOrNull()
     return when {
-        etaMinutes != null && etaMinutes <= 10 -> NearWakeColors.ApproachBase
+        alertStage == AlertStage.IMMINENT || alertStage == AlertStage.ARRIVAL -> NearWakeColors.AlertBase
+        alertStage == AlertStage.APPROACH -> NearWakeColors.ApproachBase
         monitoringMode == MonitoringMode.PRECISE_BURST -> NearWakeColors.ApproachBase
         else -> NearWakeColors.MonitoringBase
     }

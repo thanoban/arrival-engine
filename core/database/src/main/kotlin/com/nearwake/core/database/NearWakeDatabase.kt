@@ -28,7 +28,7 @@ import com.nearwake.core.database.entity.TripSessionEntity
         DiagnosticsEventEntity::class,
         RouteSnapshotEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(

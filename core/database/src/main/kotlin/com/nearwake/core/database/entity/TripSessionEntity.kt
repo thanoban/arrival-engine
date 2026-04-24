@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
@@ -29,6 +30,8 @@ data class TripSessionEntity(
     val state: TripState,
     @ColumnInfo(name = "monitoring_mode")
     val monitoringMode: MonitoringMode,
+    @ColumnInfo(name = "alert_stage")
+    val alertStage: AlertStage = AlertStage.MONITORING,
     @ColumnInfo(name = "last_known_lat")
     val lastKnownLat: Double? = null,
     @ColumnInfo(name = "last_known_lng")

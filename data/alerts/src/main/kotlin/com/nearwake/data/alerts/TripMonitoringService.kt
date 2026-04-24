@@ -22,6 +22,7 @@ import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.engine.TripEvent
 import com.nearwake.domain.trip.engine.TripSideEffect
 import com.nearwake.domain.trip.model.Confidence
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
 import com.nearwake.domain.trip.model.TripState
@@ -71,7 +72,10 @@ class TripMonitoringService : Service() {
             ACTION_START_MONITORING -> {
                 startForeground(
                     NOTIFICATION_ID_MONITORING,
-                    notificationHelper.buildMonitoringNotification(MonitoringMode.GEOFENCE_ONLY),
+                    notificationHelper.buildMonitoringNotification(
+                        mode = MonitoringMode.GEOFENCE_ONLY,
+                        stage = AlertStage.MONITORING,
+                    ),
                 )
                 val tripId = intent.getStringExtra(EXTRA_TRIP_ID) ?: return START_STICKY
                 serviceScope.launch {
@@ -126,6 +130,7 @@ class TripMonitoringService : Service() {
             payload = buildJsonObject {
                 put("state", restorationResult.session.state.name)
                 put("mode", restorationResult.session.monitoringMode.name)
+                put("stage", restorationResult.session.alertStage.name)
                 put("route_cached", context.hasCachedRoute)
             },
         )
@@ -309,8 +314,17 @@ class TripMonitoringService : Service() {
         context: MonitoredTripContext,
     ) {
         if (update.engineResult == null) {
+            val previousSession = activeSession
             persistSession(update.session)
-            refreshMonitoringNotification(update.session.monitoringMode)
+            refreshMonitoringNotification(
+                mode = update.session.monitoringMode,
+                stage = update.session.alertStage,
+            )
+            maybeNotifyStageAdvance(
+                previousSession = previousSession,
+                currentSession = update.session,
+                context = context,
+            )
             diagnosticsLogger.log(
                 eventType = "trip_location_sampled",
                 tripId = update.session.tripId,
@@ -319,6 +333,7 @@ class TripMonitoringService : Service() {
                     put("distance_meters", update.distanceMeters)
                     put("eta_minutes", update.etaMinutes ?: -1)
                     put("state", update.session.state.name)
+                    put("stage", update.session.alertStage.name)
                 },
             )
             return
@@ -341,8 +356,17 @@ class TripMonitoringService : Service() {
         context: MonitoredTripContext,
         extraPayload: kotlinx.serialization.json.JsonObject? = null,
     ) {
+        val previousSession = activeSession
         persistSession(result.session)
-        refreshMonitoringNotification(result.session.monitoringMode)
+        refreshMonitoringNotification(
+            mode = result.session.monitoringMode,
+            stage = result.session.alertStage,
+        )
+        maybeNotifyStageAdvance(
+            previousSession = previousSession,
+            currentSession = result.session,
+            context = context,
+        )
         diagnosticsLogger.log(
             eventType = "trip_state_transition",
             tripId = result.session.tripId,
@@ -351,6 +375,7 @@ class TripMonitoringService : Service() {
                 put("from_state", result.transition.fromState.name)
                 put("to_state", result.session.state.name)
                 put("mode", result.session.monitoringMode.name)
+                put("stage", result.session.alertStage.name)
                 put("ignored", result.transition.ignored)
                 extraPayload?.forEach { (key, value) -> put(key, value) }
             },
@@ -412,6 +437,7 @@ class TripMonitoringService : Service() {
         val cachedRoute = routingRepository.getCachedRoute(tripId)
         return tripMonitoringRuntime.buildContext(
             tripId = trip.id,
+            destinationName = destination.name,
             alertLeadMinutes = trip.alertLeadMinutes,
             alertIntensity = trip.alertIntensity,
             alertMode = trip.alertMode,
@@ -426,10 +452,40 @@ class TripMonitoringService : Service() {
         activeSession = session
     }
 
-    private fun refreshMonitoringNotification(mode: MonitoringMode) {
+    private fun refreshMonitoringNotification(
+        mode: MonitoringMode,
+        stage: AlertStage,
+    ) {
         notificationHelper.notify(
             NOTIFICATION_ID_MONITORING,
-            notificationHelper.buildMonitoringNotification(mode),
+            notificationHelper.buildMonitoringNotification(
+                mode = mode,
+                stage = stage,
+            ),
+        )
+    }
+
+    private fun maybeNotifyStageAdvance(
+        previousSession: TripSession?,
+        currentSession: TripSession,
+        context: MonitoredTripContext,
+    ) {
+        val previousStage = previousSession?.alertStage ?: AlertStage.MONITORING
+        val currentStage = currentSession.alertStage
+        if (currentStage.ordinal <= previousStage.ordinal) {
+            return
+        }
+        if (currentStage == AlertStage.ARRIVAL || currentStage == AlertStage.RECOVERY) {
+            return
+        }
+        notificationHelper.notify(
+            NOTIFICATION_ID_STAGE,
+            notificationHelper.buildStageNotification(
+                tripId = context.tripId,
+                destinationName = context.destinationName,
+                stage = currentStage,
+                mode = context.alertMode,
+            ),
         )
     }
 
@@ -442,6 +498,7 @@ class TripMonitoringService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID_MONITORING = 41
+        private const val NOTIFICATION_ID_STAGE = 43
         const val ACTION_START_MONITORING = "com.nearwake.data.alerts.START_MONITORING"
         const val ACTION_STOP_MONITORING = "com.nearwake.data.alerts.STOP_MONITORING"
         const val EXTRA_TRIP_ID = "extra_trip_id"

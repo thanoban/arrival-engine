@@ -12,6 +12,7 @@ import com.nearwake.data.alerts.TripMonitoringService
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.location.repository.LocationRepository
 import com.nearwake.domain.routing.repository.RoutingRepository
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
@@ -207,10 +208,11 @@ class HomeViewModel @Inject constructor(
             Confidence.DEGRADED -> "Medium confidence"
             Confidence.OFFLINE -> "Low confidence"
         }
-        val stageLabel = when (session.state) {
-            TripState.MonitoringApproach -> "Approach window"
-            TripState.Alerting -> "Arrival alert"
-            TripState.Recovery -> "Recovery mode"
+        val stageLabel = when (session.alertStage) {
+            AlertStage.APPROACH -> "Approach window"
+            AlertStage.IMMINENT -> "Get ready"
+            AlertStage.ARRIVAL -> "Arrival alert"
+            AlertStage.RECOVERY -> "Recovery mode"
             else -> "Monitoring"
         }
         val etaLabel = session.lastEtaMinutes?.let { minutes -> "~$minutes min" } ?: "ETA updating"

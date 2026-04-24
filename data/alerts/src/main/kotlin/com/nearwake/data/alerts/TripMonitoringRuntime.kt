@@ -3,9 +3,11 @@ package com.nearwake.data.alerts
 import com.nearwake.domain.location.model.GeofenceSpec
 import com.nearwake.domain.location.model.GeofenceType
 import com.nearwake.domain.location.model.LatLng
+import com.nearwake.domain.trip.engine.AlertStageEvaluator
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.TripRule
 import com.nearwake.domain.trip.model.TripSession
@@ -20,6 +22,7 @@ import kotlin.math.sqrt
 
 data class MonitoredTripContext(
     val tripId: String,
+    val destinationName: String,
     val alertIntensity: AlertIntensity,
     val alertMode: AlertMode,
     val destination: LatLng,
@@ -45,17 +48,21 @@ data class TripMonitoringUpdate(
 class TripMonitoringRuntime @Inject constructor(
     private val tripEngine: TripEngine,
 ) {
+    private val alertStageEvaluator = AlertStageEvaluator()
+
     fun buildContext(
         tripId: String,
+        destinationName: String = "Destination",
         alertLeadMinutes: Int,
         alertIntensity: AlertIntensity,
-        alertMode: AlertMode,
+        alertMode: AlertMode = AlertMode.ACTIVE,
         destination: LatLng,
         hasCachedRoute: Boolean,
         initialEtaMinutes: Int? = null,
     ): MonitoredTripContext =
         MonitoredTripContext(
             tripId = tripId,
+            destinationName = destinationName,
             alertIntensity = alertIntensity,
             alertMode = alertMode,
             destination = destination,
@@ -102,6 +109,16 @@ class TripMonitoringRuntime @Inject constructor(
             lastKnownLat = location.lat,
             lastKnownLng = location.lng,
             lastEtaMinutes = persistedEta,
+            alertStage = alertStageEvaluator.evaluate(
+                currentStage = session.alertStage,
+                tripState = session.state,
+                rule = context.tripRule,
+                alertMode = context.alertMode,
+                confidence = session.confidence,
+                etaMinutes = persistedEta,
+                distanceMeters = distanceMeters,
+                destinationGeofenceEntered = destinationGeofenceEntered,
+            ),
         )
 
         val engineResult = when {
@@ -143,6 +160,16 @@ class TripMonitoringRuntime @Inject constructor(
                 lastKnownLat = location.lat,
                 lastKnownLng = location.lng,
                 lastEtaMinutes = persistedEta,
+                alertStage = alertStageEvaluator.evaluate(
+                    currentStage = engineResult.session.alertStage,
+                    tripState = engineResult.session.state,
+                    rule = context.tripRule,
+                    alertMode = context.alertMode,
+                    confidence = engineResult.session.confidence,
+                    etaMinutes = persistedEta,
+                    distanceMeters = distanceMeters,
+                    destinationGeofenceEntered = destinationGeofenceEntered,
+                ),
             )
             TripMonitoringUpdate(
                 session = sessionWithTracking,

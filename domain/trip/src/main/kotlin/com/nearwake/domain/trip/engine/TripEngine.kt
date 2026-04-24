@@ -3,6 +3,7 @@ package com.nearwake.domain.trip.engine
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.Trip
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.TripRule
 import com.nearwake.domain.trip.model.TripSession
 import com.nearwake.domain.trip.model.TripState
@@ -30,6 +31,7 @@ class TripEngine(
             tripId = trip.id,
             state = TripState.Idle,
             monitoringMode = MonitoringMode.GEOFENCE_ONLY,
+            alertStage = AlertStage.MONITORING,
             geofenceIds = geofenceIds,
             updatedAt = clock.now(),
         )

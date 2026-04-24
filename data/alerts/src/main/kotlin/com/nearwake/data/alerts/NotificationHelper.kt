@@ -9,6 +9,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.MonitoringMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -47,17 +48,45 @@ class NotificationHelper @Inject constructor(
                     description = "Recovery notifications when a trip may have been missed"
                     lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 },
+                NotificationChannel(
+                    CHANNEL_STAGE,
+                    "NearWake Trip Updates",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = "Approach and imminent trip updates"
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                },
             ),
         )
     }
 
-    fun buildMonitoringNotification(mode: MonitoringMode): Notification =
+    fun buildMonitoringNotification(
+        mode: MonitoringMode,
+        stage: AlertStage = AlertStage.MONITORING,
+    ): Notification =
         NotificationCompat.Builder(context, CHANNEL_MONITORING)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setContentTitle("NearWake active")
-            .setContentText("Monitoring | ${mode.label}")
+            .setContentText("${stage.monitoringLabel} | ${mode.label}")
             .setOngoing(true)
             .setContentIntent(contentIntent())
+            .build()
+
+    fun buildStageNotification(
+        tripId: String,
+        destinationName: String,
+        stage: AlertStage,
+        mode: AlertMode,
+    ): Notification =
+        NotificationCompat.Builder(context, CHANNEL_STAGE)
+            .setSmallIcon(android.R.drawable.ic_dialog_map)
+            .setContentTitle(stage.notificationTitle(destinationName))
+            .setContentText(stage.notificationBody(mode))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent(tripId))
             .build()
 
     fun buildAlertNotification(
@@ -118,6 +147,7 @@ class NotificationHelper @Inject constructor(
         const val CHANNEL_MONITORING = "nearwake_monitoring"
         const val CHANNEL_ALERT = "nearwake_alert"
         const val CHANNEL_RECOVERY = "nearwake_recovery"
+        const val CHANNEL_STAGE = "nearwake_stage"
         const val EXTRA_TRIP_ID = "extra_trip_id"
     }
 }
@@ -127,3 +157,28 @@ private val AlertMode.label: String
         AlertMode.ACTIVE -> "Active"
         AlertMode.SLEEP -> "Sleep"
     }
+
+private val AlertStage.monitoringLabel: String
+    get() = when (this) {
+        AlertStage.MONITORING -> "Monitoring"
+        AlertStage.APPROACH -> "Approach stage"
+        AlertStage.IMMINENT -> "Imminent stage"
+        AlertStage.ARRIVAL -> "Arrival stage"
+        AlertStage.RECOVERY -> "Recovery stage"
+    }
+
+private fun AlertStage.notificationTitle(destinationName: String): String = when (this) {
+    AlertStage.APPROACH -> "Approaching $destinationName"
+    AlertStage.IMMINENT -> "Get ready for $destinationName"
+    AlertStage.ARRIVAL -> "Arriving at $destinationName"
+    AlertStage.RECOVERY -> "Recovery for $destinationName"
+    AlertStage.MONITORING -> "NearWake update"
+}
+
+private fun AlertStage.notificationBody(mode: AlertMode): String = when (this) {
+    AlertStage.APPROACH -> "NearWake has entered the approach window. ${mode.label} mode is standing by."
+    AlertStage.IMMINENT -> "Your stop is close. ${mode.label} mode is preparing a stronger alert."
+    AlertStage.ARRIVAL -> "It is time to get off now."
+    AlertStage.RECOVERY -> "NearWake thinks you may have missed the stop."
+    AlertStage.MONITORING -> "NearWake is monitoring this trip."
+}

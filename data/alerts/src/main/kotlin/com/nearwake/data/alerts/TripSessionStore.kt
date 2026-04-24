@@ -2,6 +2,7 @@ package com.nearwake.data.alerts
 
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.TripSessionEntity
+import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.TripSession
 import com.nearwake.domain.trip.model.TripState
 import javax.inject.Inject
@@ -18,6 +19,7 @@ class TripSessionStore @Inject constructor(
                 tripId = tripId,
                 state = TripState.Armed,
                 monitoringMode = TripState.Armed.defaultMonitoringMode(),
+                alertStage = AlertStage.MONITORING,
                 updatedAt = Clock.System.now(),
             ).also { session ->
                 save(session)
@@ -33,6 +35,7 @@ class TripSessionStore @Inject constructor(
             tripId = tripId,
             state = state,
             monitoringMode = monitoringMode,
+            alertStage = alertStage,
             lastKnownLat = lastKnownLat,
             lastKnownLng = lastKnownLng,
             lastEtaMinutes = lastEtaMinutes,
@@ -46,6 +49,7 @@ class TripSessionStore @Inject constructor(
             tripId = tripId,
             state = state,
             monitoringMode = monitoringMode,
+            alertStage = alertStage,
             lastKnownLat = lastKnownLat,
             lastKnownLng = lastKnownLng,
             lastEtaMinutes = lastEtaMinutes,

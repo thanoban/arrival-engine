@@ -8,6 +8,7 @@ data class TripSession(
     val tripId: String,
     val state: TripState,
     val monitoringMode: MonitoringMode,
+    val alertStage: AlertStage = AlertStage.MONITORING,
     val lastKnownLat: Double? = null,
     val lastKnownLng: Double? = null,
     val lastEtaMinutes: Int? = null,
