@@ -50,12 +50,23 @@ class NotificationHelper @Inject constructor(
                     lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 },
                 NotificationChannel(
-                    CHANNEL_STAGE,
-                    "NearWake Trip Updates",
+                    CHANNEL_APPROACH,
+                    "NearWake Approach",
                     NotificationManager.IMPORTANCE_DEFAULT,
                 ).apply {
-                    description = "Approach and imminent trip updates"
+                    description = "Gentle approach warning — stop is a few minutes away"
                     lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                    enableVibration(false)
+                },
+                NotificationChannel(
+                    CHANNEL_IMMINENT,
+                    "NearWake Imminent",
+                    NotificationManager.IMPORTANCE_HIGH,
+                ).apply {
+                    description = "Strong imminent warning — get ready to exit"
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                    enableVibration(true)
+                    vibrationPattern = IMMINENT_VIBRATION_PATTERN
                 },
             ),
         )
@@ -102,17 +113,27 @@ class NotificationHelper @Inject constructor(
         destinationName: String,
         stage: AlertStage,
         mode: AlertMode,
-    ): Notification =
-        NotificationCompat.Builder(context, CHANNEL_STAGE)
+    ): Notification {
+        val channelId = if (stage == AlertStage.IMMINENT) CHANNEL_IMMINENT else CHANNEL_APPROACH
+        val priority = if (stage == AlertStage.IMMINENT) {
+            NotificationCompat.PRIORITY_HIGH
+        } else {
+            NotificationCompat.PRIORITY_DEFAULT
+        }
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_map)
             .setContentTitle(stage.notificationTitle(destinationName))
             .setContentText(stage.notificationBody(mode))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(priority)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setContentIntent(contentIntent(tripId))
-            .build()
+        if (stage == AlertStage.IMMINENT) {
+            builder.setVibrate(IMMINENT_VIBRATION_PATTERN)
+        }
+        return builder.build()
+    }
 
     fun buildTransferNotification(
         tripId: String,
@@ -210,8 +231,10 @@ class NotificationHelper @Inject constructor(
         const val CHANNEL_MONITORING = "nearwake_monitoring"
         const val CHANNEL_ALERT = "nearwake_alert"
         const val CHANNEL_RECOVERY = "nearwake_recovery"
-        const val CHANNEL_STAGE = "nearwake_stage"
+        const val CHANNEL_APPROACH = "nearwake_approach"
+        const val CHANNEL_IMMINENT = "nearwake_imminent"
         const val EXTRA_TRIP_ID = "extra_trip_id"
+        val IMMINENT_VIBRATION_PATTERN = longArrayOf(0L, 200L, 100L, 400L)
     }
 }
 

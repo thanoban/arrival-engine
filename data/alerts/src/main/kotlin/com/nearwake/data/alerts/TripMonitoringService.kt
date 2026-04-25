@@ -544,8 +544,13 @@ class TripMonitoringService : Service() {
         if (currentStage == AlertStage.ARRIVAL || currentStage == AlertStage.RECOVERY) {
             return
         }
+        val notificationId = if (currentStage == AlertStage.IMMINENT) {
+            NOTIFICATION_ID_IMMINENT
+        } else {
+            NOTIFICATION_ID_APPROACH
+        }
         notificationHelper.notify(
-            NOTIFICATION_ID_STAGE,
+            notificationId,
             notificationHelper.buildStageNotification(
                 tripId = context.tripId,
                 destinationName = context.destinationName,
@@ -670,7 +675,8 @@ class TripMonitoringService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID_MONITORING = 41
-        private const val NOTIFICATION_ID_STAGE = 43
+        private const val NOTIFICATION_ID_APPROACH = 43
+        private const val NOTIFICATION_ID_IMMINENT = 46
         private const val NOTIFICATION_ID_TRANSFER = 44
         private const val NOTIFICATION_ID_BOARDING_WARNING = 45
         private const val BATTERY_SAVER_THRESHOLD = 20
