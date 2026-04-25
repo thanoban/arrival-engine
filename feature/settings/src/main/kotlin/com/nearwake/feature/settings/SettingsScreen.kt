@@ -1,12 +1,13 @@
 package com.nearwake.feature.settings
 
 import android.os.Build
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -17,13 +18,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
+import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.ElevatedCard
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeScaffold
-import com.nearwake.core.ui.NearWakeSecondaryButton
 import com.nearwake.core.ui.NearWakeSectionHeader
 import com.nearwake.core.ui.NearWakeSelectableChip
 import com.nearwake.core.ui.NearWakeStateChip
+import com.nearwake.core.ui.NearWakeTextButton
 import com.nearwake.core.ui.SurfaceCard
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
@@ -41,107 +43,142 @@ fun SettingsScreen(
         manufacturer = Build.MANUFACTURER,
         backgroundMonitoringEnabled = state.backgroundMonitoringEnabled,
     )
-    NearWakeScaffold(
-        title = "Settings",
-        subtitle = "Preferences for default alert timing, intensity, and diagnostics.",
-        topBarActions = {
-            NearWakeSecondaryButton(text = "Diagnostics", onClick = onDiagnostics)
-            NearWakeSecondaryButton(text = "Back", onClick = onBack)
-        },
-    ) {
-        SurfaceCard {
-            NearWakeSectionHeader(text = "Alerts")
-            Text("Default alert lead", style = MaterialTheme.typography.titleMedium)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(spacing.sm),
-            ) {
-                listOf(5, 10, 15, 0).forEach { minutes ->
-                    NearWakeSelectableChip(
-                        selected = state.defaultAlertLeadMinutes == minutes,
-                        onClick = { viewModel.updateLeadMinutes(minutes) },
-                        label = if (minutes == 0) "Nearby" else "${minutes} min",
-                    )
-                }
-            }
-            Text("Default intensity", style = MaterialTheme.typography.titleMedium)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(spacing.sm),
-            ) {
-                AlertIntensity.entries.forEach { intensity ->
-                    NearWakeSelectableChip(
-                        selected = state.alertIntensity == intensity,
-                        onClick = { viewModel.updateAlertIntensity(intensity) },
-                        label = intensity.name.lowercase().replaceFirstChar(Char::uppercase),
-                    )
-                }
-            }
-            Text("Default mode", style = MaterialTheme.typography.titleMedium)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(spacing.sm),
-            ) {
-                AlertMode.entries.forEach { mode ->
-                    NearWakeSelectableChip(
-                        selected = state.alertMode == mode,
-                        onClick = { viewModel.updateAlertMode(mode) },
-                        label = mode.label,
-                    )
-                }
-            }
-        }
 
-        SurfaceCard {
-            NearWakeSectionHeader(text = "Monitoring")
-            SettingSwitchRow(
-                title = "Background monitoring",
-                subtitle = "Keeps trip monitoring alive while the phone is locked.",
-                checked = state.backgroundMonitoringEnabled,
-                onCheckedChange = viewModel::setBackgroundMonitoringEnabled,
-            )
-            SettingSwitchRow(
-                title = "Diagnostics",
-                subtitle = "Stores recent engine events for troubleshooting.",
-                checked = state.diagnosticsEnabled,
-                onCheckedChange = viewModel::setDiagnosticsEnabled,
-            )
-        }
+    ProvideNearWakeStateAccent(NearWakeColors.MonitoringBase) {
+        NearWakeScaffold(
+            title = "Settings",
+            subtitle = null,
+            topBarActions = {
+                NearWakeTextButton(text = "Diagnostics", onClick = onDiagnostics)
+                NearWakeTextButton(text = "Back", onClick = onBack)
+            },
+        ) {
+            // Alerts section
+            SurfaceCard {
+                NearWakeSectionHeader(text = "Alerts")
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        Text(
+                            text = "Default lead time",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                        ) {
+                            NearWakeSelectableChip(
+                                selected = state.defaultAlertLeadMinutes == 0,
+                                onClick = { viewModel.updateLeadMinutes(0) },
+                                label = "Nearby",
+                            )
+                            listOf(5, 10, 15).forEach { minutes ->
+                                NearWakeSelectableChip(
+                                    selected = state.defaultAlertLeadMinutes == minutes,
+                                    onClick = { viewModel.updateLeadMinutes(minutes) },
+                                    label = "$minutes min",
+                                )
+                            }
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        Text(
+                            text = "Default intensity",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                        ) {
+                            AlertIntensity.entries.forEach { intensity ->
+                                NearWakeSelectableChip(
+                                    selected = state.alertIntensity == intensity,
+                                    onClick = { viewModel.updateAlertIntensity(intensity) },
+                                    label = intensity.name.lowercase().replaceFirstChar(Char::uppercase),
+                                )
+                            }
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        Text(
+                            text = "Default mode",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                        ) {
+                            AlertMode.entries.forEach { mode ->
+                                NearWakeSelectableChip(
+                                    selected = state.alertMode == mode,
+                                    onClick = { viewModel.updateAlertMode(mode) },
+                                    label = mode.label,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
-        ElevatedCard {
-            NearWakeSectionHeader(text = "Reliability")
-            NearWakeStateChip(
-                label = guidance.statusLabel,
-                state = when (guidance.statusTone) {
-                    OemReliabilityTone.Stable -> NearWakeChipState.Safe
-                    OemReliabilityTone.Review -> NearWakeChipState.Approaching
-                    OemReliabilityTone.Degraded -> NearWakeChipState.Alert
-                },
-            )
-            Text(
-                text = "${guidance.manufacturerLabel} device",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = guidance.summary,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                guidance.steps.forEachIndexed { index, step ->
-                    Text(
-                        text = "${index + 1}. $step",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
+            // Monitoring section
+            SurfaceCard {
+                NearWakeSectionHeader(text = "Monitoring")
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+                    SettingSwitchRow(
+                        title = "Background monitoring",
+                        subtitle = "Keeps trip monitoring alive while the phone is locked.",
+                        checked = state.backgroundMonitoringEnabled,
+                        onCheckedChange = viewModel::setBackgroundMonitoringEnabled,
+                    )
+                    SettingSwitchRow(
+                        title = "Diagnostics logging",
+                        subtitle = "Stores recent engine events for troubleshooting.",
+                        checked = state.diagnosticsEnabled,
+                        onCheckedChange = viewModel::setDiagnosticsEnabled,
                     )
                 }
             }
-            Text(
-                text = "NearWake does not verify OEM battery exemptions yet, so this section stays honest about what it can and cannot know today.",
-                style = MaterialTheme.typography.bodySmall,
-                color = NearWakeColors.TextSecondary,
-            )
+
+            // OEM Reliability section
+            ElevatedCard {
+                NearWakeSectionHeader(text = "Reliability")
+                NearWakeStateChip(
+                    label = guidance.statusLabel,
+                    state = when (guidance.statusTone) {
+                        OemReliabilityTone.Stable -> NearWakeChipState.Safe
+                        OemReliabilityTone.Review -> NearWakeChipState.Approaching
+                        OemReliabilityTone.Degraded -> NearWakeChipState.Alert
+                    },
+                )
+                Text(
+                    text = "${guidance.manufacturerLabel} device",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = guidance.summary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (guidance.steps.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        guidance.steps.forEachIndexed { index, step ->
+                            Text(
+                                text = "${index + 1}. $step",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = "NearWake cannot verify OEM battery exemptions automatically. Check your device's battery settings if alerts seem late.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = NearWakeColors.TextTertiary,
+                )
+            }
         }
     }
 }
@@ -165,12 +202,16 @@ private fun SettingSwitchRow(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).padding(end = spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.xs),
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
             Text(
-                subtitle,
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
