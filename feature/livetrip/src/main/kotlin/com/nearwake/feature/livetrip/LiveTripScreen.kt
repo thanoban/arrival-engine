@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.NearWakeMotion
+import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.HeroCard
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeNumericText
@@ -68,6 +69,7 @@ fun LiveTripScreen(
         label = "live-trip-background",
     )
 
+    ProvideNearWakeStateAccent(accent) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -201,6 +203,7 @@ fun LiveTripScreen(
             )
         }
     }
+    } // ProvideNearWakeStateAccent
 }
 
 private data class TrustPresentation(
