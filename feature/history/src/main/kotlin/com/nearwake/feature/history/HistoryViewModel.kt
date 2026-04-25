@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import com.nearwake.core.database.entity.TripSessionEntity
 
 data class TripHistoryItemUiModel(
     val tripId: String,
@@ -29,6 +30,7 @@ data class TripHistoryItemUiModel(
 
 data class HistoryUiState(
     val trips: List<TripHistoryItemUiModel> = emptyList(),
+    val exportCsvText: String? = null,
 )
 
 data class TripSummaryUiState(
@@ -54,6 +56,10 @@ class HistoryViewModel @Inject constructor(
     private val mutableState = MutableStateFlow(HistoryUiState())
     val state: StateFlow<HistoryUiState> = mutableState.asStateFlow()
 
+    private var latestTrips: List<TripEntity> = emptyList()
+    private var latestPlaces: Map<String, SavedPlaceEntity> = emptyMap()
+    private var latestSessions: Map<String, TripSessionEntity> = emptyMap()
+
     init {
         scope.launch {
             combine(
@@ -61,12 +67,14 @@ class HistoryViewModel @Inject constructor(
                 savedPlaceDao.observeSavedPlaces(),
                 tripSessionDao.observeTripSessions(),
             ) { trips, places, sessions ->
-                val placeMap = places.associateBy { it.id }
+                latestTrips = trips
+                latestPlaces = places.associateBy { it.id }
+                latestSessions = sessions.associateBy { it.tripId }
                 val activeTripIds = sessions.map { it.tripId }.toSet()
                 HistoryUiState(
                     trips = trips.map { trip ->
                         trip.toHistoryItem(
-                            place = placeMap[trip.destinationId],
+                            place = latestPlaces[trip.destinationId],
                             isActive = trip.id in activeTripIds,
                         )
                     },
@@ -75,6 +83,19 @@ class HistoryViewModel @Inject constructor(
                 mutableState.value = uiState
             }
         }
+    }
+
+    fun exportTrips() {
+        val csv = buildTripCsv(
+            trips = latestTrips,
+            places = latestPlaces,
+            sessions = latestSessions,
+        )
+        mutableState.value = mutableState.value.copy(exportCsvText = csv)
+    }
+
+    fun clearExport() {
+        mutableState.value = mutableState.value.copy(exportCsvText = null)
     }
 
     override fun onCleared() {

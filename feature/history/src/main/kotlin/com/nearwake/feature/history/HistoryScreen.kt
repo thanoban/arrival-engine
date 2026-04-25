@@ -1,11 +1,14 @@
 package com.nearwake.feature.history
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.NearWakeColors
@@ -24,12 +27,27 @@ fun HistoryScreen(
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(state.exportCsvText) {
+        val csv = state.exportCsvText ?: return@LaunchedEffect
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "NearWake trip log")
+            putExtra(Intent.EXTRA_TEXT, csv)
+        }
+        context.startActivity(Intent.createChooser(intent, "Export trip log"))
+        viewModel.clearExport()
+    }
 
     ProvideNearWakeStateAccent(NearWakeColors.MonitoringBase) {
         NearWakeScaffold(
             title = "Trip history",
             subtitle = null,
             topBarActions = {
+                if (state.trips.isNotEmpty()) {
+                    NearWakeTextButton(text = "Export", onClick = { viewModel.exportTrips() })
+                }
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
