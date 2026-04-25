@@ -1,5 +1,6 @@
 package com.nearwake.domain.trip.engine
 
+import com.nearwake.domain.routing.model.RouteSignalQuality
 import com.nearwake.domain.routing.model.RouteSnapshot
 
 enum class TransferCheckpointType {
@@ -19,6 +20,7 @@ data class TransferCheckpoint(
     val lineName: String? = null,
     val remainingMinutes: Int,
     val status: TransferProgressStatus,
+    val signalQuality: RouteSignalQuality = RouteSignalQuality.HIGH,
 )
 
 data class TransferProgressState(
@@ -52,6 +54,7 @@ class TransferMonitor {
                         remainingMinutes <= SOON_WINDOW_MINUTES -> TransferProgressStatus.SOON
                         else -> TransferProgressStatus.UPCOMING
                     },
+                    signalQuality = transfer.stop.signalQuality,
                 )
             }
 

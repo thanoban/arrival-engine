@@ -8,4 +8,5 @@ data class Stop(
     val lat: Double,
     val lng: Double,
     val order: Int,
+    val signalQuality: RouteSignalQuality = RouteSignalQuality.HIGH,
 )

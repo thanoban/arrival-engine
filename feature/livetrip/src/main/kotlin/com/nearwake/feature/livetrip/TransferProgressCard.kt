@@ -16,6 +16,7 @@ import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeSectionHeader
 import com.nearwake.core.ui.NearWakeStateChip
 import com.nearwake.core.ui.SurfaceCard
+import com.nearwake.domain.routing.model.RouteSignalQuality
 
 @Composable
 fun TransferProgressCard(
@@ -41,15 +42,31 @@ fun TransferProgressCard(
         ) {
             transferSteps.forEach { step ->
                 SurfaceCard(modifier = Modifier.width(220.dp)) {
-                    NearWakeStateChip(
-                        label = step.timingLabel,
-                        state = when (step.status) {
-                            TransferProgressStatus.Completed -> NearWakeChipState.Neutral
-                            TransferProgressStatus.Soon -> NearWakeChipState.Approaching
-                            TransferProgressStatus.Upcoming -> NearWakeChipState.Monitoring
-                            TransferProgressStatus.Final -> NearWakeChipState.Safe
-                        },
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        NearWakeStateChip(
+                            label = step.timingLabel,
+                            state = when (step.status) {
+                                TransferProgressStatus.Completed -> NearWakeChipState.Neutral
+                                TransferProgressStatus.Soon -> NearWakeChipState.Approaching
+                                TransferProgressStatus.Upcoming -> NearWakeChipState.Monitoring
+                                TransferProgressStatus.Final -> NearWakeChipState.Safe
+                            },
+                        )
+                        if (step.signalQuality != RouteSignalQuality.HIGH) {
+                            NearWakeStateChip(
+                                label = when (step.signalQuality) {
+                                    RouteSignalQuality.DEGRADED -> "Medium"
+                                    RouteSignalQuality.OFFLINE -> "Low signal"
+                                    RouteSignalQuality.HIGH -> ""
+                                },
+                                state = when (step.signalQuality) {
+                                    RouteSignalQuality.DEGRADED -> NearWakeChipState.Approaching
+                                    RouteSignalQuality.OFFLINE -> NearWakeChipState.Alert
+                                    RouteSignalQuality.HIGH -> NearWakeChipState.Safe
+                                },
+                            )
+                        }
+                    }
                     Text(
                         text = step.title,
                         style = MaterialTheme.typography.titleMedium,

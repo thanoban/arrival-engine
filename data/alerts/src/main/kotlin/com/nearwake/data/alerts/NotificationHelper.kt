@@ -141,7 +141,7 @@ class NotificationHelper @Inject constructor(
         lineName: String,
         remainingMinutes: Int,
     ): Notification =
-        NotificationCompat.Builder(context, CHANNEL_STAGE)
+        NotificationCompat.Builder(context, CHANNEL_APPROACH)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Transfer coming up")
             .setContentText(
@@ -162,14 +162,15 @@ class NotificationHelper @Inject constructor(
         tripId: String,
         destinationName: String,
     ): Notification =
-        NotificationCompat.Builder(context, CHANNEL_STAGE)
+        NotificationCompat.Builder(context, CHANNEL_IMMINENT)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setContentTitle("Check the route direction")
             .setContentText("This vehicle may be heading away from $destinationName.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
+            .setVibrate(IMMINENT_VIBRATION_PATTERN)
             .setContentIntent(contentIntent(tripId))
             .build()
 

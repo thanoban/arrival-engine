@@ -11,6 +11,7 @@ import com.nearwake.data.alerts.TripMonitoringService
 import com.nearwake.domain.trip.engine.TransferCheckpointType
 import com.nearwake.domain.trip.engine.TransferMonitor
 import com.nearwake.domain.trip.engine.TransferProgressStatus as DomainTransferProgressStatus
+import com.nearwake.domain.routing.model.RouteSignalQuality
 import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertMode
@@ -144,6 +145,7 @@ data class TransferProgressUiState(
     val subtitle: String,
     val timingLabel: String,
     val status: TransferProgressStatus,
+    val signalQuality: RouteSignalQuality = RouteSignalQuality.HIGH,
 )
 
 enum class TransferProgressStatus {
@@ -183,6 +185,7 @@ internal fun buildTransferProgress(
                     DomainTransferProgressStatus.SOON -> TransferProgressStatus.Soon
                     DomainTransferProgressStatus.UPCOMING -> TransferProgressStatus.Upcoming
                 },
+                signalQuality = checkpoint.signalQuality,
             )
 
             TransferCheckpointType.DESTINATION -> TransferProgressUiState(
