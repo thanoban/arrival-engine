@@ -178,6 +178,12 @@ fun LiveTripScreen(
                         state = NearWakeChipState.Alert,
                     )
                 }
+                if (state.batterySaverActive) {
+                    NearWakeStateChip(
+                        label = "Battery saver",
+                        state = NearWakeChipState.Approaching,
+                    )
+                }
             }
 
             androidx.compose.foundation.layout.Row(

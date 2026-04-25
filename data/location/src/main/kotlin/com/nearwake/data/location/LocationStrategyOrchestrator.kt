@@ -17,11 +17,13 @@ class LocationStrategyOrchestrator @Inject constructor(
 
     val monitoringMode: StateFlow<MonitoringMode> = mutableMode
 
-    fun escalate(to: MonitoringMode): Flow<LatLng> {
+    fun escalate(to: MonitoringMode, balancedMinDistanceMeters: Float = 100f): Flow<LatLng> {
         mutableMode.value = to
         return when (to) {
             MonitoringMode.GEOFENCE_ONLY -> emptyFlow()
-            MonitoringMode.BALANCED -> fusedLocationDataSource.startBalancedUpdates()
+            MonitoringMode.BALANCED -> fusedLocationDataSource.startBalancedUpdates(
+                minDistanceMeters = balancedMinDistanceMeters,
+            )
             MonitoringMode.PRECISE_BURST -> fusedLocationDataSource.startPreciseBurst()
         }
     }

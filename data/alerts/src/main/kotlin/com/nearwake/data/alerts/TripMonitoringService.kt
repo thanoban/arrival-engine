@@ -3,7 +3,11 @@ package com.nearwake.data.alerts
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.BatteryManager
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofenceStatusCodes
@@ -257,7 +261,12 @@ class TripMonitoringService : Service() {
         }
 
         val context = activeContext ?: return
-        val updates = locationStrategyOrchestrator.escalate(mode)
+        val minDistance = if (mode == MonitoringMode.BALANCED && !isScreenOn()) {
+            BALANCED_SCREEN_OFF_MIN_DISTANCE
+        } else {
+            BALANCED_SCREEN_ON_MIN_DISTANCE
+        }
+        val updates = locationStrategyOrchestrator.escalate(mode, balancedMinDistanceMeters = minDistance)
         locationJob = serviceScope.launch {
             updates.collectLatest { location ->
                 handleLocationUpdate(context, location)
@@ -270,7 +279,8 @@ class TripMonitoringService : Service() {
         location: LatLng,
     ) {
         var session = activeSession ?: return
-        val etaResult = if (context.hasCachedRoute) {
+        val suppressNetworkRefresh = isOnCellularOnly() && readBatteryPercent() < NETWORK_SUPPRESS_THRESHOLD
+        val etaResult = if (context.hasCachedRoute && !suppressNetworkRefresh) {
             routingRepository.refreshEta(context.tripId, location)
         } else {
             Result.failure(IllegalStateException("No cached route is available for this trip."))
@@ -475,7 +485,26 @@ class TripMonitoringService : Service() {
             hasCachedRoute = cachedRoute != null,
             routeSnapshot = cachedRoute,
             initialEtaMinutes = cachedRoute?.totalDurationMinutes,
+            batterySaverMode = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
         )
+    }
+
+    private fun readBatteryPercent(): Int {
+        val bm = getSystemService(BATTERY_SERVICE) as? BatteryManager
+        return bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
+    }
+
+    private fun isOnCellularOnly(): Boolean {
+        val cm = getSystemService(CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) &&
+            !caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+    }
+
+    private fun isScreenOn(): Boolean {
+        val pm = getSystemService(POWER_SERVICE) as? PowerManager ?: return true
+        return pm.isInteractive
     }
 
     private suspend fun persistSession(session: TripSession) {
@@ -644,6 +673,10 @@ class TripMonitoringService : Service() {
         private const val NOTIFICATION_ID_STAGE = 43
         private const val NOTIFICATION_ID_TRANSFER = 44
         private const val NOTIFICATION_ID_BOARDING_WARNING = 45
+        private const val BATTERY_SAVER_THRESHOLD = 20
+        private const val NETWORK_SUPPRESS_THRESHOLD = 30
+        private const val BALANCED_SCREEN_ON_MIN_DISTANCE = 100f
+        private const val BALANCED_SCREEN_OFF_MIN_DISTANCE = 200f
         const val ACTION_START_MONITORING = "com.nearwake.data.alerts.START_MONITORING"
         const val ACTION_STOP_MONITORING = "com.nearwake.data.alerts.STOP_MONITORING"
         const val EXTRA_TRIP_ID = "extra_trip_id"

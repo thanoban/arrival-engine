@@ -62,6 +62,7 @@ class TripMonitoringRuntime @Inject constructor(
         hasCachedRoute: Boolean,
         routeSnapshot: RouteSnapshot? = null,
         initialEtaMinutes: Int? = null,
+        batterySaverMode: Boolean = false,
     ): MonitoredTripContext =
         MonitoredTripContext(
             tripId = tripId,
@@ -69,7 +70,10 @@ class TripMonitoringRuntime @Inject constructor(
             alertIntensity = alertIntensity,
             alertMode = alertMode,
             destination = destination,
-            tripRule = TripRule(alertLeadMinutes = alertLeadMinutes),
+            tripRule = TripRule(
+                alertLeadMinutes = alertLeadMinutes,
+                approachRadiusMeters = if (batterySaverMode) BATTERY_SAVER_APPROACH_RADIUS else TripRule.DEFAULT_APPROACH_RADIUS_METERS,
+            ),
             geofenceIds = buildGeofenceIds(tripId),
             hasCachedRoute = hasCachedRoute,
             routeSnapshot = routeSnapshot,
@@ -227,5 +231,6 @@ class TripMonitoringRuntime @Inject constructor(
         private const val EARTH_RADIUS_METERS = 6_371_000.0
         private const val APPROACH_SUFFIX = ":approach"
         private const val DESTINATION_SUFFIX = ":destination"
+        private const val BATTERY_SAVER_APPROACH_RADIUS = 2_250f
     }
 }

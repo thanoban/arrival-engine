@@ -33,10 +33,13 @@ class FusedLocationDataSource @Inject constructor(
             ?.let { LatLng(lat = it.latitude, lng = it.longitude) }
 
     @SuppressLint("MissingPermission")
-    fun startBalancedUpdates(intervalMillis: Long = 60_000L): Flow<LatLng> =
+    fun startBalancedUpdates(
+        intervalMillis: Long = 60_000L,
+        minDistanceMeters: Float = 100f,
+    ): Flow<LatLng> =
         locationFlow(
             request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, intervalMillis)
-                .setMinUpdateDistanceMeters(100f)
+                .setMinUpdateDistanceMeters(minDistanceMeters)
                 .build(),
         )
 

@@ -1,6 +1,7 @@
 package com.nearwake.feature.livetrip
 
 import android.content.Context
+import android.os.BatteryManager
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.nearwake.core.database.dao.SavedPlaceDao
@@ -38,6 +39,7 @@ data class LiveTripUiState(
     val monitoringMode: MonitoringMode = MonitoringMode.GEOFENCE_ONLY,
     val confidence: Confidence = Confidence.HIGH,
     val batteryImpact: String = "Very Low",
+    val batterySaverActive: Boolean = false,
     val alertSummary: String = "",
     val alertMode: AlertMode = AlertMode.ACTIVE,
     val alertStage: AlertStage = AlertStage.MONITORING,
@@ -85,6 +87,7 @@ class LiveTripViewModel @Inject constructor(
                         MonitoringMode.BALANCED -> "Low"
                         MonitoringMode.PRECISE_BURST -> "Temporary spike"
                     },
+                    batterySaverActive = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
                     alertMode = trip?.alertMode ?: AlertMode.ACTIVE,
                     alertStage = session?.alertStage ?: AlertStage.MONITORING,
                     transferSteps = routeSnapshot?.let { snapshot ->
@@ -125,8 +128,14 @@ class LiveTripViewModel @Inject constructor(
         super.onCleared()
     }
 
+    private fun readBatteryPercent(): Int {
+        val bm = appContext.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        return bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
+    }
+
     companion object {
         const val TRIP_ID_ARG = "tripId"
+        private const val BATTERY_SAVER_THRESHOLD = 20
     }
 }
 
