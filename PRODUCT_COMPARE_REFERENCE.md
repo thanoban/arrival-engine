@@ -1,309 +1,251 @@
 # NearWake Product Compare Reference
 
-This file is the easiest project reference to use when comparing NearWake against competitor apps.
+Use this file to quickly answer:
+- What exact problem are we solving?
+- Who is the user?
+- What does the app do and not do?
+- How do we compare to competitors?
+- What are our non-negotiable commitments?
 
-Use it to answer these questions quickly:
-
-- what exact problem are we solving
-- who is the user
-- what the app does now
-- what the app does not do
-- what is already built
-- what is still planned
-- what technology choices were made
-- what parts can still change if the product scope changes
+---
 
 ## 1. One-Line Product Definition
 
-NearWake is an offline-first arrival alarm app that helps users avoid missing a bus stop, train stop, transfer, or destination.
+NearWake is the Android arrival assurance system — for commuters whether they sleep, read, scroll, work, or zone out during their ride.
 
-## 2. Core Problem We Are Solving
+**The twelve-word promise:**
+> Wake me before my stop. Tell me if you are not sure.
 
-The main problem is not navigation.
-The main problem is not route planning.
-The main problem is not social location sharing.
+---
 
-The real problem is:
+## 2. The Core Problem
 
-- users miss stops because they fall asleep
-- users miss stops because they get distracted
-- users cannot depend on themselves to watch the route continuously
-- many transit apps help users plan, but do not specialize in reliably waking or warning them at the right time
+The main problem is not navigation. The main problem is not route planning.
 
-NearWake is meant to reduce that failure point.
+The real problem:
+- Users miss stops because they fall asleep
+- Users miss stops because they get distracted
+- Users cannot depend on themselves to watch the route continuously
+- Most transit apps help users plan, but do not specialize in reliably alerting them at the right time
 
-## 3. User Situation
+NearWake reduces that failure point. It is a **trust app**, not a safety platform.
 
-The ideal user is someone who:
+---
 
-- travels by bus or train
-- is tired during commuting
-- may nap during travel
-- wants confidence that they will not miss the stop
-- does not want a heavy always-on tracking app
+## 3. User Situations
 
-The strongest use cases are:
+**Primary users:**
+- Bus and train commuters who nap (sleeping commuter)
+- Bus and train commuters who are awake but distracted — scrolling, reading, on a call (active commuter)
 
-- bus commuters
-- train commuters
-- long daily travel
-- night or early-morning travel
-- transfer-heavy public transit travel
+**Strongest use cases:**
+- Daily commuters, night or early-morning travel, long journeys
+- Unfamiliar routes, travel in new cities
+- Parents whose kids travel alone and want arrival confirmation
 
-## 4. Product Job To Be Done
+**Key insight:** the market thinks "arrival alarm = nap app." That is a small niche. Most commuters are awake but distracted. By serving both, NearWake addresses the full commuter population.
 
-The job NearWake is trying to do is:
+---
 
-"Let me set where I need to get off, then quietly monitor in the background and alert me before I miss it."
+## 4. The Eight Pillars of Arrival Assurance
 
-That breaks into these product responsibilities:
+Every feature must fit one of these pillars. Nothing else ships.
 
-- let the user choose a destination quickly
-- let the user arm a trip quickly
-- monitor efficiently in the background
-- conserve battery as much as possible
-- survive app/process death as much as practical
-- alert clearly before the user misses the stop
+| # | Pillar | User question | Competitor gap |
+|---|--------|--------------|----------------|
+| 1 | Depart on time | "When do I leave?" | Only transit apps attempt this, badly |
+| 2 | Board right | "Am I on the right vehicle?" | Nobody solves this |
+| 3 | Ride awake or asleep | "Can I relax now?" | Nobody markets dual modes |
+| 4 | Transfer confidently | "Do I change here?" | Geofence apps cannot do this |
+| 5 | Arrive correctly | "Is this my stop?" | Existing apps, but fragile |
+| 6 | Recover gracefully | "I missed it — now what?" | Nobody owns this word |
+| 7 | Walk the last mile | "How do I get from stop to door?" | Gap in both clusters |
+| 8 | Confirm arrival | "Did I make it?" | Not solved anywhere |
 
-## 5. What NearWake Is
+---
 
-- an arrival assurance app
-- a destination monitoring app
-- an offline-first Android mobile app
-- a background-aware transit helper
-- a focused utility product rather than a general transit platform
+## 5. Three-Stage Alert Architecture
 
-## 6. What NearWake Is Not
+Single-threshold alarms fail. NearWake uses staged escalation — the only design that reliably works.
 
-- not a full transit planner replacement
-- not a live map-first navigation product
-- not a social sharing app
-- not a rideshare app
-- not a safety/emergency platform
-- not a full backend-first SaaS product today
+### Stage A — Approach (far warning)
+- **Fires:** 2 stops before destination, OR 500m away, OR 5 min predicted travel remaining
+- **Does:** gentle notification, lock-screen update "Approaching [destination]"
+- **Purpose:** user starts gathering belongings
 
-This matters during competitor analysis because many competitors may solve adjacent problems but not the exact same one.
+### Stage B — Imminent (get ready)
+- **Fires:** next stop, OR 100–150m away, OR 90 seconds predicted remaining
+- **Active mode:** stronger tone + haptic pulse
+- **Sleep mode:** haptic preamble 30s, then rising audio
+- **Purpose:** stand up, reach for bag
 
-## 7. Current Scope
+### Stage C — Arrival (exit now)
+- **Fires:** at stop, OR within 30–50m, OR < 30 seconds predicted
+- **Active mode:** short tone, "You have arrived" card
+- **Sleep mode:** full alarm, max vibration, repeats until dismissed
+- **Purpose:** "exit now" signal
 
-Current scope is:
+### Stage D — Recovery (overshoot)
+- **Trigger:** user did not dismiss AND distance from destination increases
+- **Does:** Recovery screen opens, nearest return stop, one-tap re-arm, "walk back" if < 400m
+- **Purpose:** turn the worst failure into a managed event
 
-- destination selection
-- trip arming
-- background monitoring
-- alerting and recovery
-- trip/session persistence
-- route preview when Google routing is available
-- diagnostics and settings
+**Why this beats every competitor:**
+- GPS Alarm, Naplarm, Wake Me There, StopAlert: single-stage only — if late, you're stranded
+- Transit, Moovit, Citymapper: staged but buried in map-first UI with ads and clutter
+- NearWake: three stages + recovery, dedicated UI, honest about confidence
 
-Current scope is not yet:
+---
 
-- production backend sync
-- full account system
-- production-grade provider-backed places flow
-- full release-store hardening
-- polished final end-to-end recovery coverage in every scenario
+## 6. Active Mode vs Sleep Mode
 
-## 8. Current Feature Status
+Same engine, different alert personality.
 
-### Implemented now
+| Aspect | Active Mode (default) | Sleep Mode |
+|--------|----------------------|------------|
+| Intended state | Awake, distracted | Eyes closed, napping |
+| Stage A | Soft notification tone | Soft tone + mild haptic |
+| Stage B | Tone + haptic pulse | Haptic preamble + rising audio |
+| Stage C | Short confirmation tone | Full alarm until dismissed |
+| Overrides silent mode? | No | Yes (user-consented) |
+| Bias-early under low confidence | 15% earlier | 25% earlier |
 
-- onboarding
-- permissions flow
-- home screen
-- place selection flow
-- trip setup
-- live trip screen
-- alert screen
-- recovery screen
-- history
-- trip summary
-- settings
-- diagnostics
-- Room-backed trip persistence
-- DataStore-backed app preferences
-- route snapshot cache
-- Google transit route preview support
-- background monitoring service
-- WorkManager recovery path
+---
 
-### Implemented, but still immature
+## 7. Confidence Model (The Visible Differentiator)
+
+Every prediction on every screen shows a confidence level. No competitor does this.
+
+| State | UI | Engine behavior |
+|-------|-----|----------------|
+| High | Cyan chip | Fire at standard thresholds |
+| Medium | Amber chip + "Alerting earlier" banner | Bias 15% earlier |
+| Low | Red chip + "Underground mode" label | Bias 25% earlier, Stage A at Stage B threshold |
+
+**Why this wins:** Transit reviews say "DO NOT TRUST ARRIVAL TIME." Moovit says "very inaccurate." These apps show confident ETAs that are wrong. NearWake shows honest confidence that is occasionally conservative — and users learn to trust it.
+
+---
+
+## 8. What NearWake Is
 
-- live monitoring behavior is present, but still needs more hardening and broader scenario coverage
-- route-aware behavior exists, but the product still degrades to destination-only mode in several cases
-- UI is modernized, but not fully polished
-- place search exists, but is not yet a real production Google Places flow
-
-### Planned or likely next
-
-- broader live monitoring hardening
-- better end-to-end scenario testing
-- richer empty/error/loading states
-- real production auth path
-- real provider-backed place search
-- final release-readiness items
-
-## 9. Current Differentiators
-
-These are the strongest current differentiators to compare against competitors:
-
-- offline-first design
-- battery-conscious monitoring strategy
-- geofence and activity-recognition-first monitoring
-- destination assurance focus instead of generic transit browsing
-- process-death/session recovery architecture
-- strong modular architecture for future evolution
-
-If a competitor is stronger in maps, route exploration, or real-time schedules, NearWake can still win on focused arrival assurance and background alert reliability.
-
-## 10. Current Weaknesses
-
-These are the main current weaknesses to compare honestly:
-
-- not production-finished yet
-- no full backend or cloud sync story yet
-- no finalized account/login flow yet
-- place search is not fully provider-backed yet
-- monitoring still needs broader real-world edge-case validation
-- product positioning is clearer than the final business model
-
-## 11. Technology Stack
-
-### Core platform
-
-- Kotlin
-- Android
-- Jetpack Compose
-- Jetpack Navigation
-- Hilt
-
-### Persistence and state
-
-- Room
-- DataStore
-
-### Background and device capabilities
-
-- WorkManager
-- Google Play Services Location
-- Geofencing
-- Activity Recognition
-- Foreground Service
-
-### Networking and external integration
-
-- OkHttp
-- Retrofit-ready shared network layer
-- Google Directions API integration in the routing module
-
-### Testing and architecture support
-
-- JUnit 5
-- MockK
-- shared fake/testing modules
-
-## 12. Why These Technology Choices Matter
-
-These choices were made to support the product problem, not just for engineering style.
-
-### Why Room
-
-- trip/session state must survive process death
-- history and diagnostics need structured persistence
-
-### Why DataStore
-
-- user preferences are simple key-value settings
-- lighter than putting everything in Room
-
-### Why Hilt
-
-- many modules and Android components need dependency injection
-- service/repository/data-layer composition needs to stay manageable
-
-### Why Geofencing and Activity Recognition
-
-- they reduce constant GPS usage
-- they fit the battery-sensitive nature of the product
-
-### Why Foreground Service
-
-- active monitoring needs a durable runtime path
-- Android background limitations require a more explicit monitoring model
-
-### Why Google Directions
-
-- it provides a better route preview and ETA source when available
-- but the app is still designed to degrade gracefully if routing is unavailable
-
-## 13. External Dependencies And Operational Inputs
-
-Current required or useful external inputs:
-
-- Android SDK on the development machine
-- `sdk.dir` in `local.properties`
-- `MAPS_API_KEY` for Google route preview and ETA refresh
-
-Current Google API most relevant now:
-
-- `Directions API`
-
-Likely future Google APIs:
-
-- `Places API`
-- `Maps SDK for Android`
-
-## 14. Comparison Questions To Ask Against Competitors
-
-When comparing NearWake to competitors, these are the most useful questions:
-
-- do they solve missed-stop prevention directly, or only route planning generally
-- do they support background alerting well
-- are they battery-heavy or battery-light
-- do they work only with live network data, or can they degrade gracefully
-- do they focus on commuters who may sleep or get distracted
-- do they support transfers or only final destinations
-- is their alerting experience stronger than their planning experience
-- do they require a backend/account before delivering value
-- is their product broad and generic, or focused and dependable
-
-## 15. Scope Levers That Can Still Change
-
-If competitor analysis changes the direction, these parts can still be adjusted:
-
-- target user segment
-- exact alert timing model
-- whether route-aware mode stays central or secondary
-- whether auth becomes important early
-- whether backend sync becomes part of MVP
-- whether the app stays transit-only or broadens into general arrival assurance
-
-These parts should be changed carefully:
-
-- offline-first philosophy
-- battery-sensitive monitoring approach
-- core promise of "wake me before I miss my stop"
-
-## 16. Short Positioning Summary
-
-NearWake should currently be compared as:
-
-- a focused arrival-alarm product
-- an offline-first commuter assistant
-- a battery-conscious destination monitoring app
-
-It should not be judged mainly as:
-
-- a complete transit planning suite
-- a map-heavy navigation platform
-- a backend-first mobility product
-
-## 17. Best Use Of This File
-
-Use this file when:
-
-- comparing competitors
-- rewriting the scope
-- refining the MVP
-- preparing a pitch
-- deciding what features to keep, cut, or postpone
+- An offline-first arrival assurance app
+- A trust tool: calm when idle, alive when monitoring, unmistakable when alerting
+- An honest system: confidence is visible, degraded modes are named, failures are surfaced
+- Battery-conscious: OS-managed geofences, Activity Recognition, precise GPS only in short bursts
+
+---
+
+## 9. What NearWake Is Not
+
+- Not a live-map navigator
+- Not a transit route planner (no schedule lookups, no trip planning)
+- Not a ticketing app
+- Not a social platform
+- Not a cloud tracking service
+- Not a safety/SOS platform — no emergency contacts, no 24/7 monitoring
+- Not a lifestyle app — every pixel serves status communication
+
+---
+
+## 10. Current Differentiators
+
+Features no competitor currently has:
+
+1. **Confidence-first UX** — every prediction shows confidence level with labeled fallback behavior
+2. **Three-stage alert system** — Approach / Imminent / Arrival, distinct from single-threshold competitors
+3. **Dual Active/Sleep modes** — same engine, two alert personalities per user state
+4. **Bias-early rule** — when uncertain, alert earlier and tell the user why
+5. **Underground-dignified mode** — signal loss is a named, visible mode, not a silent failure
+6. **Missed-stop recovery** — first-class Recovery screen with re-arm and walk-back
+7. **Boarding validation** — wrong-direction check after trip arms
+8. **Transfer awareness** — pre-transfer alerts for multi-leg journeys
+9. **OEM-specific reliability guidance** — Samsung, Xiaomi, Oppo, etc. battery exemption steps shown in-product
+10. **No-ads commitment** — stated publicly, in the Play listing, enforced in product
+
+---
+
+## 11. Cross-Cutting Commitments (Non-Negotiable)
+
+These are product commitments that go on the Play Store listing:
+
+1. **Confidence-first.** Every prediction shows confidence.
+2. **Bias-early.** When in doubt, alert earlier and label why.
+3. **Offline-dignified.** Underground is a named mode with its own UI.
+4. **No ads, no paywalls in the alert path — ever.**
+5. **No account required for core value.**
+6. **Battery-honest.** Expose what we spend.
+7. **OEM-aware.** Vendor-specific battery guidance in-product.
+8. **One-tap re-arm.** Returning commuters never re-enter a trip.
+9. **Privacy-respecting.** Local persistence first. No continuous cloud location.
+10. **Fail visible, not silent.**
+
+---
+
+## 12. What We Will Not Build
+
+- Full transit route planner (Citymapper trap)
+- Live vehicle map (Transit / Moovit trap)
+- Ticketing / payments
+- Social / community reports (Waze-style)
+- AR stop finder
+- Mandatory accounts
+- Continuous cloud location sharing
+- Safety platform — SOS, emergency contacts, 24/7 monitoring (liability trap)
+- Ads of any kind
+- Wear OS (post-1.0)
+- Cloud sync (post-1.0, possibly never)
+
+If a feature request does not clearly fit one of the eight pillars, it does not ship.
+
+---
+
+## 13. Feature Matrix vs Competitors
+
+| Capability | Transit | Citymapper | Moovit | Naplarm | GPS Alarm | Wake Me There | StopAlert | **NearWake** |
+|-----------|---------|-----------|--------|---------|-----------|---------------|-----------|------------|
+| Destination alarm | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | **✓** |
+| Route-aware stops | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Transfer alerts | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Three-stage alerts | partial | partial | partial | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Sleep / Active mode distinction | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Confidence shown to user | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Bias-early under uncertainty | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Underground-dignified mode | partial | partial | partial | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Missed-stop recovery | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Walk the last mile | ✗ | ✓ (heavy) | ✓ (heavy) | ✗ | ✗ | ✗ | ✗ | **✓ (light)** |
+| Departure reminder | ✓ | ✓ | ✓ | ✗ | partial | ✗ | ✗ | **✓** |
+| Arrival confirmation to contact | ✗ | ✓ (heavy) | ✗ | ✗ | ✗ | ✗ | ✗ | **✓ (light)** |
+| OEM battery guidance in-product | ✗ | ✗ | ✗ | ✗ | partial | ✗ | ✗ | **✓ vendor-specific** |
+| No ads in alert path | ✗ | partial | ✗ | partial | ✗ | ? | ? | **✓ committed** |
+| Works without account | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | **✓** |
+| Process-death recovery | partial | ? | partial | ✗ | partial | ? | ✗ | **✓** |
+
+NearWake does not beat Transit on map features or Moovit on ticketing. It beats all of them on trust, transparency, and recovery — which is what the review evidence says users actually want.
+
+---
+
+## 14. Technology Choices (Frozen for MVP)
+
+| Layer | Choice | Constraint |
+|-------|--------|-----------|
+| Language | Kotlin | Android-only MVP |
+| UI | Jetpack Compose + Material 3 | Dark-first, no light theme yet |
+| DI | Hilt | All modules use `@HiltViewModel`, `@HiltAndroidApp` |
+| Database | Room | Entities frozen — no schema changes |
+| State | DataStore | Keys frozen |
+| Background | WorkManager + ForegroundService | Survives process death |
+| Location | FusedLocationProvider (bursts only) + GeofencingClient | Never continuous GPS |
+| Motion | Activity Recognition Transition API | OS-managed |
+| Network | OkHttp + Retrofit (core:network) | Backend deferred |
+| Maps | Google Maps SDK + Places Autocomplete | Setup only, not during monitoring |
+
+---
+
+## 15. What Parts Can Still Change
+
+- UI / design system (modernization pass planned)
+- Alert personality profiles (Active vs Sleep mode details)
+- Geofence radius tuning (300–500m destination, 1.5km approach)
+- Confidence threshold calibration (from field test data)
+- Permission copy wording
+- New feature modules (Pillars 1–4, 6–8) — all additive, no breaking changes
