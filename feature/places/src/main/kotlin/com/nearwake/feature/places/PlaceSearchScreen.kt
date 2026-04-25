@@ -3,17 +3,25 @@ package com.nearwake.feature.places
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nearwake.core.designsystem.LocalRadius
+import com.nearwake.core.designsystem.LocalSpacing
+import com.nearwake.core.designsystem.NearWakeColors
+import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
+import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
-import com.nearwake.core.ui.NearWakeSecondaryButton
 import com.nearwake.core.ui.NearWakeSectionHeader
+import com.nearwake.core.ui.NearWakeTextButton
 import com.nearwake.core.ui.SurfaceCard
 
 @Composable
@@ -23,46 +31,91 @@ fun PlaceSearchScreen(
     viewModel: PlaceSearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val spacing = LocalSpacing.current
+    val radius = LocalRadius.current
 
-    NearWakeScaffold(
-        title = "Pick a destination",
-        subtitle = "Search now, save the place, and reuse it later from Home.",
-        topBarActions = {
-            NearWakeSecondaryButton(text = "Back", onClick = onBack)
-        },
-    ) {
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = viewModel::updateQuery,
-            label = { Text("Search") },
-            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-        )
-
-        if (state.savedPlaces.isNotEmpty()) {
-            NearWakeSectionHeader(text = "Saved places")
-            SavedPlacesSection(
-                places = state.savedPlaces,
-                onSelectPlace = { placeId -> viewModel.selectSavedPlace(placeId, onSelectPlace) },
+    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+        NearWakeScaffold(
+            title = "Pick a destination",
+            subtitle = null,
+            topBarActions = {
+                NearWakeTextButton(text = "Back", onClick = onBack)
+            },
+        ) {
+            OutlinedTextField(
+                value = state.query,
+                onValueChange = viewModel::updateQuery,
+                placeholder = { Text("Search stations, airports, landmarks…") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(radius.sm),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = NearWakeColors.SafeBase,
+                    unfocusedBorderColor = NearWakeColors.BorderDefault,
+                    focusedContainerColor = NearWakeColors.BgElevated,
+                    unfocusedContainerColor = NearWakeColors.BgElevated,
+                    focusedTextColor = NearWakeColors.TextPrimary,
+                    unfocusedTextColor = NearWakeColors.TextPrimary,
+                    cursorColor = NearWakeColors.SafeBase,
+                ),
             )
-        }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            NearWakeSectionHeader(text = "Search results")
-            state.results.forEach { result ->
-                SurfaceCard {
-                    Text(result.name, style = MaterialTheme.typography.titleLarge)
-                    Text(result.address, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    NearWakeSecondaryButton(
-                        text = "Use this place",
-                        onClick = { viewModel.selectResult(result, onSelectPlace) },
-                    )
-                }
+            if (state.savedPlaces.isNotEmpty()) {
+                NearWakeSectionHeader(text = "Saved places")
+                SavedPlacesSection(
+                    places = state.savedPlaces,
+                    onSelectPlace = { placeId -> viewModel.selectSavedPlace(placeId, onSelectPlace) },
+                )
             }
-            if (state.results.isEmpty()) {
+
+            if (state.query.length >= 2) {
+                NearWakeSectionHeader(text = "Search results")
+                if (state.results.isEmpty()) {
+                    SurfaceCard {
+                        Text(
+                            text = "No places matched that search yet.",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Text(
+                            text = "Try a broader station, airport, or landmark name.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+                        state.results.forEach { result ->
+                            SurfaceCard {
+                                Text(
+                                    text = result.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                                Text(
+                                    text = result.address,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                NearWakePrimaryButton(
+                                    modifier = Modifier.padding(top = spacing.sm).fillMaxWidth(),
+                                    text = "Use this place",
+                                    onClick = { viewModel.selectResult(result, onSelectPlace) },
+                                )
+                            }
+                        }
+                    }
+                }
+            } else if (state.savedPlaces.isEmpty()) {
                 SurfaceCard {
-                    Text(if (state.query.isBlank()) "Start typing to search places" else "No places matched that search yet.")
                     Text(
-                        "Try a broader station, airport, or landmark name.",
+                        text = "Start typing to search places",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        text = "Your saved places will also appear here for quick re-use.",
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

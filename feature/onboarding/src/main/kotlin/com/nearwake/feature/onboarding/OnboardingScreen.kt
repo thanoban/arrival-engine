@@ -2,13 +2,17 @@ package com.nearwake.feature.onboarding
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nearwake.core.designsystem.LocalSpacing
+import com.nearwake.core.designsystem.NearWakeColors
+import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.HeroCard
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakePrimaryButton
@@ -22,44 +26,48 @@ fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    NearWakeScaffold(
-        title = "Wake before your stop",
-        subtitle = "NearWake arms in seconds and stays calm until it really matters.",
-    ) {
-        HeroCard {
-            NearWakeStateChip(
-                label = "Privacy-first",
-                state = NearWakeChipState.Safe,
-            )
-            Text(
-                text = "Background monitoring, quiet until needed, and built for the commutes where fatigue makes timing hard.",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+    val spacing = LocalSpacing.current
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            state.pages.forEachIndexed { index, page ->
-                SurfaceCard {
-                    Text(
-                        text = "0${index + 1}",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = page,
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    Text(
-                        text = "Step ${index + 1} of ${state.pages.size}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+        NearWakeScaffold(
+            title = "Wake before your stop",
+            subtitle = null,
+            showTopBarDivider = false,
+        ) {
+            HeroCard {
+                NearWakeStateChip(
+                    label = "Privacy-first",
+                    state = NearWakeChipState.Safe,
+                )
+                Text(
+                    text = "Background monitoring, quiet until needed, and built for the commutes where fatigue makes timing hard.",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+                state.pages.forEachIndexed { index, page ->
+                    SurfaceCard {
+                        Text(
+                            text = "0${index + 1}",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = NearWakeColors.MonitoringBase,
+                        )
+                        Text(
+                            text = page,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
                 }
             }
+
+            NearWakePrimaryButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = "Start setup",
+                onClick = { viewModel.completeOnboarding(onContinue) },
+            )
         }
-        NearWakePrimaryButton(
-            text = "Start setup",
-            onClick = { viewModel.completeOnboarding(onContinue) },
-        )
     }
 }
