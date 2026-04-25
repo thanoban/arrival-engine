@@ -40,6 +40,10 @@ class AlertOrchestrator @Inject constructor(
         intensity: AlertIntensity,
         mode: AlertMode,
         type: AlertType = AlertType.ARRIVAL,
+        confidence: String? = null,
+        stage: String? = null,
+        distanceMeters: Double? = null,
+        etaMinutes: Int? = null,
     ) {
         notificationHelper.ensureChannels()
         val eventId = UUID.randomUUID().toString()
@@ -81,6 +85,10 @@ class AlertOrchestrator @Inject constructor(
                 put("type", type.name)
                 put("intensity", intensity.name)
                 put("mode", mode.name)
+                confidence?.let { put("confidence", it) }
+                stage?.let { put("stage", it) }
+                distanceMeters?.let { put("distance_meters", it) }
+                etaMinutes?.let { put("eta_minutes", it) }
             },
         )
     }

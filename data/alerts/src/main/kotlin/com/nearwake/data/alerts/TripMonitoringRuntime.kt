@@ -96,6 +96,9 @@ class TripMonitoringRuntime @Inject constructor(
             ),
         )
 
+    fun distanceToDestination(lat: Double, lng: Double, destination: LatLng): Double =
+        distanceMeters(LatLng(lat = lat, lng = lng), destination)
+
     fun classifySignal(geofenceIds: List<String>): GeofenceSignal? =
         when {
             geofenceIds.any { it.endsWith(DESTINATION_SUFFIX) } -> GeofenceSignal.DESTINATION

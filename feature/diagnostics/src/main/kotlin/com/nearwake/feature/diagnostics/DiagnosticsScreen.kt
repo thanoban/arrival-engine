@@ -69,30 +69,38 @@ fun DiagnosticsScreen(
             }
 
             SurfaceCard {
-                NearWakeSectionHeader(text = "Last session")
-                Text(
-                    text = "Recent events",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                    if (state.recentEvents.isEmpty()) {
-                        Text(
-                            text = "No diagnostics events recorded yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
+                NearWakeSectionHeader(text = "Last session — why each event fired")
+                if (state.recentEvents.isEmpty()) {
+                    Text(
+                        text = "No diagnostics events recorded yet",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
                         state.recentEvents.forEach { event ->
-                            Text(
-                                text = event,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onBackground,
-                            )
+                            DiagnosticsEventRow(event = event)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DiagnosticsEventRow(event: DiagnosticsEventUiModel) {
+    val spacing = LocalSpacing.current
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+        Text(
+            text = event.tripPrefix?.let { "${event.label} · $it" } ?: event.label,
+            style = MaterialTheme.typography.labelMedium,
+            color = NearWakeColors.TextSecondary,
+        )
+        Text(
+            text = event.summary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
     }
 }

@@ -445,6 +445,18 @@ class TripMonitoringService : Service() {
                         tripId = context.tripId,
                         intensity = context.alertIntensity,
                         mode = context.alertMode,
+                        confidence = result.session.confidence.name,
+                        stage = result.session.alertStage.name,
+                        distanceMeters = result.session.lastKnownLat?.let { lat ->
+                            result.session.lastKnownLng?.let { lng ->
+                                tripMonitoringRuntime.distanceToDestination(
+                                    lat = lat,
+                                    lng = lng,
+                                    destination = context.destination,
+                                )
+                            }
+                        },
+                        etaMinutes = result.session.lastEtaMinutes,
                     )
                 }
 
