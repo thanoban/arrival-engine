@@ -3,6 +3,7 @@
 This file is the practical pre-release guide for the current app state.
 
 Pair it with [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md) when you are actually running trips on a device.
+Use [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md) for the current draft release wording.
 
 Use it when you want to answer:
 

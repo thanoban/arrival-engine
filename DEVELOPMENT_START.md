@@ -221,6 +221,7 @@ Completed so far inside this slice:
 - Added focused permission-readiness unit coverage.
 - Added a dedicated release-readiness checklist covering field tests, permission disclosures, privacy notes, and release gates.
 - Added a dedicated field-test runbook with a per-trip logging template and blocker criteria.
+- Added a privacy and permission-disclosure draft aligned to the current app behavior.
 
 Still remaining in this slice:
 
