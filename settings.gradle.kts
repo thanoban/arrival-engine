@@ -32,6 +32,7 @@ include(":core:ui")
 include(":domain:trip")
 include(":domain:location")
 include(":domain:routing")
+include(":domain:commute")
 
 // Data
 include(":data:location")
@@ -39,6 +40,7 @@ include(":data:motion")
 include(":data:routing")
 include(":data:alerts")
 include(":data:analytics")
+include(":data:patterns")
 
 // Features
 include(":feature:onboarding")
@@ -52,3 +54,4 @@ include(":feature:settings")
 include(":feature:diagnostics")
 include(":feature:walkfinish")
 include(":feature:companion")
+include(":feature:departure")

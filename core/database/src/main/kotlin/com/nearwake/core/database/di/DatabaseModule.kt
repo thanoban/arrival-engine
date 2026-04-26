@@ -6,6 +6,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.nearwake.core.database.NearWakeDatabase
 import com.nearwake.core.database.dao.AlertEventDao
+import com.nearwake.core.database.dao.CommutePredictionDao
 import com.nearwake.core.database.dao.DiagnosticsEventDao
 import com.nearwake.core.database.dao.RouteSnapshotDao
 import com.nearwake.core.database.dao.SavedPlaceDao
@@ -32,6 +33,7 @@ object DatabaseModule {
     ).addMigrations(MIGRATION_1_2)
         .addMigrations(MIGRATION_2_3)
         .addMigrations(MIGRATION_3_4)
+        .addMigrations(MIGRATION_4_5)
         .build()
 
     @Provides
@@ -53,6 +55,10 @@ object DatabaseModule {
     @Provides
     fun provideRouteSnapshotDao(database: NearWakeDatabase): RouteSnapshotDao =
         database.routeSnapshotDao()
+
+    @Provides
+    fun provideCommutePredictionDao(database: NearWakeDatabase): CommutePredictionDao =
+        database.commutePredictionDao()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
         override fun migrate(database: SupportSQLiteDatabase) {
@@ -89,6 +95,28 @@ object DatabaseModule {
                 """
                 ALTER TABLE `trip_sessions`
                 ADD COLUMN `alert_stage` TEXT NOT NULL DEFAULT 'MONITORING'
+                """.trimIndent(),
+            )
+        }
+    }
+
+    private val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `commute_predictions` (
+                    `id` TEXT NOT NULL,
+                    `origin_id` TEXT,
+                    `destination_id` TEXT NOT NULL,
+                    `destination_name` TEXT NOT NULL,
+                    `days_of_week_json` TEXT NOT NULL,
+                    `typical_departure_hour` INTEGER NOT NULL,
+                    `typical_departure_minute` INTEGER NOT NULL,
+                    `avg_duration_minutes` INTEGER NOT NULL,
+                    `trip_count` INTEGER NOT NULL,
+                    `updated_at` TEXT NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
                 """.trimIndent(),
             )
         }

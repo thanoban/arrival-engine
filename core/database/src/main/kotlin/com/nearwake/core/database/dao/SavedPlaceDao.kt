@@ -15,6 +15,9 @@ interface SavedPlaceDao {
     @Query("SELECT * FROM saved_places WHERE id = :id LIMIT 1")
     suspend fun getSavedPlaceById(id: String): SavedPlaceEntity?
 
+    @Query("SELECT * FROM saved_places")
+    suspend fun getAllSavedPlaces(): List<SavedPlaceEntity>
+
     @Upsert
     suspend fun upsertSavedPlace(place: SavedPlaceEntity)
 

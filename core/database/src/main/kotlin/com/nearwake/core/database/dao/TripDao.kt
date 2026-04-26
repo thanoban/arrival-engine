@@ -17,6 +17,9 @@ interface TripDao {
     @Query("SELECT * FROM trips WHERE id = :tripId LIMIT 1")
     suspend fun getTripById(tripId: String): TripEntity?
 
+    @Query("SELECT * FROM trips WHERE completed_at IS NOT NULL ORDER BY created_at DESC")
+    suspend fun getCompletedTrips(): List<TripEntity>
+
     @Upsert
     suspend fun upsertTrip(trip: TripEntity)
 
