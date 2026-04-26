@@ -116,25 +116,21 @@ If a module has no tests yet, `assembleDebug` must still pass.
 Status:
 
 ```text
-Planned
+Done
 ```
 
-Current issue:
+Completed:
 
-- `PlaceSearchViewModel` still uses three local sample places.
-
-Target:
-
-- Add a proper place-search data path.
+- Added a proper place-search data path.
 - Keep saved places persisted through `SavedPlaceDao`.
-- Use Google Places or a provider abstraction so the screen is not tied directly to SDK calls.
+- Use Google Places behind a domain repository so the screen is not tied directly to SDK calls.
 - Keep destination-only fallback behavior if provider search fails.
 
-Likely structure:
+Implemented structure:
 
 ```text
-domain/location or domain/places
-data/location or data/places
+domain/location
+data/location
 feature/places
 ```
 
@@ -218,12 +214,11 @@ Target:
 
 ## Recommended First Implementation Order
 
-1. Replace sample place search with real provider-backed search.
-2. Implement light/dark theme support.
-3. Add departure reminder scheduling.
-4. Run field testing and release hardening.
+1. Implement light/dark theme support.
+2. Add departure reminder scheduling.
+3. Run field testing and release hardening.
 
-This order keeps work useful immediately while reducing risk. Departure reminders are now reachable in the app, so the next highest-value slice is replacing sample destination search with real provider-backed search.
+This order keeps work useful immediately while reducing risk. Departure reminders are reachable in the app, and destination search now has a provider-backed path with local fallback.
 
 ## Standard Verification Set
 

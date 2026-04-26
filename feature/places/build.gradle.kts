@@ -9,8 +9,6 @@ android {
 dependencies {
     implementation(project(":domain:location"))
     implementation(project(":core:database"))
-    implementation(libs.google.places)
     implementation(libs.coroutines.android)
-    implementation(libs.coroutines.play.services)
     implementation(libs.kotlinx.datetime)
 }

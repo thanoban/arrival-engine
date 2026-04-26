@@ -70,7 +70,24 @@ fun PlaceSearchScreen(
 
             if (state.query.length >= 2) {
                 NearWakeSectionHeader(text = "Search results")
-                if (state.results.isEmpty()) {
+                state.message?.let { message ->
+                    SurfaceCard {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
+                if (state.isSearching) {
+                    SurfaceCard {
+                        Text(
+                            text = "Searching places...",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                } else if (state.results.isEmpty() && state.message == null) {
                     SurfaceCard {
                         Text(
                             text = "No places matched that search yet.",

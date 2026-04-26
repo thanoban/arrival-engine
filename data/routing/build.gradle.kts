@@ -1,3 +1,17 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.isFile) {
+        localPropertiesFile.inputStream().use(::load)
+    }
+}
+
+fun configuredMapsApiKey(): String =
+    ((findProperty("MAPS_API_KEY") as? String) ?: localProperties.getProperty("MAPS_API_KEY"))
+        ?.takeUnless { value -> value.isBlank() || value == "REPLACE_WITH_YOUR_KEY" }
+        .orEmpty()
+
 plugins {
     alias(libs.plugins.nearwake.android.library)
     alias(libs.plugins.nearwake.android.hilt)
@@ -8,8 +22,7 @@ android {
     namespace = "com.nearwake.data.routing"
 
     defaultConfig {
-        val mapsApiKey = project.findProperty("MAPS_API_KEY")?.toString().orEmpty()
-        buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+        buildConfigField("String", "MAPS_API_KEY", "\"${configuredMapsApiKey()}\"")
     }
 }
 

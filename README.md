@@ -16,6 +16,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - The app persists selected places, trips, route snapshots, and trip sessions through Room-backed flows.
 - The Android toolchain is bootstrapped in-repo with the Gradle wrapper.
 - `data:routing` now includes a working Google Transit provider, Room-backed route cache, and shared network wiring in `core:network`.
+- `data:location` now includes Google Places-backed destination search with a local fallback when the API key is not configured.
 - Trip setup, live trip, monitoring service recovery, and trip summary screens now surface real persisted route/session data instead of only placeholder values.
 
 ## Docs
@@ -31,6 +32,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 ## Recent Implemented Slices
 
 - Google transit route fetching and ETA refresh support were added in `data:routing`.
+- Google Places-backed destination search was added through the domain/data location layer.
 - Route snapshots are cached per trip and shown in trip setup, live trip, and trip summary flows.
 - `core:network` now provides shared `OkHttpClient`, shared `Json`, and a `Retrofit.Builder`.
 - `TripMonitoringService` now restores and persists `TripSession` state through Room while it runs.
@@ -74,7 +76,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - JDK 17
 - Android SDK 35
 - A valid `sdk.dir` entry in `local.properties`
-- Optional but recommended: `MAPS_API_KEY` for current Google transit route preview support
+- Optional but recommended: `MAPS_API_KEY` for current Google transit route preview and Places search support
 
 ## Setup
 
@@ -129,7 +131,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 ## Notes
 
 - `corrections.md` documents the build and consistency fixes that were applied during stabilization.
-- If `MAPS_API_KEY` is present, trip setup can fetch a Google transit preview and cache it against the trip; if not, the app falls back gracefully to destination-only monitoring.
+- If `MAPS_API_KEY` is present, place search can use Google Places and trip setup can fetch a Google transit preview; if not, the app falls back gracefully to local sample search and destination-only monitoring.
 - The current UI is no longer just a shell: destination selection, trip setup, live trip, alert dismissal, diagnostics, settings, and history/summary screens all flow through persisted app data.
 - `TripMonitoringService` now uses Room-backed `TripSession` restore/save behavior, which better matches the plan's recovery and process-death requirements.
 - `SETUP_AND_STATUS.md` now contains the detailed answer for what you need to provide to build/run the app and what is still unfinished.

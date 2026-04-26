@@ -1,3 +1,17 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.isFile) {
+        localPropertiesFile.inputStream().use(::load)
+    }
+}
+
+fun configuredMapsApiKey(): String =
+    ((findProperty("MAPS_API_KEY") as? String) ?: localProperties.getProperty("MAPS_API_KEY"))
+        ?.takeUnless { value -> value.isBlank() || value == "REPLACE_WITH_YOUR_KEY" }
+        .orEmpty()
+
 plugins {
     alias(libs.plugins.nearwake.android.application)
     alias(libs.plugins.nearwake.android.application.compose)
@@ -13,7 +27,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        manifestPlaceholders["MAPS_API_KEY"] = project.findProperty("MAPS_API_KEY") ?: ""
+        manifestPlaceholders["MAPS_API_KEY"] = configuredMapsApiKey()
     }
 
     buildTypes {

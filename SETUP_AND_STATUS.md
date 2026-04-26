@@ -29,6 +29,7 @@ What is already implemented:
 - WorkManager trip recovery
 - route preview and route cache
 - Google transit routing integration
+- Google Places-backed destination search with local fallback
 - persisted trip/session/history flows
 - diagnostics and settings screens backed by real data
 
@@ -73,7 +74,6 @@ These are the main remaining gaps before calling the project fully finished:
 - deeper live ETA refresh behavior during an active monitored trip
 - broader end-to-end scenario testing
 - richer UI polish and edge-state refinement
-- replacing sample place search with real provider-backed search
 - release/store readiness items such as privacy/distribution/final hardening
 
 So the app is substantial and usable for development, but not fully production-finished.
@@ -102,12 +102,13 @@ This is required for Android builds.
 
 - `MAPS_API_KEY`
 
-This enables Google transit route preview and ETA refresh in `data:routing`.
+This enables Google Places destination search and Google transit route preview / ETA refresh.
 
 Without it:
 
 - the app still builds
 - the app still runs
+- place search falls back to local sample results
 - the app falls back to destination-only monitoring
 
 With it:
@@ -115,6 +116,7 @@ With it:
 - trip setup can fetch a route preview
 - route snapshots can be cached per trip
 - live trip and history flows can show richer route context
+- place search can use Google Places instead of the local fallback list
 
 ## 5. Exact File To Update
 
@@ -134,25 +136,29 @@ MAPS_API_KEY=REPLACE_WITH_YOUR_KEY
 
 which already exists in `local.properties.template`.
 
+`MAPS_API_KEY` can also be passed as a Gradle property, but `local.properties` is the normal local-development path.
+
 ## 6. Which APIs To Enable
 
 ### Needed now
 
 - `Directions API`
+- `Places API`
 
-This is the one the current routing code actually calls.
+Why:
+
+- `Directions API` is used by the current transit routing code.
+- `Places API` is used by the provider-backed destination search path.
 
 ### Likely needed later
 
-- `Places API`
 - `Maps SDK for Android`
 
 Important current note:
 
-- the project has `google-places` dependency present
-- but the current place search screen still uses local/sample results rather than a fully wired Google Places flow
+- the app can still run without `Places API` by using the local fallback list
 
-So if you only want the current code to work as implemented, `Directions API` is the most important one.
+So if you only want routing previews, `Directions API` is the most important one. If you also want real place search, enable `Places API`.
 
 ## 7. What Is Not Needed Right Now
 
@@ -173,6 +179,7 @@ The app is currently offline-first and does not depend on a custom backend to bu
 ### If `MAPS_API_KEY` is set
 
 - routing module uses the Google transit provider
+- place search uses Google Places
 - trip setup can show route preview
 - route snapshots are cached against trip ids
 - live trip and trip summary can show route details
@@ -180,6 +187,7 @@ The app is currently offline-first and does not depend on a custom backend to bu
 ### If `MAPS_API_KEY` is missing
 
 - routing gracefully falls back
+- place search uses the local fallback list
 - trip setup shows destination-only behavior
 - the app does not block the user from starting a trip
 - the app remains buildable
@@ -203,9 +211,9 @@ If you want development to continue smoothly, the most useful thing you can prov
 
 1. a valid `sdk.dir`
 2. a `MAPS_API_KEY`
-3. that key with `Directions API` enabled
+3. that key with `Directions API` and `Places API` enabled
 
-That is enough for the current routing-backed app behavior.
+That is enough for the current routing-backed and provider-backed place search behavior.
 
 ## 11. Short Answer
 
@@ -216,7 +224,7 @@ To build the app on your machine:
 To unlock the current route-aware behavior:
 
 - add `MAPS_API_KEY`
-- enable `Directions API`
+- enable `Directions API` and `Places API`
 
 To fully finish the whole product:
 

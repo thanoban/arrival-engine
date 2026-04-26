@@ -18,6 +18,8 @@ sdk.dir=C:\\Users\\<your-user>\\AppData\\Local\\Android\\Sdk
 MAPS_API_KEY=YOUR_GOOGLE_API_KEY
 ```
 
+The Gradle build reads `MAPS_API_KEY` from `local.properties` for local development. You can also pass it as a Gradle property when needed.
+
 What each value means:
 
 - `sdk.dir`
@@ -25,7 +27,7 @@ What each value means:
   - required for Android builds
 - `MAPS_API_KEY`
   - Google API key used by the current routing integration
-  - enables transit route preview and ETA refresh support
+  - enables transit route preview, ETA refresh support, and provider-backed destination search
 
 ## 2. APIs You Should Enable Now
 
@@ -38,18 +40,24 @@ Why:
 - the current `GoogleTransitDataSource` calls the Google Directions transit endpoint
 - without this API, route preview will fail even if the key exists
 
+### Required for provider-backed destination search
+
+- `Places API`
+
+Why:
+
+- the current place search repository uses Google Places when `MAPS_API_KEY` is configured
+- without this API, the app can still use the local fallback list, but real place search will fail
+
 ## 3. APIs Likely Needed Later
 
 These are not strictly required for the current code path, but they are likely part of the later full product path.
 
-- `Places API`
 - `Maps SDK for Android`
 
 Why:
 
-- the repo already includes related dependencies
-- the long-term plan includes richer place search and map-based integrations
-- the current place search screen is still sample-data based, not fully provider-backed
+- the long-term plan includes map-based integrations
 
 ## 4. What Happens If You Do Not Add `MAPS_API_KEY`
 
@@ -65,6 +73,7 @@ But it falls back to:
 - destination-only monitoring
 - no live Google route preview
 - no trip-scoped cached route details from the provider
+- local fallback destination search instead of Google Places search
 
 So this key is recommended, not a hard blocker for all development.
 
@@ -93,7 +102,6 @@ These are not current build blockers, but they will matter before calling the pr
 ### Product/API side
 
 - decide whether to keep direct Google routing or introduce a backend layer
-- replace sample place search with real Places-backed search
 - decide whether Maps SDK UI is part of the final product
 
 ### Release/ops side
@@ -109,6 +117,7 @@ These are not current build blockers, but they will matter before calling the pr
 For your `MAPS_API_KEY`, you should:
 
 - enable `Directions API`
+- enable `Places API`
 - restrict the key appropriately in Google Cloud Console
 - avoid using an unrestricted production key
 
@@ -125,9 +134,10 @@ If you want the smallest possible setup to continue development:
 2. set `sdk.dir`
 3. create a Google API key
 4. enable `Directions API`
-5. put that key into `local.properties`
+5. enable `Places API`
+6. put that key into `local.properties`
 
-That is enough for the current repo to build and use the route-aware parts.
+That is enough for the current repo to build and use the route-aware and provider-backed place-search parts.
 
 ## 9. Short Checklist
 
@@ -135,8 +145,9 @@ That is enough for the current repo to build and use the route-aware parts.
 - [ ] `sdk.dir` set in `local.properties`
 - [ ] Google API key created
 - [ ] `Directions API` enabled
+- [ ] `Places API` enabled
 - [ ] `MAPS_API_KEY` added to `local.properties`
-- [ ] optional future APIs enabled later: `Places API`, `Maps SDK for Android`
+- [ ] optional future APIs enabled later: `Maps SDK for Android`
 
 ## 10. Where This Fits With The Other Docs
 
