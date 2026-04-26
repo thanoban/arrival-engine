@@ -68,6 +68,14 @@ class NotificationHelper @Inject constructor(
                     enableVibration(true)
                     vibrationPattern = IMMINENT_VIBRATION_PATTERN
                 },
+                NotificationChannel(
+                    CHANNEL_DEPARTURE,
+                    "NearWake Departures",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = "Flexible leave-by reminders from learned commute patterns"
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                },
             ),
         )
     }
@@ -201,6 +209,21 @@ class NotificationHelper @Inject constructor(
             .build()
     }
 
+    fun buildDepartureReminderNotification(
+        destinationName: String,
+        leaveByLabel: String,
+    ): Notification =
+        NotificationCompat.Builder(context, CHANNEL_DEPARTURE)
+            .setSmallIcon(android.R.drawable.ic_dialog_map)
+            .setContentTitle("Leave by $leaveByLabel")
+            .setContentText("Start your trip to $destinationName.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent())
+            .build()
+
     fun notify(id: Int, notification: Notification) {
         notificationManager.notify(id, notification)
     }
@@ -234,7 +257,11 @@ class NotificationHelper @Inject constructor(
         const val CHANNEL_RECOVERY = "nearwake_recovery"
         const val CHANNEL_APPROACH = "nearwake_approach"
         const val CHANNEL_IMMINENT = "nearwake_imminent"
+        const val CHANNEL_DEPARTURE = "nearwake_departure"
         const val EXTRA_TRIP_ID = "extra_trip_id"
+        const val EXTRA_PREDICTION_ID = "extra_prediction_id"
+        const val EXTRA_DESTINATION_NAME = "extra_destination_name"
+        const val EXTRA_LEAVE_BY_LABEL = "extra_leave_by_label"
         val IMMINENT_VIBRATION_PATTERN = longArrayOf(0L, 200L, 100L, 400L)
     }
 }

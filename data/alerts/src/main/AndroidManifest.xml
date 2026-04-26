@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <receiver
+            android:name=".DepartureReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        <receiver
             android:name=".AlertReminderReceiver"
             android:enabled="true"
             android:exported="false" />

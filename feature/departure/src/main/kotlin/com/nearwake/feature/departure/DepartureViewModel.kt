@@ -1,6 +1,9 @@
 package com.nearwake.feature.departure
 
 import androidx.lifecycle.ViewModel
+import com.nearwake.core.datastore.UserPreferencesDataStore
+import com.nearwake.data.alerts.DepartureReminderScheduleResult
+import com.nearwake.data.alerts.DepartureReminderScheduler
 import com.nearwake.data.patterns.CommutePredictionRepository
 import com.nearwake.domain.commute.CommutePrediction
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,6 +15,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -20,6 +24,8 @@ import kotlinx.datetime.toLocalDateTime
 data class DepartureUiState(
     val predictions: List<DeparturePredictionUiModel> = emptyList(),
     val isRefreshing: Boolean = false,
+    val remindersEnabled: Boolean = true,
+    val scheduleStatus: String = "Checking reminders.",
 )
 
 data class DeparturePredictionUiModel(
@@ -33,6 +39,8 @@ data class DeparturePredictionUiModel(
 @HiltViewModel
 class DepartureViewModel @Inject constructor(
     private val repository: CommutePredictionRepository,
+    private val userPreferencesDataStore: UserPreferencesDataStore,
+    private val departureReminderScheduler: DepartureReminderScheduler,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(DepartureUiState())
@@ -40,11 +48,23 @@ class DepartureViewModel @Inject constructor(
 
     init {
         scope.launch {
-            repository.observePredictions().collect { predictions ->
-                mutableState.value = mutableState.value.copy(
-                    predictions = predictions.toUiModels(),
-                )
-            }
+            userPreferencesDataStore.preferences
+                .combine(repository.observePredictions()) { preferences, predictions ->
+                    preferences.departureRemindersEnabled to predictions
+                }
+                .collect { (remindersEnabled, predictions) ->
+                    val scheduleStatus = if (remindersEnabled) {
+                        departureReminderScheduler.scheduleToday(predictions).statusLabel()
+                    } else {
+                        departureReminderScheduler.cancel(predictions.map { it.id })
+                        "Departure reminders are off."
+                    }
+                    mutableState.value = mutableState.value.copy(
+                        predictions = predictions.toUiModels(),
+                        remindersEnabled = remindersEnabled,
+                        scheduleStatus = scheduleStatus,
+                    )
+                }
         }
         scope.launch {
             mutableState.value = mutableState.value.copy(isRefreshing = true)
@@ -53,11 +73,27 @@ class DepartureViewModel @Inject constructor(
         }
     }
 
+    fun setDepartureRemindersEnabled(enabled: Boolean) {
+        scope.launch {
+            userPreferencesDataStore.setDepartureRemindersEnabled(enabled)
+        }
+    }
+
     override fun onCleared() {
         scope.cancel()
         super.onCleared()
     }
 }
+
+private fun DepartureReminderScheduleResult.statusLabel(): String =
+    when {
+        scheduledCount > 0 && nextReminderLabel != null ->
+            "Next flexible reminder: $nextReminderLabel."
+        skippedPastCount > 0 ->
+            "Today's learned leave-by times have already passed."
+        else ->
+            "No learned departures are scheduled for today."
+    }
 
 private fun List<CommutePrediction>.toUiModels(): List<DeparturePredictionUiModel> {
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())

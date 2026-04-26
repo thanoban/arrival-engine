@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,8 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalSpacing
-import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakePrimaryButton
@@ -31,8 +32,9 @@ fun DepartureReminderScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
+    val themeColors = LocalNearWakeColors.current
 
-    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+    ProvideNearWakeStateAccent(themeColors.safeBase) {
         NearWakeScaffold(
             title = "Leave by",
             subtitle = "Based on your trip history",
@@ -40,6 +42,31 @@ fun DepartureReminderScreen(
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
+            SurfaceCard {
+                NearWakeSectionHeader(text = "Reminder scheduling")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = state.scheduleStatus,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Switch(
+                        checked = state.remindersEnabled,
+                        onCheckedChange = viewModel::setDepartureRemindersEnabled,
+                    )
+                }
+                Text(
+                    text = "NearWake uses flexible Android alarms for leave-by reminders, so delivery may vary by a few minutes to protect battery.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
             if (state.isRefreshing) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

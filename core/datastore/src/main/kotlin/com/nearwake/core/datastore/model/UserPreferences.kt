@@ -18,4 +18,5 @@ data class UserPreferences(
     val diagnosticsEnabled: Boolean = false,
     val notificationChannelVersion: Int = 1,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val departureRemindersEnabled: Boolean = true,
 )

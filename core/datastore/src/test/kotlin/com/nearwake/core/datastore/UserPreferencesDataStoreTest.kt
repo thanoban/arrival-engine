@@ -21,6 +21,7 @@ class UserPreferencesDataStoreTest {
         val preferences = store.preferences.first()
 
         assertEquals(ThemeMode.SYSTEM, preferences.themeMode)
+        assertEquals(true, preferences.departureRemindersEnabled)
     }
 
     @Test
@@ -30,6 +31,15 @@ class UserPreferencesDataStoreTest {
         store.updateThemeMode(ThemeMode.DARK)
 
         assertEquals(ThemeMode.DARK, store.preferences.first().themeMode)
+    }
+
+    @Test
+    fun `setDepartureRemindersEnabled persists departure reminder preference`() = runTest {
+        val store = userPreferencesDataStore()
+
+        store.setDepartureRemindersEnabled(false)
+
+        assertEquals(false, store.preferences.first().departureRemindersEnabled)
     }
 
     private fun TestScope.userPreferencesDataStore(): UserPreferencesDataStore =

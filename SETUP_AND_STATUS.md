@@ -31,6 +31,7 @@ What is already implemented:
 - Google transit routing integration
 - Google Places-backed destination search with local fallback
 - persisted light/dark/system appearance mode
+- flexible leave-by reminders from learned commute predictions
 - persisted trip/session/history flows
 - diagnostics and settings screens backed by real data
 
@@ -55,6 +56,7 @@ These areas are meaningfully developed:
 - history and trip summary
 - settings
 - appearance/theme selection
+- departure reminder scheduling
 - diagnostics
 - route cache and route summaries
 - monitoring session persistence
@@ -76,6 +78,7 @@ These are the main remaining gaps before calling the project fully finished:
 - deeper live ETA refresh behavior during an active monitored trip
 - broader end-to-end scenario testing
 - richer UI polish and edge-state refinement
+- real-device validation for flexible reminder delivery timing
 - release/store readiness items such as privacy/distribution/final hardening
 
 So the app is substantial and usable for development, but not fully production-finished.

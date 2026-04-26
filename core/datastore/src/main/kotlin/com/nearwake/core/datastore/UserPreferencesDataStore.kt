@@ -30,6 +30,7 @@ class UserPreferencesDataStore(
             diagnosticsEnabled = preferences[DIAGNOSTICS_ENABLED] ?: false,
             notificationChannelVersion = preferences[NOTIFICATION_CHANNEL_VERSION] ?: 1,
             themeMode = preferences[THEME_MODE]?.toEnumOrDefault(ThemeMode.SYSTEM) ?: ThemeMode.SYSTEM,
+            departureRemindersEnabled = preferences[DEPARTURE_REMINDERS_ENABLED] ?: true,
         )
     }
 
@@ -81,6 +82,12 @@ class UserPreferencesDataStore(
         }
     }
 
+    suspend fun setDepartureRemindersEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[DEPARTURE_REMINDERS_ENABLED] = enabled
+        }
+    }
+
     suspend fun updateAll(values: UserPreferences) {
         dataStore.edit { preferences ->
             preferences[DEFAULT_ALERT_LEAD_MINUTES] = values.defaultAlertLeadMinutes
@@ -91,6 +98,7 @@ class UserPreferencesDataStore(
             preferences[DIAGNOSTICS_ENABLED] = values.diagnosticsEnabled
             preferences[NOTIFICATION_CHANNEL_VERSION] = values.notificationChannelVersion
             preferences[THEME_MODE] = values.themeMode.name
+            preferences[DEPARTURE_REMINDERS_ENABLED] = values.departureRemindersEnabled
         }
     }
 
@@ -103,6 +111,7 @@ class UserPreferencesDataStore(
         private val DIAGNOSTICS_ENABLED = booleanPreferencesKey("diagnostics_enabled")
         private val NOTIFICATION_CHANNEL_VERSION = intPreferencesKey("notification_channel_version")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
+        private val DEPARTURE_REMINDERS_ENABLED = booleanPreferencesKey("departure_reminders_enabled")
     }
 }
 

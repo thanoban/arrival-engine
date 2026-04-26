@@ -71,6 +71,7 @@ NearWake is already beyond scaffold stage. The app currently has:
 - Destination-only fallback when routing is unavailable.
 - CSV trip export from history.
 - Persisted light, dark, and system appearance modes.
+- Flexible leave-by reminders from learned commute predictions.
 
 ## Main Open Development Slices
 
@@ -177,21 +178,23 @@ If a module has no tests yet, `assembleDebug` must still pass.
 Status:
 
 ```text
-Planned
+Done
 ```
 
-Target:
+Completed:
 
-- Schedule "Leave by HH:MM for Destination" reminders from learned commute predictions.
-- Decide between WorkManager and AlarmManager based on exact timing needs.
-- Keep battery behavior honest and visible.
-- Add notification channel or reuse an appropriate existing channel.
-- Persist enough state to recover after reboot if the feature is enabled.
+- Scheduled "Leave by HH:MM for Destination" reminders from learned commute predictions.
+- Used flexible `AlarmManager` windows for clock-time reminders without exact-alarm permission.
+- Kept battery behavior honest and visible in the Departure screen.
+- Added a dedicated departure notification channel.
+- Added a persisted departure-reminder enabled flag.
+- Added boot rescheduling when reminders are enabled.
+- Added focused planner and DataStore tests.
 
 Verification for this slice:
 
 ```powershell
-.\gradlew.bat :data:patterns:test :data:alerts:test :app:assembleDebug
+.\gradlew.bat :core:datastore:testDebugUnitTest :data:patterns:test :data:alerts:test :feature:departure:testDebugUnitTest :app:assembleDebug
 ```
 
 ### Slice 5 - Field Test And Release Hardening
@@ -212,10 +215,9 @@ Target:
 
 ## Recommended First Implementation Order
 
-1. Add departure reminder scheduling.
-2. Run field testing and release hardening.
+1. Run field testing and release hardening.
 
-This order keeps work useful immediately while reducing risk. Departure reminders are reachable in the app, destination search now has a provider-backed path with local fallback, and appearance mode is configurable from Settings.
+This order keeps work useful immediately while reducing risk. Departure reminders are reachable and scheduled, destination search has a provider-backed path with local fallback, and appearance mode is configurable from Settings.
 
 ## Standard Verification Set
 

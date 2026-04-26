@@ -28,6 +28,9 @@ class CommutePredictionRepository @Inject constructor(
             entities.map { it.toDomain() }
         }
 
+    suspend fun getPredictions(): List<CommutePrediction> =
+        commutePredictionDao.getPredictions().map { it.toDomain() }
+
     suspend fun refreshPredictions() {
         val trips = tripDao.getCompletedTrips()
         val places = savedPlaceDao.getAllSavedPlaces().associateBy { it.id }

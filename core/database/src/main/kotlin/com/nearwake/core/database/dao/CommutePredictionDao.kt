@@ -11,6 +11,9 @@ interface CommutePredictionDao {
     @Query("SELECT * FROM commute_predictions ORDER BY trip_count DESC")
     fun observePredictions(): Flow<List<CommutePredictionEntity>>
 
+    @Query("SELECT * FROM commute_predictions ORDER BY trip_count DESC")
+    suspend fun getPredictions(): List<CommutePredictionEntity>
+
     @Query("SELECT * FROM commute_predictions WHERE destination_id = :destinationId LIMIT 1")
     suspend fun getPredictionForDestination(destinationId: String): CommutePredictionEntity?
 

@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
+    implementation(project(":domain:commute"))
     implementation(project(":domain:trip"))
     implementation(project(":domain:location"))
     implementation(project(":domain:routing"))
