@@ -220,6 +220,7 @@ Completed so far inside this slice:
 - Added a direct app-settings path for denied or settings-only cases.
 - Added focused permission-readiness unit coverage.
 - Added a dedicated release-readiness checklist covering field tests, permission disclosures, privacy notes, and release gates.
+- Added a dedicated field-test runbook with a per-trip logging template and blocker criteria.
 
 Still remaining in this slice:
 

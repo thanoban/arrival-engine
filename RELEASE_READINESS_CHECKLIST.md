@@ -2,6 +2,8 @@
 
 This file is the practical pre-release guide for the current app state.
 
+Pair it with [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md) when you are actually running trips on a device.
+
 Use it when you want to answer:
 
 - is the app ready for internal testing, field testing, or store release
