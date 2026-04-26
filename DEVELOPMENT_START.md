@@ -1,0 +1,257 @@
+# NearWake Development Start
+
+This is the active development-start tracker for the NearWake Android app.
+
+Use this file when beginning a new implementation thread. It captures the current build-verified state, the first development slices to work on, and the commands that should be run before each slice is considered finished.
+
+## Current Verified Baseline
+
+Workspace:
+
+```text
+D:\PROJECTS\Startup\LocationTracker
+```
+
+Project:
+
+```text
+NearWake
+Android app
+Package: com.nearwake.app
+```
+
+Verified on 2026-04-26 with:
+
+```powershell
+.\gradlew.bat :domain:trip:test :core:network:test :data:routing:test :data:alerts:test :app:assembleDebug
+```
+
+Result:
+
+```text
+BUILD SUCCESSFUL
+```
+
+## Development Rules For This Repo
+
+- Use `.\gradlew.bat`, not global `gradle`.
+- Keep each finished part small and independently verifiable.
+- Commit and push each finished part separately.
+- Do not include generated/editor folders in commits.
+- Preserve the existing module structure: `app`, `core`, `domain`, `data`, and `feature`.
+- Add production features through the correct layer, not as screen-only shortcuts.
+- Keep docs honest: separate implemented, partial, and planned work.
+
+Known generated/editor folders currently visible in git status:
+
+```text
+.vscode/
+build-logic/convention/bin/
+domain/location/bin/
+domain/routing/bin/
+domain/trip/bin/
+```
+
+Do not stage these unless a future task explicitly makes them intentional project files.
+
+## Current Product State
+
+NearWake is already beyond scaffold stage. The app currently has:
+
+- Compose app shell and navigation.
+- Onboarding and startup gating.
+- Home, permissions, place search, trip setup, live trip, alert, recovery, walk finish, companion, history, settings, and diagnostics screens.
+- Room database with persisted places, trips, trip sessions, route snapshots, alert events, diagnostics events, and commute predictions.
+- DataStore preferences.
+- Foreground trip monitoring service.
+- WorkManager recovery worker.
+- Geofence and activity-recognition monitoring foundations.
+- Alert stage evaluation with confidence and bias-early behavior.
+- Google Directions transit routing when `MAPS_API_KEY` is configured.
+- Destination-only fallback when routing is unavailable.
+- CSV trip export from history.
+
+## Main Open Development Slices
+
+### Slice 1 - Wire Departure Reminders Into The App
+
+Status:
+
+```text
+Partial
+```
+
+Already present:
+
+- `:domain:commute`
+- `:data:patterns`
+- `:feature:departure`
+- Room database version 5 with `commute_predictions`
+- `DepartureReminderScreen`
+- `DepartureViewModel`
+
+Still needed:
+
+- Add `:feature:departure` dependency to `:app`.
+- Add a `Departure` route to `NearWakeRoute`.
+- Wire `DepartureReminderScreen` into `NearWakeNavHost`.
+- Add a visible entry point from Home or Settings.
+- Ensure the "Start trip" CTA navigates to the existing trip setup flow.
+- Add focused tests where useful.
+
+Verification for this slice:
+
+```powershell
+.\gradlew.bat :domain:commute:test :data:patterns:test :feature:departure:testDebugUnitTest :app:assembleDebug
+```
+
+If a module has no tests yet, `assembleDebug` must still pass.
+
+### Slice 2 - Replace Sample Place Search With Real Provider Search
+
+Status:
+
+```text
+Planned
+```
+
+Current issue:
+
+- `PlaceSearchViewModel` still uses three local sample places.
+
+Target:
+
+- Add a proper place-search data path.
+- Keep saved places persisted through `SavedPlaceDao`.
+- Use Google Places or a provider abstraction so the screen is not tied directly to SDK calls.
+- Keep destination-only fallback behavior if provider search fails.
+
+Likely structure:
+
+```text
+domain/location or domain/places
+data/location or data/places
+feature/places
+```
+
+External setup likely needed:
+
+- Google API key.
+- Places API enabled.
+- Key restrictions appropriate for Android usage.
+
+Verification for this slice:
+
+```powershell
+.\gradlew.bat :feature:places:testDebugUnitTest :app:assembleDebug
+```
+
+### Slice 3 - Implement Light / Dark Theme Support
+
+Status:
+
+```text
+Planned
+```
+
+Current issue:
+
+- `NearWakeTheme(darkTheme: Boolean)` accepts a parameter, but the implementation always uses the dark color scheme.
+
+Target:
+
+- Add light color tokens.
+- Add persisted theme mode: `SYSTEM`, `LIGHT`, `DARK`.
+- Resolve the actual theme in `MainActivity`.
+- Add an Appearance section in Settings.
+- Keep all existing screens inheriting semantic Material colors.
+
+Verification for this slice:
+
+```powershell
+.\gradlew.bat :core:designsystem:testDebugUnitTest :core:datastore:testDebugUnitTest :feature:settings:testDebugUnitTest :app:assembleDebug
+```
+
+If a module has no tests yet, `assembleDebug` must still pass.
+
+### Slice 4 - Add Departure Reminder Notification Scheduling
+
+Status:
+
+```text
+Planned
+```
+
+Target:
+
+- Schedule "Leave by HH:MM for Destination" reminders from learned commute predictions.
+- Decide between WorkManager and AlarmManager based on exact timing needs.
+- Keep battery behavior honest and visible.
+- Add notification channel or reuse an appropriate existing channel.
+- Persist enough state to recover after reboot if the feature is enabled.
+
+Verification for this slice:
+
+```powershell
+.\gradlew.bat :data:patterns:test :data:alerts:test :app:assembleDebug
+```
+
+### Slice 5 - Field Test And Release Hardening
+
+Status:
+
+```text
+Planned
+```
+
+Target:
+
+- Run real trips with screen on, screen off, tunnels or low signal, and transfers.
+- Confirm notification behavior on target Android versions.
+- Check permission flows.
+- Check battery impact.
+- Prepare privacy and Play Store disclosure material.
+
+## Recommended First Implementation Order
+
+1. Wire `feature:departure` into the app.
+2. Replace sample place search with real provider-backed search.
+3. Implement light/dark theme support.
+4. Add departure reminder scheduling.
+5. Run field testing and release hardening.
+
+This order keeps work useful immediately while reducing risk. The departure feature is already partially built, so wiring it first converts existing code into reachable product behavior.
+
+## Standard Verification Set
+
+Use this after broad app-level changes:
+
+```powershell
+.\gradlew.bat :domain:trip:test :core:network:test :data:routing:test :data:alerts:test :app:assembleDebug
+```
+
+Use this before claiming release-build readiness:
+
+```powershell
+.\gradlew.bat :app:assembleRelease
+```
+
+Use this if Gradle or Windows file locks behave strangely:
+
+```powershell
+.\gradlew.bat --stop
+```
+
+Then rerun the focused verification command.
+
+## Done Criteria For Each Development Part
+
+A part is done only when:
+
+- The intended app behavior is reachable from navigation or documented as intentionally internal.
+- The implementation follows the module boundaries.
+- Persisted data and external API requirements are documented.
+- Focused verification passes.
+- Git status is reviewed.
+- Only relevant source/docs files are staged.
+- The part is committed and pushed separately.
