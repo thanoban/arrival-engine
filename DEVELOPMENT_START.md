@@ -78,7 +78,7 @@ NearWake is already beyond scaffold stage. The app currently has:
 Status:
 
 ```text
-Partial
+Done
 ```
 
 Already present:
@@ -90,14 +90,18 @@ Already present:
 - `DepartureReminderScreen`
 - `DepartureViewModel`
 
-Still needed:
+Completed:
 
 - Add `:feature:departure` dependency to `:app`.
 - Add a `Departure` route to `NearWakeRoute`.
 - Wire `DepartureReminderScreen` into `NearWakeNavHost`.
 - Add a visible entry point from Home or Settings.
 - Ensure the "Start trip" CTA navigates to the existing trip setup flow.
-- Add focused tests where useful.
+
+Remaining departure work now belongs to Slice 4:
+
+- Add reminder notification scheduling.
+- Add any focused tests needed for scheduling behavior.
 
 Verification for this slice:
 
@@ -214,13 +218,12 @@ Target:
 
 ## Recommended First Implementation Order
 
-1. Wire `feature:departure` into the app.
-2. Replace sample place search with real provider-backed search.
-3. Implement light/dark theme support.
-4. Add departure reminder scheduling.
-5. Run field testing and release hardening.
+1. Replace sample place search with real provider-backed search.
+2. Implement light/dark theme support.
+3. Add departure reminder scheduling.
+4. Run field testing and release hardening.
 
-This order keeps work useful immediately while reducing risk. The departure feature is already partially built, so wiring it first converts existing code into reachable product behavior.
+This order keeps work useful immediately while reducing risk. Departure reminders are now reachable in the app, so the next highest-value slice is replacing sample destination search with real provider-backed search.
 
 ## Standard Verification Set
 

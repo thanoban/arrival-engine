@@ -44,6 +44,7 @@ fun HomeScreen(
     onHistory: () -> Unit,
     onSettings: () -> Unit,
     onPermissions: () -> Unit,
+    onDepartureReminders: () -> Unit,
     onOpenTrip: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -73,6 +74,11 @@ fun HomeScreen(
                 delayMs = 60,
             )
 
+            DepartureReminderCard(
+                onDepartureReminders = onDepartureReminders,
+                delayMs = 100,
+            )
+
             state.rearmTrip?.let { rearmTrip ->
                 RearmCard(
                     destinationName = rearmTrip.destinationName,
@@ -87,6 +93,37 @@ fun HomeScreen(
                 onViewAll = onHistory,
             )
         }
+    }
+}
+
+@Composable
+private fun DepartureReminderCard(
+    onDepartureReminders: () -> Unit,
+    delayMs: Int,
+) {
+    val spacing = LocalSpacing.current
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(delayMs.toLong())
+        visible = true
+    }
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = NearWakeMotion.Base),
+        label = "departure-alpha",
+    )
+    SurfaceCard(modifier = Modifier.alpha(alpha)) {
+        NearWakeSectionHeader(text = "Depart on time")
+        Text(
+            text = "See learned leave-by times from your trip history.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        NearWakePrimaryButton(
+            modifier = Modifier.padding(top = spacing.md).fillMaxWidth(),
+            text = "View leave-by times",
+            onClick = onDepartureReminders,
+        )
     }
 }
 

@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.nearwake.feature.alerts.AlertScreen
 import com.nearwake.feature.alerts.RecoveryScreen
 import com.nearwake.feature.companion.CompanionScreen
+import com.nearwake.feature.departure.DepartureReminderScreen
 import com.nearwake.feature.diagnostics.DiagnosticsScreen
 import com.nearwake.feature.history.HistoryScreen
 import com.nearwake.feature.history.TripSummaryScreen
@@ -39,6 +40,7 @@ fun NearWakeNavHost(
                 onHistory = { navController.navigate(NearWakeRoute.History.route) },
                 onSettings = { navController.navigate(NearWakeRoute.Settings.route) },
                 onPermissions = { navController.navigate(NearWakeRoute.Permissions.route) },
+                onDepartureReminders = { navController.navigate(NearWakeRoute.Departure.route) },
                 onOpenTrip = { tripId ->
                     navController.navigate(NearWakeRoute.LiveTrip.createRoute(tripId))
                 },
@@ -98,6 +100,14 @@ fun NearWakeNavHost(
                 onBack = { navController.popBackStack() },
                 onTripSelected = { tripId ->
                     navController.navigate(NearWakeRoute.TripSummary.createRoute(tripId))
+                },
+            )
+        }
+        composable(NearWakeRoute.Departure.route) {
+            DepartureReminderScreen(
+                onBack = { navController.popBackStack() },
+                onStartTrip = { destinationId ->
+                    navController.navigate(NearWakeRoute.TripSetup.createRoute(destinationId))
                 },
             )
         }

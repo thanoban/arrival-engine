@@ -62,6 +62,7 @@ dependencies {
     implementation(project(":feature:diagnostics"))
     implementation(project(":feature:walkfinish"))
     implementation(project(":feature:companion"))
+    implementation(project(":feature:departure"))
 
     // AndroidX
     implementation(libs.androidx.core.ktx)
