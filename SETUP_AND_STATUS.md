@@ -32,6 +32,7 @@ What is already implemented:
 - Google Places-backed destination search with local fallback
 - persisted light/dark/system appearance mode
 - flexible leave-by reminders from learned commute predictions
+- runtime permission readiness and Android settings guidance
 - persisted trip/session/history flows
 - diagnostics and settings screens backed by real data
 
@@ -48,6 +49,7 @@ These areas are meaningfully developed:
 
 - onboarding
 - permissions flow
+- live permission status and staged permission requests
 - home screen
 - place selection flow
 - trip setup

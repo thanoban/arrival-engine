@@ -19,6 +19,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - `data:location` now includes Google Places-backed destination search with a local fallback when the API key is not configured.
 - Light, dark, and system theme modes are persisted through DataStore and selectable from Settings.
 - Learned commute predictions can now schedule flexible leave-by departure reminders with reboot recovery.
+- The permissions screen now reads live Android permission state, stages requests, and routes denied cases to app settings.
 - Trip setup, live trip, monitoring service recovery, and trip summary screens now surface real persisted route/session data instead of only placeholder values.
 
 ## Docs
@@ -37,6 +38,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - Google Places-backed destination search was added through the domain/data location layer.
 - Light/dark theme support was added with semantic design-system colors and a Settings appearance control.
 - Departure reminders now use a tested planner, flexible alarms, a dedicated notification channel, and boot rescheduling.
+- Permission readiness now reflects real runtime state instead of placeholder values and can request or deep-link to the needed Android settings.
 - Route snapshots are cached per trip and shown in trip setup, live trip, and trip summary flows.
 - `core:network` now provides shared `OkHttpClient`, shared `Json`, and a `Retrofit.Builder`.
 - `TripMonitoringService` now restores and persists `TripSession` state through Room while it runs.

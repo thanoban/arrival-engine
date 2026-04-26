@@ -48,7 +48,6 @@ fun NearWakeNavHost(
         }
         composable(NearWakeRoute.Permissions.route) {
             PermissionsScreen(
-                onGrantLocation = { navController.popBackStack() },
                 onUseLimitedMode = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
             )

@@ -202,7 +202,7 @@ Verification for this slice:
 Status:
 
 ```text
-Planned
+In progress
 ```
 
 Target:
@@ -212,6 +212,19 @@ Target:
 - Check permission flows.
 - Check battery impact.
 - Prepare privacy and Play Store disclosure material.
+
+Completed so far inside this slice:
+
+- Replaced placeholder permission status with live Android permission checks.
+- Added staged permission requests for notifications, precise location, activity recognition, and background location.
+- Added a direct app-settings path for denied or settings-only cases.
+- Added focused permission-readiness unit coverage.
+
+Still remaining in this slice:
+
+- Real trip field testing across the target device scenarios.
+- Notification timing validation on real devices and Android versions.
+- Privacy/disclosure and store-release material.
 
 ## Recommended First Implementation Order
 
