@@ -23,8 +23,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalSpacing
-import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.NearWakeMotion
 import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.ElevatedCard
@@ -50,8 +50,9 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
+    val themeColors = LocalNearWakeColors.current
 
-    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+    ProvideNearWakeStateAccent(themeColors.safeBase) {
         NearWakeScaffold(
             title = "NearWake",
             subtitle = null,

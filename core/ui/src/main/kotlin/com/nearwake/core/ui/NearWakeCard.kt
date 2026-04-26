@@ -11,10 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalRadius
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.LocalStateAccent
-import com.nearwake.core.designsystem.NearWakeColors
 
 @Composable
 fun NearWakeCard(
@@ -29,10 +29,11 @@ fun SurfaceCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val colors = LocalNearWakeColors.current
     NearWakeCardFrame(
         modifier = modifier,
-        containerColor = NearWakeColors.BgSurface,
-        borderColor = NearWakeColors.BorderSubtle,
+        containerColor = colors.bgSurface,
+        borderColor = colors.borderSubtle,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(LocalRadius.current.md),
         padding = LocalSpacing.current.lg,
         content = content,
@@ -44,10 +45,11 @@ fun ElevatedCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val colors = LocalNearWakeColors.current
     NearWakeCardFrame(
         modifier = modifier,
-        containerColor = NearWakeColors.BgElevated,
-        borderColor = NearWakeColors.BorderDefault,
+        containerColor = colors.bgElevated,
+        borderColor = colors.borderDefault,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(LocalRadius.current.lg),
         padding = LocalSpacing.current.xl,
         content = content,

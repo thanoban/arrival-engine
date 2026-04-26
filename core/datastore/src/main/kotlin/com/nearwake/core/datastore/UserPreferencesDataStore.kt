@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.nearwake.core.datastore.model.ThemeMode
 import com.nearwake.core.datastore.model.UserPreferences
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
@@ -28,6 +29,7 @@ class UserPreferencesDataStore(
             onboardingCompleted = preferences[ONBOARDING_COMPLETED] ?: false,
             diagnosticsEnabled = preferences[DIAGNOSTICS_ENABLED] ?: false,
             notificationChannelVersion = preferences[NOTIFICATION_CHANNEL_VERSION] ?: 1,
+            themeMode = preferences[THEME_MODE]?.toEnumOrDefault(ThemeMode.SYSTEM) ?: ThemeMode.SYSTEM,
         )
     }
 
@@ -73,6 +75,12 @@ class UserPreferencesDataStore(
         }
     }
 
+    suspend fun updateThemeMode(themeMode: ThemeMode) {
+        dataStore.edit { preferences ->
+            preferences[THEME_MODE] = themeMode.name
+        }
+    }
+
     suspend fun updateAll(values: UserPreferences) {
         dataStore.edit { preferences ->
             preferences[DEFAULT_ALERT_LEAD_MINUTES] = values.defaultAlertLeadMinutes
@@ -82,6 +90,7 @@ class UserPreferencesDataStore(
             preferences[ONBOARDING_COMPLETED] = values.onboardingCompleted
             preferences[DIAGNOSTICS_ENABLED] = values.diagnosticsEnabled
             preferences[NOTIFICATION_CHANNEL_VERSION] = values.notificationChannelVersion
+            preferences[THEME_MODE] = values.themeMode.name
         }
     }
 
@@ -93,5 +102,9 @@ class UserPreferencesDataStore(
         private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val DIAGNOSTICS_ENABLED = booleanPreferencesKey("diagnostics_enabled")
         private val NOTIFICATION_CHANNEL_VERSION = intPreferencesKey("notification_channel_version")
+        private val THEME_MODE = stringPreferencesKey("theme_mode")
     }
 }
+
+private inline fun <reified T : Enum<T>> String.toEnumOrDefault(default: T): T =
+    runCatching { enumValueOf<T>(this) }.getOrDefault(default)

@@ -27,22 +27,18 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalRadius
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.LocalStateAccent
-import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.NearWakeMotion
 
-enum class NearWakeChipState(
-    val base: Color,
-    val soft: Color,
-    val border: Color,
-) {
-    Safe(NearWakeColors.SafeBase, NearWakeColors.SafeSoft, NearWakeColors.SafeBorder),
-    Monitoring(NearWakeColors.MonitoringBase, NearWakeColors.MonitoringSoft, NearWakeColors.MonitoringBorder),
-    Approaching(NearWakeColors.ApproachBase, NearWakeColors.ApproachSoft, NearWakeColors.ApproachBorder),
-    Alert(NearWakeColors.AlertBase, NearWakeColors.AlertSoft, NearWakeColors.AlertBorder),
-    Neutral(NearWakeColors.TextSecondary, NearWakeColors.BgHighest, NearWakeColors.BorderDefault),
+enum class NearWakeChipState {
+    Safe,
+    Monitoring,
+    Approaching,
+    Alert,
+    Neutral,
 }
 
 @Composable
@@ -52,18 +48,19 @@ fun NearWakeStateChip(
     modifier: Modifier = Modifier,
 ) {
     val radius = LocalRadius.current
+    val colors = state.colors()
     Surface(
         modifier = modifier.defaultMinSize(minHeight = 28.dp),
         shape = RoundedCornerShape(radius.sm),
-        color = state.soft,
-        contentColor = state.base,
-        border = BorderStroke(1.dp, state.border),
+        color = colors.soft,
+        contentColor = colors.base,
+        border = BorderStroke(1.dp, colors.border),
     ) {
         Text(
             text = label,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = state.base,
+            color = colors.base,
         )
     }
 }
@@ -77,6 +74,7 @@ fun NearWakeSelectableChip(
 ) {
     val radius = LocalRadius.current
     val accent = LocalStateAccent.current
+    val colors = LocalNearWakeColors.current
     FilterChip(
         selected = selected,
         onClick = onClick,
@@ -85,13 +83,13 @@ fun NearWakeSelectableChip(
         border = FilterChipDefaults.filterChipBorder(
             enabled = true,
             selected = selected,
-            borderColor = NearWakeColors.BorderDefault,
+            borderColor = colors.borderDefault,
             selectedBorderColor = accent.copy(alpha = 0.65f),
         ),
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = NearWakeColors.BgElevated,
+            containerColor = colors.bgElevated,
             selectedContainerColor = accent.copy(alpha = 0.14f),
-            labelColor = NearWakeColors.TextSecondary,
+            labelColor = colors.textSecondary,
             selectedLabelColor = accent,
         ),
         label = { Text(label, style = MaterialTheme.typography.labelLarge) },
@@ -103,12 +101,35 @@ fun NearWakeSectionHeader(
     text: String,
     modifier: Modifier = Modifier,
 ) {
+    val colors = LocalNearWakeColors.current
     Text(
         text = text.uppercase(),
         modifier = modifier,
         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
-        color = NearWakeColors.TextTertiary,
+        color = colors.textTertiary,
     )
+}
+
+private data class ChipColors(
+    val base: Color,
+    val soft: Color,
+    val border: Color,
+)
+
+@Composable
+private fun NearWakeChipState.colors(): ChipColors {
+    val colors = LocalNearWakeColors.current
+    return when (this) {
+        NearWakeChipState.Safe -> ChipColors(colors.safeBase, colors.safeSoft, colors.safeBorder)
+        NearWakeChipState.Monitoring -> ChipColors(
+            colors.monitoringBase,
+            colors.monitoringSoft,
+            colors.monitoringBorder,
+        )
+        NearWakeChipState.Approaching -> ChipColors(colors.approachBase, colors.approachSoft, colors.approachBorder)
+        NearWakeChipState.Alert -> ChipColors(colors.alertBase, colors.alertSoft, colors.alertBorder)
+        NearWakeChipState.Neutral -> ChipColors(colors.textSecondary, colors.bgHighest, colors.borderDefault)
+    }
 }
 
 @Composable

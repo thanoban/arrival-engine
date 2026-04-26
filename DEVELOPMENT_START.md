@@ -70,6 +70,7 @@ NearWake is already beyond scaffold stage. The app currently has:
 - Google Directions transit routing when `MAPS_API_KEY` is configured.
 - Destination-only fallback when routing is unavailable.
 - CSV trip export from history.
+- Persisted light, dark, and system appearance modes.
 
 ## Main Open Development Slices
 
@@ -151,20 +152,17 @@ Verification for this slice:
 Status:
 
 ```text
-Planned
+Done
 ```
 
-Current issue:
+Completed:
 
-- `NearWakeTheme(darkTheme: Boolean)` accepts a parameter, but the implementation always uses the dark color scheme.
-
-Target:
-
-- Add light color tokens.
-- Add persisted theme mode: `SYSTEM`, `LIGHT`, `DARK`.
-- Resolve the actual theme in `MainActivity`.
-- Add an Appearance section in Settings.
-- Keep all existing screens inheriting semantic Material colors.
+- Added light color roles and a light Material color scheme.
+- Added persisted theme mode: `SYSTEM`, `LIGHT`, `DARK`.
+- Resolved the actual theme in `MainActivity`.
+- Added an Appearance section in Settings.
+- Updated shared UI components to use semantic theme colors.
+- Added focused DataStore coverage for theme mode persistence.
 
 Verification for this slice:
 
@@ -214,11 +212,10 @@ Target:
 
 ## Recommended First Implementation Order
 
-1. Implement light/dark theme support.
-2. Add departure reminder scheduling.
-3. Run field testing and release hardening.
+1. Add departure reminder scheduling.
+2. Run field testing and release hardening.
 
-This order keeps work useful immediately while reducing risk. Departure reminders are reachable in the app, and destination search now has a provider-backed path with local fallback.
+This order keeps work useful immediately while reducing risk. Departure reminders are reachable in the app, destination search now has a provider-backed path with local fallback, and appearance mode is configurable from Settings.
 
 ## Standard Verification Set
 

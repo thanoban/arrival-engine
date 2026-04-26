@@ -16,8 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nearwake.core.datastore.model.ThemeMode
+import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalSpacing
-import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.ElevatedCard
 import com.nearwake.core.ui.NearWakeChipState
@@ -39,12 +40,13 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
+    val themeColors = LocalNearWakeColors.current
     val guidance = oemReliabilityGuidance(
         manufacturer = Build.MANUFACTURER,
         backgroundMonitoringEnabled = state.backgroundMonitoringEnabled,
     )
 
-    ProvideNearWakeStateAccent(NearWakeColors.MonitoringBase) {
+    ProvideNearWakeStateAccent(themeColors.monitoringBase) {
         NearWakeScaffold(
             title = "Settings",
             subtitle = null,
@@ -53,6 +55,30 @@ fun SettingsScreen(
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
+            // Appearance section
+            SurfaceCard {
+                NearWakeSectionHeader(text = "Appearance")
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                    Text(
+                        text = "Theme",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                        verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                    ) {
+                        ThemeMode.entries.forEach { themeMode ->
+                            NearWakeSelectableChip(
+                                selected = state.themeMode == themeMode,
+                                onClick = { viewModel.updateThemeMode(themeMode) },
+                                label = themeMode.label,
+                            )
+                        }
+                    }
+                }
+            }
+
             // Alerts section
             SurfaceCard {
                 NearWakeSectionHeader(text = "Alerts")
@@ -176,7 +202,7 @@ fun SettingsScreen(
                 Text(
                     text = "NearWake cannot verify OEM battery exemptions automatically. Check your device's battery settings if alerts seem late.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = NearWakeColors.TextTertiary,
+                    color = themeColors.textTertiary,
                 )
             }
         }
@@ -187,6 +213,13 @@ private val AlertMode.label: String
     get() = when (this) {
         AlertMode.ACTIVE -> "Active"
         AlertMode.SLEEP -> "Sleep"
+    }
+
+private val ThemeMode.label: String
+    get() = when (this) {
+        ThemeMode.SYSTEM -> "System"
+        ThemeMode.LIGHT -> "Light"
+        ThemeMode.DARK -> "Dark"
     }
 
 @Composable

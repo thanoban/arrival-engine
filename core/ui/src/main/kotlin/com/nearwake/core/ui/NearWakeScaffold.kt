@@ -22,8 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalSpacing
-import com.nearwake.core.designsystem.NearWakeColors
 
 @Composable
 fun NearWakeScaffold(
@@ -36,10 +36,11 @@ fun NearWakeScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val spacing = LocalSpacing.current
+    val colors = LocalNearWakeColors.current
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(NearWakeColors.BgBase),
+            .background(colors.bgBase),
     ) {
         Column(
             modifier = Modifier
@@ -63,7 +64,7 @@ fun NearWakeScaffold(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineLarge,
-                        color = NearWakeColors.TextPrimary,
+                        color = colors.textPrimary,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -71,7 +72,7 @@ fun NearWakeScaffold(
                         Text(
                             text = it,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = NearWakeColors.TextSecondary,
+                            color = colors.textSecondary,
                         )
                     }
                 }
@@ -85,7 +86,7 @@ fun NearWakeScaffold(
                 HorizontalDivider(
                     modifier = Modifier.fillMaxWidth(),
                     thickness = 1.dp,
-                    color = NearWakeColors.BorderSubtle,
+                    color = colors.borderSubtle,
                 )
             }
             content()

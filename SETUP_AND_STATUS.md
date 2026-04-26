@@ -30,6 +30,7 @@ What is already implemented:
 - route preview and route cache
 - Google transit routing integration
 - Google Places-backed destination search with local fallback
+- persisted light/dark/system appearance mode
 - persisted trip/session/history flows
 - diagnostics and settings screens backed by real data
 
@@ -53,6 +54,7 @@ These areas are meaningfully developed:
 - alerts and recovery screens
 - history and trip summary
 - settings
+- appearance/theme selection
 - diagnostics
 - route cache and route summaries
 - monitoring session persistence

@@ -11,9 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalRadius
 import com.nearwake.core.designsystem.LocalStateAccent
-import com.nearwake.core.designsystem.NearWakeColors
 
 @Composable
 fun NearWakePrimaryButton(
@@ -24,6 +24,7 @@ fun NearWakePrimaryButton(
     accent: Color = LocalStateAccent.current,
 ) {
     val radius = LocalRadius.current
+    val colors = LocalNearWakeColors.current
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -34,8 +35,8 @@ fun NearWakePrimaryButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = accent,
             contentColor = Color.Black,
-            disabledContainerColor = NearWakeColors.BgHighest,
-            disabledContentColor = NearWakeColors.TextTertiary,
+            disabledContainerColor = colors.bgHighest,
+            disabledContentColor = colors.textTertiary,
         ),
     ) {
         Text(text = text, style = MaterialTheme.typography.labelLarge)
@@ -50,15 +51,16 @@ fun NearWakeSecondaryButton(
     enabled: Boolean = true,
 ) {
     val radius = LocalRadius.current
+    val colors = LocalNearWakeColors.current
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.heightIn(min = 48.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(radius.md),
-        border = androidx.compose.foundation.BorderStroke(1.dp, NearWakeColors.BorderDefault),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.borderDefault),
         colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = NearWakeColors.TextPrimary,
-            disabledContentColor = NearWakeColors.TextDisabled,
+            contentColor = colors.textPrimary,
+            disabledContentColor = colors.textDisabled,
         ),
     ) {
         Text(text = text, style = MaterialTheme.typography.labelLarge)
@@ -72,13 +74,14 @@ fun NearWakeTextButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val colors = LocalNearWakeColors.current
     androidx.compose.material3.TextButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.heightIn(min = 48.dp),
         colors = ButtonDefaults.textButtonColors(
-            contentColor = NearWakeColors.TextSecondary,
-            disabledContentColor = NearWakeColors.TextDisabled,
+            contentColor = colors.textSecondary,
+            disabledContentColor = colors.textDisabled,
         ),
     ) {
         Text(text = text, style = MaterialTheme.typography.labelLarge)

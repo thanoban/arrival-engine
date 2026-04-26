@@ -2,6 +2,7 @@ package com.nearwake.feature.settings
 
 import androidx.lifecycle.ViewModel
 import com.nearwake.core.datastore.UserPreferencesDataStore
+import com.nearwake.core.datastore.model.ThemeMode
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ data class SettingsUiState(
     val alertMode: AlertMode = AlertMode.ACTIVE,
     val backgroundMonitoringEnabled: Boolean = true,
     val diagnosticsEnabled: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
 )
 
 @HiltViewModel
@@ -40,6 +42,7 @@ class SettingsViewModel @Inject constructor(
                     alertMode = preferences.defaultAlertMode,
                     backgroundMonitoringEnabled = preferences.backgroundMonitoringEnabled,
                     diagnosticsEnabled = preferences.diagnosticsEnabled,
+                    themeMode = preferences.themeMode,
                 )
             }
         }
@@ -72,6 +75,12 @@ class SettingsViewModel @Inject constructor(
     fun setDiagnosticsEnabled(enabled: Boolean) {
         scope.launch {
             userPreferencesDataStore.setDiagnosticsEnabled(enabled)
+        }
+    }
+
+    fun updateThemeMode(themeMode: ThemeMode) {
+        scope.launch {
+            userPreferencesDataStore.updateThemeMode(themeMode)
         }
     }
 
