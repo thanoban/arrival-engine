@@ -219,6 +219,7 @@ Completed so far inside this slice:
 - Added staged permission requests for notifications, precise location, activity recognition, and background location.
 - Added a direct app-settings path for denied or settings-only cases.
 - Added focused permission-readiness unit coverage.
+- Added a dedicated release-readiness checklist covering field tests, permission disclosures, privacy notes, and release gates.
 
 Still remaining in this slice:
 

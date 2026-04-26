@@ -112,6 +112,8 @@ These are not current build blockers, but they will matter before calling the pr
 - Sentry DSN if crash monitoring is desired
 - production API restrictions on the Google key
 
+For the full release-prep checklist, field-test matrix, and permission disclosure map, use [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md).
+
 ## 7. Recommended Google Key Setup
 
 For your `MAPS_API_KEY`, you should:
@@ -159,3 +161,5 @@ That is enough for the current repo to build and use the route-aware and provide
   - beginner-friendly architecture explanation
 - `REQUIRED_UPDATES_AND_APIS.md`
   - exact external values/services you still need to update or provide
+- `RELEASE_READINESS_CHECKLIST.md`
+  - pre-release validation, field testing, and disclosure prep

@@ -6,6 +6,7 @@ If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md
 For the practical current-state checklist, env/API setup, and what is finished vs not finished, read [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md).
 For the active development-start tracker and next implementation slices, read [DEVELOPMENT_START.md](DEVELOPMENT_START.md).
 For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md).
+For the pre-release field-test, disclosure, and shipment checklist, read [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md).
 For product problem, current scope, features, and technology choices in a comparison-friendly format, read [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md).
 For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md).
 
@@ -27,6 +28,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md): exact current setup, required env/API values, and project condition
 - [DEVELOPMENT_START.md](DEVELOPMENT_START.md): active development queue, slice order, and verification rules
 - [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md): exact API keys, local updates, and later release-time configuration items
+- [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md): pre-release validation, permission disclosure prep, and honest shipment gate
 - [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md): problem statement, scope, features, weaknesses, and technology choices for competitor comparison
 - [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md): dedicated plan for the upcoming modern UI/frontend pass
 - [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
