@@ -224,6 +224,7 @@ Completed so far inside this slice:
 - Added a privacy and permission-disclosure draft aligned to the current app behavior.
 - Added a Play Store listing draft covering safe release copy, screenshot prep, and claims to avoid before field testing.
 - Added Diagnostics export so field-test sessions can share the current service state, geofences, and recent event trail.
+- Added timestamps to the diagnostics trail so field-test exports can be matched against real alert timing.
 
 Still remaining in this slice:
 

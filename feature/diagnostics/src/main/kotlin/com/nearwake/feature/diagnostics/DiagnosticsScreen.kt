@@ -111,7 +111,8 @@ private fun DiagnosticsEventRow(event: DiagnosticsEventUiModel) {
     val spacing = LocalSpacing.current
     Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
         Text(
-            text = event.tripPrefix?.let { "${event.label} · $it" } ?: event.label,
+            text = event.tripPrefix?.let { "${event.recordedAtLabel} · ${event.label} · $it" }
+                ?: "${event.recordedAtLabel} · ${event.label}",
             style = MaterialTheme.typography.labelMedium,
             color = NearWakeColors.TextSecondary,
         )

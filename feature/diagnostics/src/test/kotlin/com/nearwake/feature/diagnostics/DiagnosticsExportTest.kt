@@ -1,5 +1,4 @@
 package com.nearwake.feature.diagnostics
-
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -16,6 +15,7 @@ class DiagnosticsExportTest {
                         label = "Alert Fired",
                         summary = "ARRIVAL alert - STANDARD intensity",
                         tripPrefix = "abc12345",
+                        recordedAtLabel = "2026-04-27 11:45:00",
                     ),
                 ),
             ),
@@ -23,7 +23,7 @@ class DiagnosticsExportTest {
 
         assertTrue(export.contains("Service state: APPROACH"))
         assertTrue(export.contains("- dest-1"))
-        assertTrue(export.contains("Alert Fired [abc12345]"))
+        assertTrue(export.contains("2026-04-27 11:45:00 Alert Fired [abc12345]"))
         assertTrue(export.contains("ARRIVAL alert - STANDARD intensity"))
     }
 

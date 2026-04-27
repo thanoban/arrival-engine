@@ -28,6 +28,7 @@ data class DiagnosticsEventUiModel(
     val label: String,
     val summary: String,
     val tripPrefix: String?,
+    val recordedAtLabel: String,
 )
 
 data class DiagnosticsUiState(
@@ -109,8 +110,12 @@ private fun DiagnosticsEventEntity.toUiModel(): DiagnosticsEventUiModel {
         label = label,
         summary = summary,
         tripPrefix = tripId?.take(8),
+        recordedAtLabel = recordedAt.toReadableLabel(),
     )
 }
+
+private fun kotlinx.datetime.Instant.toReadableLabel(): String =
+    toString().replace('T', ' ').take(19)
 
 private fun JsonObject.alertFiredSummary(): String = buildString {
     val type = stringOrNull("type") ?: "ARRIVAL"

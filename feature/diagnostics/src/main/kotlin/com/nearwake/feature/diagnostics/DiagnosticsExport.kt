@@ -19,7 +19,8 @@ internal fun buildDiagnosticsExport(state: DiagnosticsUiState): String = buildSt
         appendLine("- none recorded")
     } else {
         state.recentEvents.forEach { event ->
-            val title = event.tripPrefix?.let { "${event.label} [$it]" } ?: event.label
+            val title = event.tripPrefix?.let { "${event.recordedAtLabel} ${event.label} [$it]" }
+                ?: "${event.recordedAtLabel} ${event.label}"
             appendLine("- $title")
             appendLine("  ${event.summary}")
         }

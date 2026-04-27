@@ -38,6 +38,7 @@ Record this once per session:
 - OEM battery mode
 - network condition baseline
 - export a diagnostics snapshot after any failed or suspicious run
+- compare diagnostics event timestamps against the real alert/reminder timing when investigating issues
 
 ## 3. Trip Scenario Matrix
 
