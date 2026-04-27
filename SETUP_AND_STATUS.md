@@ -42,6 +42,7 @@ What this means in practice:
 - the frontend exists
 - the backend is not required for the current app
 - the app can run in a degraded destination-only mode without a Google routing key
+- release-hardening support inside the repo is substantially in place
 
 ## 2. What Is Finished
 
@@ -60,6 +61,7 @@ These areas are meaningfully developed:
 - appearance/theme selection
 - departure reminder scheduling
 - diagnostics
+- diagnostics export for field-test evidence
 - route cache and route summaries
 - monitoring session persistence
 
@@ -77,13 +79,11 @@ These infrastructure areas are also in place:
 
 These are the main remaining gaps before calling the project fully finished:
 
-- deeper live ETA refresh behavior during an active monitored trip
 - broader end-to-end scenario testing
-- richer UI polish and edge-state refinement
 - real-device validation for flexible reminder delivery timing
 - release/store readiness items such as privacy/distribution/final hardening
 
-So the app is substantial and usable for development, but not fully production-finished.
+So the app is substantial and usable for development, and most remaining work is now release validation rather than missing architecture.
 
 ## 3.1 Problem And Scope Reference
 

@@ -202,7 +202,7 @@ Verification for this slice:
 Status:
 
 ```text
-In progress
+Ready for real-device field testing
 ```
 
 Target:
@@ -234,6 +234,12 @@ Still remaining in this slice:
 - Real trip field testing across the target device scenarios.
 - Notification timing validation on real devices and Android versions.
 - Final device-validated release wording and store assets.
+
+Code-side release-hardening support now in place:
+
+- release checklist, field-test runbook, privacy notes, and Play Store copy draft
+- live permission-readiness flow in-product
+- diagnostics export with timing, build, device, permission, battery, and network context
 
 ## Recommended First Implementation Order
 
