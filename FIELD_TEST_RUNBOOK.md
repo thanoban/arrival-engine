@@ -37,6 +37,7 @@ Record this once per session:
 - app version/commit
 - OEM battery mode
 - network condition baseline
+- export a diagnostics snapshot after any failed or suspicious run
 
 ## 3. Trip Scenario Matrix
 
@@ -94,6 +95,7 @@ Pass condition:
 - the app explains the degraded state clearly
 - the app does not silently pretend monitoring is healthy
 - diagnostics or visible UI gives enough context to understand what happened
+- the Diagnostics screen export is usable for sharing the latest service state and event trail
 
 ## 6. Severity Rules
 

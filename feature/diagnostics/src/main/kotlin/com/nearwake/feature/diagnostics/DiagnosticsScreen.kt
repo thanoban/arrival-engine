@@ -1,11 +1,14 @@
 package com.nearwake.feature.diagnostics
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
@@ -25,12 +28,27 @@ fun DiagnosticsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
+    val context = LocalContext.current
+
+    LaunchedEffect(state.exportText) {
+        val exportText = state.exportText ?: return@LaunchedEffect
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "NearWake diagnostics export")
+            putExtra(Intent.EXTRA_TEXT, exportText)
+        }
+        context.startActivity(Intent.createChooser(intent, "Export diagnostics"))
+        viewModel.clearExport()
+    }
 
     ProvideNearWakeStateAccent(NearWakeColors.MonitoringBase) {
         NearWakeScaffold(
             title = "Diagnostics",
             subtitle = null,
             topBarActions = {
+                if (state.registeredGeofences.isNotEmpty() || state.recentEvents.isNotEmpty()) {
+                    NearWakeTextButton(text = "Export", onClick = viewModel::exportDiagnostics)
+                }
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {

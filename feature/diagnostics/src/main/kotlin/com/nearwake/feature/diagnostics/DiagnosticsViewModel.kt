@@ -34,6 +34,7 @@ data class DiagnosticsUiState(
     val stateLabel: String = "No active trip",
     val registeredGeofences: List<String> = emptyList(),
     val recentEvents: List<DiagnosticsEventUiModel> = emptyList(),
+    val exportText: String? = null,
 )
 
 @HiltViewModel
@@ -58,9 +59,19 @@ class DiagnosticsViewModel @Inject constructor(
                     recentEvents = recentEvents.map { it.toUiModel() },
                 )
             }.collect { uiState ->
-                mutableState.value = uiState
+                mutableState.value = uiState.copy(exportText = mutableState.value.exportText)
             }
         }
+    }
+
+    fun exportDiagnostics() {
+        mutableState.value = mutableState.value.copy(
+            exportText = buildDiagnosticsExport(mutableState.value),
+        )
+    }
+
+    fun clearExport() {
+        mutableState.value = mutableState.value.copy(exportText = null)
     }
 
     override fun onCleared() {
