@@ -3,6 +3,10 @@ package com.nearwake.feature.diagnostics
 internal fun buildDiagnosticsExport(state: DiagnosticsUiState): String = buildString {
     appendLine("NearWake diagnostics export")
     appendLine()
+    appendLine("App version: ${state.buildInfo.appVersionLabel}")
+    appendLine("Build type: ${state.buildInfo.buildTypeLabel}")
+    appendLine("Device: ${state.buildInfo.deviceLabel}")
+    appendLine()
     appendLine("Service state: ${state.stateLabel}")
     appendLine()
     appendLine("Registered geofences:")

@@ -46,12 +46,50 @@ fun DiagnosticsScreen(
             title = "Diagnostics",
             subtitle = null,
             topBarActions = {
-                if (state.registeredGeofences.isNotEmpty() || state.recentEvents.isNotEmpty()) {
+                if (
+                    state.buildInfo.appVersionLabel.isNotBlank() ||
+                    state.registeredGeofences.isNotEmpty() ||
+                    state.recentEvents.isNotEmpty()
+                ) {
                     NearWakeTextButton(text = "Export", onClick = viewModel::exportDiagnostics)
                 }
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
+            SurfaceCard {
+                NearWakeSectionHeader(text = "Build and device")
+                Text(
+                    text = "App version",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = state.buildInfo.appVersionLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Build type",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = state.buildInfo.buildTypeLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Device",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = state.buildInfo.deviceLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
             SurfaceCard {
                 NearWakeSectionHeader(text = "Services")
                 NearWakeStateChip(

@@ -39,6 +39,7 @@ Record this once per session:
 - network condition baseline
 - export a diagnostics snapshot after any failed or suspicious run
 - compare diagnostics event timestamps against the real alert/reminder timing when investigating issues
+- use the Diagnostics screen export to capture app version, build type, and device context with each report
 
 ## 3. Trip Scenario Matrix
 

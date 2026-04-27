@@ -225,6 +225,7 @@ Completed so far inside this slice:
 - Added a Play Store listing draft covering safe release copy, screenshot prep, and claims to avoid before field testing.
 - Added Diagnostics export so field-test sessions can share the current service state, geofences, and recent event trail.
 - Added timestamps to the diagnostics trail so field-test exports can be matched against real alert timing.
+- Added build and device context to Diagnostics so exported reports carry app version, build type, and device details.
 
 Still remaining in this slice:
 

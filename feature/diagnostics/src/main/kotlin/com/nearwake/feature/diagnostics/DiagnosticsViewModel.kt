@@ -1,9 +1,12 @@
 package com.nearwake.feature.diagnostics
 
+import android.content.Context
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import com.nearwake.core.database.dao.DiagnosticsEventDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.DiagnosticsEventEntity
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +34,18 @@ data class DiagnosticsEventUiModel(
     val recordedAtLabel: String,
 )
 
+data class DiagnosticsBuildInfoUiModel(
+    val appVersionLabel: String,
+    val buildTypeLabel: String,
+    val deviceLabel: String,
+)
+
 data class DiagnosticsUiState(
+    val buildInfo: DiagnosticsBuildInfoUiModel = DiagnosticsBuildInfoUiModel(
+        appVersionLabel = "",
+        buildTypeLabel = "",
+        deviceLabel = "",
+    ),
     val stateLabel: String = "No active trip",
     val registeredGeofences: List<String> = emptyList(),
     val recentEvents: List<DiagnosticsEventUiModel> = emptyList(),
@@ -40,6 +54,7 @@ data class DiagnosticsUiState(
 
 @HiltViewModel
 class DiagnosticsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     tripSessionDao: TripSessionDao,
     diagnosticsEventDao: DiagnosticsEventDao,
 ) : ViewModel() {
@@ -55,6 +70,7 @@ class DiagnosticsViewModel @Inject constructor(
             ) { sessions, recentEvents ->
                 val session = sessions.firstOrNull()
                 DiagnosticsUiState(
+                    buildInfo = context.toBuildInfoUiModel(),
                     stateLabel = session?.state?.name ?: "No active trip",
                     registeredGeofences = session?.geofenceIds.orEmpty(),
                     recentEvents = recentEvents.map { it.toUiModel() },
@@ -116,6 +132,17 @@ private fun DiagnosticsEventEntity.toUiModel(): DiagnosticsEventUiModel {
 
 private fun kotlinx.datetime.Instant.toReadableLabel(): String =
     toString().replace('T', ' ').take(19)
+
+private fun Context.toBuildInfoUiModel(): DiagnosticsBuildInfoUiModel {
+    val packageInfo = packageManager.getPackageInfo(packageName, 0)
+    val versionName = packageInfo.versionName ?: "unknown"
+    val versionCode = packageInfo.longVersionCode
+    return DiagnosticsBuildInfoUiModel(
+        appVersionLabel = "$versionName ($versionCode)",
+        buildTypeLabel = BuildConfig.BUILD_TYPE.replaceFirstChar(Char::uppercase),
+        deviceLabel = "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}",
+    )
+}
 
 private fun JsonObject.alertFiredSummary(): String = buildString {
     val type = stringOrNull("type") ?: "ARRIVAL"

@@ -8,6 +8,11 @@ class DiagnosticsExportTest {
     fun `export includes service state geofences and events`() {
         val export = buildDiagnosticsExport(
             DiagnosticsUiState(
+                buildInfo = DiagnosticsBuildInfoUiModel(
+                    appVersionLabel = "0.1.0 (1)",
+                    buildTypeLabel = "Debug",
+                    deviceLabel = "Google Pixel 8 · Android 15",
+                ),
                 stateLabel = "APPROACH",
                 registeredGeofences = listOf("dest-1", "dest-2"),
                 recentEvents = listOf(
@@ -21,6 +26,9 @@ class DiagnosticsExportTest {
             ),
         )
 
+        assertTrue(export.contains("App version: 0.1.0 (1)"))
+        assertTrue(export.contains("Build type: Debug"))
+        assertTrue(export.contains("Device: Google Pixel 8 · Android 15"))
         assertTrue(export.contains("Service state: APPROACH"))
         assertTrue(export.contains("- dest-1"))
         assertTrue(export.contains("2026-04-27 11:45:00 Alert Fired [abc12345]"))
@@ -31,6 +39,7 @@ class DiagnosticsExportTest {
     fun `export shows empty markers when no data exists`() {
         val export = buildDiagnosticsExport(DiagnosticsUiState())
 
+        assertTrue(export.contains("App version: "))
         assertTrue(export.contains("Service state: No active trip"))
         assertTrue(export.contains("- none"))
         assertTrue(export.contains("- none recorded"))
