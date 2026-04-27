@@ -10,7 +10,12 @@ For the pre-release field-test, disclosure, and shipment checklist, read [RELEAS
 For the real-device execution guide and per-trip logging format, read [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md).
 For a ready-to-fill trip log sheet, read [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv).
 For the privacy and permission-disclosure draft notes, read [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md).
+For the current privacy policy draft, read [PRIVACY_POLICY_DRAFT.md](PRIVACY_POLICY_DRAFT.md).
+For the hostable privacy policy page, read [privacy-policy.html](privacy-policy.html).
+For the current Play Console disclosure-answer draft, read [PLAY_CONSOLE_DISCLOSURE_DRAFT.md](PLAY_CONSOLE_DISCLOSURE_DRAFT.md).
+For release-signing preparation, read [APP_SIGNING_SETUP_GUIDE.md](APP_SIGNING_SETUP_GUIDE.md).
 For the current store-facing copy draft, read [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md).
+For the final manual store-submission sequence, read [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md).
 For product problem, current scope, features, and technology choices in a comparison-friendly format, read [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md).
 For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md).
 
@@ -37,7 +42,12 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md): real-device test procedure and per-trip logging template
 - [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv): ready-to-fill CSV for recording real-device trip results
 - [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md): draft privacy and permission-disclosure copy aligned to the current app behavior
+- [PRIVACY_POLICY_DRAFT.md](PRIVACY_POLICY_DRAFT.md): publishable privacy policy draft aligned to the current app behavior
+- [privacy-policy.html](privacy-policy.html): simple hostable privacy-policy page file
+- [PLAY_CONSOLE_DISCLOSURE_DRAFT.md](PLAY_CONSOLE_DISCLOSURE_DRAFT.md): draft Play Console permission and policy answers
+- [APP_SIGNING_SETUP_GUIDE.md](APP_SIGNING_SETUP_GUIDE.md): local release-signing preparation guide
 - [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md): draft short description, full description, and screenshot checklist for store release prep
+- [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md): final manual sequence for field-test closeout, privacy hosting, signing, and Play submission
 - [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md): problem statement, scope, features, weaknesses, and technology choices for competitor comparison
 - [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md): dedicated plan for the upcoming modern UI/frontend pass
 - [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
