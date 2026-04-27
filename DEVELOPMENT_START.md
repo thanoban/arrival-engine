@@ -228,6 +228,7 @@ Completed so far inside this slice:
 - Added build and device context to Diagnostics so exported reports carry app version, build type, and device details.
 - Added a live permission-readiness snapshot to Diagnostics so field-test exports capture the active permission state.
 - Added environment context to Diagnostics so exports record power saver, battery optimization, and network state.
+- Added Diagnostics refresh behavior so resumed screens pick up live permission and device-state changes before export.
 
 Still remaining in this slice:
 

@@ -42,6 +42,7 @@ Record this once per session:
 - use the Diagnostics screen export to capture app version, build type, and device context with each report
 - use the Diagnostics screen export to capture the live permission readiness state that was active during the run
 - use the Diagnostics screen export to capture battery-saver, battery-optimization, and network context for the run
+- refresh the Diagnostics screen after permission or battery-setting changes so the exported snapshot matches the live device state
 
 ## 3. Trip Scenario Matrix
 

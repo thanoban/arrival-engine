@@ -6,10 +6,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
@@ -29,6 +33,7 @@ fun DiagnosticsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(state.exportText) {
         val exportText = state.exportText ?: return@LaunchedEffect
@@ -41,11 +46,25 @@ fun DiagnosticsScreen(
         viewModel.clearExport()
     }
 
+    DisposableEffect(lifecycleOwner, viewModel) {
+        viewModel.refreshSnapshot()
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshSnapshot()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     ProvideNearWakeStateAccent(NearWakeColors.MonitoringBase) {
         NearWakeScaffold(
             title = "Diagnostics",
             subtitle = null,
             topBarActions = {
+                NearWakeTextButton(text = "Refresh", onClick = viewModel::refreshSnapshot)
                 if (
                     state.buildInfo.appVersionLabel.isNotBlank() ||
                     state.registeredGeofences.isNotEmpty() ||

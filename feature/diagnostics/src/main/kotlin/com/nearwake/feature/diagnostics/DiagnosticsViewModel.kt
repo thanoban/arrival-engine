@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -115,6 +116,16 @@ class DiagnosticsViewModel @Inject constructor(
             }.collect { uiState ->
                 mutableState.value = uiState.copy(exportText = mutableState.value.exportText)
             }
+        }
+    }
+
+    fun refreshSnapshot() {
+        mutableState.update { state ->
+            state.copy(
+                buildInfo = context.toBuildInfoUiModel(),
+                permissions = context.toPermissionSummaryUiModel(),
+                environment = context.toEnvironmentUiModel(),
+            )
         }
     }
 
