@@ -4,6 +4,8 @@ This file turns the remaining real-device validation work into a repeatable runb
 
 Use it when you are actively testing trips on a device.
 
+If you want a ready-to-fill spreadsheet-style log, use [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv).
+
 ## 1. Goal
 
 Prove whether NearWake is reliable enough for a release candidate under real travel conditions.
@@ -83,6 +85,8 @@ Diagnostics captured: Yes / No
 Battery notes:
 Tester notes:
 ```
+
+Or record trips directly in [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv).
 
 ## 5. Required Failure Tests
 

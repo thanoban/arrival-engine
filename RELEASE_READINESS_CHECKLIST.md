@@ -3,6 +3,7 @@
 This file is the practical pre-release guide for the current app state.
 
 Pair it with [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md) when you are actually running trips on a device.
+Use [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv) if you want a simple per-trip test log sheet.
 Use [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md) for the current draft release wording.
 Use [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md) for the current listing copy and screenshot-prep draft.
 

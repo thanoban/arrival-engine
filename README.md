@@ -8,6 +8,7 @@ For the active development-start tracker and next implementation slices, read [D
 For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md).
 For the pre-release field-test, disclosure, and shipment checklist, read [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md).
 For the real-device execution guide and per-trip logging format, read [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md).
+For a ready-to-fill trip log sheet, read [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv).
 For the privacy and permission-disclosure draft notes, read [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md).
 For the current store-facing copy draft, read [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md).
 For product problem, current scope, features, and technology choices in a comparison-friendly format, read [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md).
@@ -34,6 +35,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md): exact API keys, local updates, and later release-time configuration items
 - [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md): pre-release validation, permission disclosure prep, and honest shipment gate
 - [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md): real-device test procedure and per-trip logging template
+- [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv): ready-to-fill CSV for recording real-device trip results
 - [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md): draft privacy and permission-disclosure copy aligned to the current app behavior
 - [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md): draft short description, full description, and screenshot checklist for store release prep
 - [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md): problem statement, scope, features, weaknesses, and technology choices for competitor comparison
