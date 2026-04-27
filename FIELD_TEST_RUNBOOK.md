@@ -40,6 +40,7 @@ Record this once per session:
 - export a diagnostics snapshot after any failed or suspicious run
 - compare diagnostics event timestamps against the real alert/reminder timing when investigating issues
 - use the Diagnostics screen export to capture app version, build type, and device context with each report
+- use the Diagnostics screen export to capture the live permission readiness state that was active during the run
 
 ## 3. Trip Scenario Matrix
 

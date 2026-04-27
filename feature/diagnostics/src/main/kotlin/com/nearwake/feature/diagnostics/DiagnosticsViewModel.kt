@@ -1,8 +1,12 @@
 package com.nearwake.feature.diagnostics
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.lifecycle.ViewModel
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.nearwake.core.database.dao.DiagnosticsEventDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.DiagnosticsEventEntity
@@ -40,11 +44,28 @@ data class DiagnosticsBuildInfoUiModel(
     val deviceLabel: String,
 )
 
+data class DiagnosticsPermissionStatusUiModel(
+    val title: String,
+    val granted: Boolean,
+    val relevant: Boolean = true,
+)
+
+data class DiagnosticsPermissionSummaryUiModel(
+    val readinessLabel: String,
+    val summary: String,
+    val statuses: List<DiagnosticsPermissionStatusUiModel>,
+)
+
 data class DiagnosticsUiState(
     val buildInfo: DiagnosticsBuildInfoUiModel = DiagnosticsBuildInfoUiModel(
         appVersionLabel = "",
         buildTypeLabel = "",
         deviceLabel = "",
+    ),
+    val permissions: DiagnosticsPermissionSummaryUiModel = DiagnosticsPermissionSummaryUiModel(
+        readinessLabel = "",
+        summary = "",
+        statuses = emptyList(),
     ),
     val stateLabel: String = "No active trip",
     val registeredGeofences: List<String> = emptyList(),
@@ -71,6 +92,7 @@ class DiagnosticsViewModel @Inject constructor(
                 val session = sessions.firstOrNull()
                 DiagnosticsUiState(
                     buildInfo = context.toBuildInfoUiModel(),
+                    permissions = context.toPermissionSummaryUiModel(),
                     stateLabel = session?.state?.name ?: "No active trip",
                     registeredGeofences = session?.geofenceIds.orEmpty(),
                     recentEvents = recentEvents.map { it.toUiModel() },
@@ -143,6 +165,58 @@ private fun Context.toBuildInfoUiModel(): DiagnosticsBuildInfoUiModel {
         deviceLabel = "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}",
     )
 }
+
+private fun Context.toPermissionSummaryUiModel(): DiagnosticsPermissionSummaryUiModel {
+    val notificationGranted = NotificationManagerCompat.from(this).areNotificationsEnabled()
+    val fineLocationGranted = isPermissionGranted(Manifest.permission.ACCESS_FINE_LOCATION)
+    val backgroundLocationRelevant = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+    val activityRecognitionRelevant = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+    val backgroundLocationGranted = if (backgroundLocationRelevant) {
+        isPermissionGranted(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    } else {
+        true
+    }
+    val activityRecognitionGranted = if (activityRecognitionRelevant) {
+        isPermissionGranted(Manifest.permission.ACTIVITY_RECOGNITION)
+    } else {
+        true
+    }
+
+    val readinessLabel = when {
+        !notificationGranted || !fineLocationGranted -> "Action needed"
+        (backgroundLocationRelevant && !backgroundLocationGranted) ||
+            (activityRecognitionRelevant && !activityRecognitionGranted) -> "Limited"
+        else -> "Ready"
+    }
+
+    val summary = when (readinessLabel) {
+        "Ready" -> "Notifications, precise location, and the current background permissions are in place."
+        "Limited" -> "Trips can run, but screen-off reliability or power-aware behavior is reduced."
+        else -> "Notifications and precise location still need attention before the app is fully ready."
+    }
+
+    return DiagnosticsPermissionSummaryUiModel(
+        readinessLabel = readinessLabel,
+        summary = summary,
+        statuses = listOf(
+            DiagnosticsPermissionStatusUiModel("Notifications", notificationGranted),
+            DiagnosticsPermissionStatusUiModel("Precise location", fineLocationGranted),
+            DiagnosticsPermissionStatusUiModel(
+                title = "Background location",
+                granted = backgroundLocationGranted,
+                relevant = backgroundLocationRelevant,
+            ),
+            DiagnosticsPermissionStatusUiModel(
+                title = "Activity recognition",
+                granted = activityRecognitionGranted,
+                relevant = activityRecognitionRelevant,
+            ),
+        ),
+    )
+}
+
+private fun Context.isPermissionGranted(permission: String): Boolean =
+    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
 private fun JsonObject.alertFiredSummary(): String = buildString {
     val type = stringOrNull("type") ?: "ARRIVAL"

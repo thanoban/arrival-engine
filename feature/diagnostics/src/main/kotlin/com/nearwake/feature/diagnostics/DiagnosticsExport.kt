@@ -7,6 +7,12 @@ internal fun buildDiagnosticsExport(state: DiagnosticsUiState): String = buildSt
     appendLine("Build type: ${state.buildInfo.buildTypeLabel}")
     appendLine("Device: ${state.buildInfo.deviceLabel}")
     appendLine()
+    appendLine("Permission readiness: ${state.permissions.readinessLabel}")
+    appendLine(state.permissions.summary)
+    state.permissions.statuses.filter { it.relevant }.forEach { permission ->
+        appendLine("${permission.title}: ${if (permission.granted) "Granted" else "Needed"}")
+    }
+    appendLine()
     appendLine("Service state: ${state.stateLabel}")
     appendLine()
     appendLine("Registered geofences:")

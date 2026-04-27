@@ -13,6 +13,15 @@ class DiagnosticsExportTest {
                     buildTypeLabel = "Debug",
                     deviceLabel = "Google Pixel 8 · Android 15",
                 ),
+                permissions = DiagnosticsPermissionSummaryUiModel(
+                    readinessLabel = "Limited",
+                    summary = "Trips can run, but screen-off reliability or power-aware behavior is reduced.",
+                    statuses = listOf(
+                        DiagnosticsPermissionStatusUiModel("Notifications", granted = true),
+                        DiagnosticsPermissionStatusUiModel("Precise location", granted = true),
+                        DiagnosticsPermissionStatusUiModel("Background location", granted = false),
+                    ),
+                ),
                 stateLabel = "APPROACH",
                 registeredGeofences = listOf("dest-1", "dest-2"),
                 recentEvents = listOf(
@@ -29,6 +38,8 @@ class DiagnosticsExportTest {
         assertTrue(export.contains("App version: 0.1.0 (1)"))
         assertTrue(export.contains("Build type: Debug"))
         assertTrue(export.contains("Device: Google Pixel 8 · Android 15"))
+        assertTrue(export.contains("Permission readiness: Limited"))
+        assertTrue(export.contains("Background location: Needed"))
         assertTrue(export.contains("Service state: APPROACH"))
         assertTrue(export.contains("- dest-1"))
         assertTrue(export.contains("2026-04-27 11:45:00 Alert Fired [abc12345]"))

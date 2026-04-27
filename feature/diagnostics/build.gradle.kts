@@ -9,6 +9,7 @@ android {
 dependencies {
     implementation(project(":domain:trip"))
     implementation(project(":core:database"))
+    implementation(libs.androidx.core.ktx)
     implementation(libs.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
 }

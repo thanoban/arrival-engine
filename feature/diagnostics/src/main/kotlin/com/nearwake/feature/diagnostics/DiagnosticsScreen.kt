@@ -91,6 +91,32 @@ fun DiagnosticsScreen(
             }
 
             SurfaceCard {
+                NearWakeSectionHeader(text = "Permissions")
+                NearWakeStateChip(
+                    label = state.permissions.readinessLabel,
+                    state = when (state.permissions.readinessLabel) {
+                        "Ready" -> NearWakeChipState.Safe
+                        "Limited" -> NearWakeChipState.Approaching
+                        else -> NearWakeChipState.Alert
+                    },
+                )
+                Text(
+                    text = state.permissions.summary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                    state.permissions.statuses.filter { it.relevant }.forEach { permission ->
+                        Text(
+                            text = "${permission.title}: ${if (permission.granted) "Granted" else "Needed"}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
+            }
+
+            SurfaceCard {
                 NearWakeSectionHeader(text = "Services")
                 NearWakeStateChip(
                     label = state.stateLabel.replace('_', ' ').lowercase().replaceFirstChar(Char::uppercase),

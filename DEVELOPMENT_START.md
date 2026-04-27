@@ -226,6 +226,7 @@ Completed so far inside this slice:
 - Added Diagnostics export so field-test sessions can share the current service state, geofences, and recent event trail.
 - Added timestamps to the diagnostics trail so field-test exports can be matched against real alert timing.
 - Added build and device context to Diagnostics so exported reports carry app version, build type, and device details.
+- Added a live permission-readiness snapshot to Diagnostics so field-test exports capture the active permission state.
 
 Still remaining in this slice:
 
