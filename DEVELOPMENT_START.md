@@ -225,6 +225,7 @@ Completed so far inside this slice:
 - Added a standalone privacy-policy draft that can be turned into a hosted policy URL later.
 - Added a Play Console disclosure-answer draft aligned to the current permission and policy surface.
 - Added a simple hostable privacy-policy HTML page so release prep is not blocked on drafting from scratch.
+- Added a local app-signing setup guide so release-key preparation is documented even before final secrets exist.
 - Added a Play Store listing draft covering safe release copy, screenshot prep, and claims to avoid before field testing.
 - Added a ready-to-fill CSV field-test log template for recording real trip results consistently.
 - Added Diagnostics export so field-test sessions can share the current service state, geofences, and recent event trail.

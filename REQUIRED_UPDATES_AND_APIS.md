@@ -113,6 +113,7 @@ These are not current build blockers, but they will matter before calling the pr
 - production API restrictions on the Google key
 
 For the full release-prep checklist, field-test matrix, and permission disclosure map, use [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md).
+For local release-signing preparation, use [APP_SIGNING_SETUP_GUIDE.md](APP_SIGNING_SETUP_GUIDE.md).
 
 ## 7. Recommended Google Key Setup
 
