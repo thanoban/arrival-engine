@@ -6,6 +6,7 @@ Pair it with [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md) when you are actuall
 Use [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv) if you want a simple per-trip test log sheet.
 Use [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md) for the current draft release wording.
 Use [PRIVACY_POLICY_DRAFT.md](PRIVACY_POLICY_DRAFT.md) for the current publishable-policy draft.
+Use [PLAY_CONSOLE_DISCLOSURE_DRAFT.md](PLAY_CONSOLE_DISCLOSURE_DRAFT.md) for the current Play Console disclosure-answer draft.
 Use [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md) for the current listing copy and screenshot-prep draft.
 
 Use it when you want to answer:
@@ -144,7 +145,7 @@ Before store submission, prepare:
 - [ ] privacy policy URL
 - [x] plain-language explanation of local trip/history storage
 - [x] diagnostics retention explanation
-- [ ] permission disclosure copy matching the runtime flows
+- [x] permission disclosure copy matching the runtime flows
 
 ## 6. Battery And Reliability Checks
 

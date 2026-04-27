@@ -5,6 +5,7 @@ This file is a working draft for release preparation.
 It is not legal advice and it is not a final Play Console submission.
 Use it to keep the product copy aligned with what the current app actually does.
 Use [PRIVACY_POLICY_DRAFT.md](PRIVACY_POLICY_DRAFT.md) when you want the longer publishable-policy version of the same privacy posture.
+Use [PLAY_CONSOLE_DISCLOSURE_DRAFT.md](PLAY_CONSOLE_DISCLOSURE_DRAFT.md) when you want store-submission answers that map the current permissions to Play Console wording.
 
 ## 1. Current Privacy Posture
 
@@ -112,3 +113,4 @@ Do not overstate these until the field-test runbook is completed:
 Already drafted in-repo:
 
 - [x] publishable privacy-policy draft
+- [x] Play Console disclosure-answer draft

@@ -223,6 +223,7 @@ Completed so far inside this slice:
 - Added a dedicated field-test runbook with a per-trip logging template and blocker criteria.
 - Added a privacy and permission-disclosure draft aligned to the current app behavior.
 - Added a standalone privacy-policy draft that can be turned into a hosted policy URL later.
+- Added a Play Console disclosure-answer draft aligned to the current permission and policy surface.
 - Added a Play Store listing draft covering safe release copy, screenshot prep, and claims to avoid before field testing.
 - Added a ready-to-fill CSV field-test log template for recording real trip results consistently.
 - Added Diagnostics export so field-test sessions can share the current service state, geofences, and recent event trail.
