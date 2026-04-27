@@ -222,12 +222,13 @@ Completed so far inside this slice:
 - Added a dedicated release-readiness checklist covering field tests, permission disclosures, privacy notes, and release gates.
 - Added a dedicated field-test runbook with a per-trip logging template and blocker criteria.
 - Added a privacy and permission-disclosure draft aligned to the current app behavior.
+- Added a Play Store listing draft covering safe release copy, screenshot prep, and claims to avoid before field testing.
 
 Still remaining in this slice:
 
 - Real trip field testing across the target device scenarios.
 - Notification timing validation on real devices and Android versions.
-- Privacy/disclosure and store-release material.
+- Final device-validated release wording and store assets.
 
 ## Recommended First Implementation Order
 

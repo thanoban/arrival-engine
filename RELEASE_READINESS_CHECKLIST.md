@@ -4,6 +4,7 @@ This file is the practical pre-release guide for the current app state.
 
 Pair it with [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md) when you are actually running trips on a device.
 Use [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md) for the current draft release wording.
+Use [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md) for the current listing copy and screenshot-prep draft.
 
 Use it when you want to answer:
 
@@ -161,6 +162,12 @@ Still needed before a public release:
 - [ ] permission disclosure answers in Play Console
 - [ ] policy review for full-screen intent usage
 - [ ] final Google API key restrictions
+
+Current prep already done:
+
+- [x] working draft for short description and full description
+- [x] safe feature claims list and overclaim guardrails
+- [x] screenshot checklist for store assets
 
 ## 8. Honest Release Gate
 
