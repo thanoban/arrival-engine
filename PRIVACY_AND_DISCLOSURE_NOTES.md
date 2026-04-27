@@ -42,6 +42,10 @@ Plain-language draft for diagnostics:
 
 > If diagnostics logging is enabled, NearWake keeps recent troubleshooting events on the device to help explain missed or degraded monitoring behavior.
 
+Retention clarification draft:
+
+> Recent diagnostics stay on the device until the user clears them from the Diagnostics screen or removes the app's local data.
+
 ## 4. Permissions Disclosure Draft
 
 Use copy like this in release material and in-product explanations.
@@ -101,5 +105,5 @@ Do not overstate these until the field-test runbook is completed:
 - [ ] privacy policy URL
 - [ ] Play Console permission disclosure answers
 - [ ] final wording review against the shipped build
-- [ ] confirm whether diagnostics are included in release builds exactly as described
+- [x] confirm whether diagnostics are included in release builds exactly as described
 - [ ] policy review for full-screen intent behavior

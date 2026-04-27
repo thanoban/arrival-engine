@@ -20,6 +20,7 @@ android {
 dependencies {
     implementation(project(":domain:trip"))
     implementation(project(":core:database"))
+    implementation(project(":core:datastore"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.coroutines.android)
     implementation(libs.kotlinx.serialization.json)

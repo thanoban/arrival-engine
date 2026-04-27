@@ -45,6 +45,8 @@ class DiagnosticsExportTest {
         assertTrue(export.contains("Build type: Debug"))
         assertTrue(export.contains("Git revision: abc123def456"))
         assertTrue(export.contains("Device: Google Pixel 8 · Android 15"))
+        assertTrue(export.contains("Diagnostics logging: Off"))
+        assertTrue(export.contains("Retention: Recent diagnostics stay on this device until you clear them or app data is removed."))
         assertTrue(export.contains("Permission readiness: Limited"))
         assertTrue(export.contains("Background location: Needed"))
         assertTrue(export.contains("Power saver: Off"))
@@ -61,6 +63,7 @@ class DiagnosticsExportTest {
         val export = buildDiagnosticsExport(DiagnosticsUiState())
 
         assertTrue(export.contains("App version: "))
+        assertTrue(export.contains("Diagnostics logging: Off"))
         assertTrue(export.contains("Service state: No active trip"))
         assertTrue(export.contains("- none"))
         assertTrue(export.contains("- none recorded"))

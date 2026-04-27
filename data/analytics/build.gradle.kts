@@ -11,10 +11,13 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:database"))
+    implementation(project(":core:datastore"))
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coroutines.android)
     implementation(libs.timber)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.datastore.preferences)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
 }

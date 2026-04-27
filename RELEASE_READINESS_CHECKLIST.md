@@ -142,7 +142,7 @@ Before store submission, prepare:
 
 - [ ] privacy policy URL
 - [ ] plain-language explanation of local trip/history storage
-- [ ] diagnostics retention explanation
+- [x] diagnostics retention explanation
 - [ ] permission disclosure copy matching the runtime flows
 
 ## 6. Battery And Reliability Checks

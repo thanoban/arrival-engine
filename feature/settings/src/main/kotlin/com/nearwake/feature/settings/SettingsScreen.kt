@@ -160,7 +160,7 @@ fun SettingsScreen(
                     )
                     SettingSwitchRow(
                         title = "Diagnostics logging",
-                        subtitle = "Stores recent engine events for troubleshooting.",
+                        subtitle = "Stores recent engine events on this device for troubleshooting. Clear them from Diagnostics.",
                         checked = state.diagnosticsEnabled,
                         onCheckedChange = viewModel::setDiagnosticsEnabled,
                     )

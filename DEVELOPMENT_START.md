@@ -231,6 +231,7 @@ Completed so far inside this slice:
 - Added a live permission-readiness snapshot to Diagnostics so field-test exports capture the active permission state.
 - Added environment context to Diagnostics so exports record power saver, battery optimization, and network state.
 - Added Diagnostics refresh behavior so resumed screens pick up live permission and device-state changes before export.
+- Made the diagnostics logging toggle control actual event writes, and added a clear-events path plus retention copy in Diagnostics.
 
 Still remaining in this slice:
 

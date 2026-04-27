@@ -7,6 +7,8 @@ internal fun buildDiagnosticsExport(state: DiagnosticsUiState): String = buildSt
     appendLine("Build type: ${state.buildInfo.buildTypeLabel}")
     appendLine("Git revision: ${state.buildInfo.gitShaLabel}")
     appendLine("Device: ${state.buildInfo.deviceLabel}")
+    appendLine("Diagnostics logging: ${if (state.diagnosticsLoggingEnabled) "Enabled" else "Off"}")
+    appendLine("Retention: Recent diagnostics stay on this device until you clear them or app data is removed.")
     appendLine()
     appendLine("Permission readiness: ${state.permissions.readinessLabel}")
     appendLine(state.permissions.summary)

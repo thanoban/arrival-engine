@@ -28,8 +28,10 @@ Checklist:
 - [ ] confirm precise location is enabled
 - [ ] confirm background location state
 - [ ] confirm activity recognition state
+- [ ] confirm diagnostics logging is enabled when you want a per-run event trail
 - [ ] note OEM battery mode or battery saver state
 - [ ] clear old expectations from previous trips
+- [ ] clear older diagnostics events first if you want the exported trail to cover only the current test run
 
 Record this once per session:
 

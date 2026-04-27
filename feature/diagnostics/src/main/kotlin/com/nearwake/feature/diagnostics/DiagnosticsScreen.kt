@@ -120,6 +120,32 @@ fun DiagnosticsScreen(
             }
 
             SurfaceCard {
+                NearWakeSectionHeader(text = "Data and retention")
+                Text(
+                    text = "Diagnostics logging is ${if (state.diagnosticsLoggingEnabled) "on" else "off"}.",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = if (state.diagnosticsLoggingEnabled) {
+                        "Recent troubleshooting events stay on this device until you clear them or remove app data."
+                    } else {
+                        "New troubleshooting events are paused. Existing diagnostics stay on this device until you clear them or remove app data."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Exports share the current snapshot and recent event trail as plain text.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (state.recentEvents.isNotEmpty()) {
+                    NearWakeTextButton(text = "Clear events", onClick = viewModel::clearDiagnostics)
+                }
+            }
+
+            SurfaceCard {
                 NearWakeSectionHeader(text = "Permissions")
                 NearWakeStateChip(
                     label = state.permissions.readinessLabel,

@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import com.nearwake.core.database.dao.DiagnosticsEventDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.DiagnosticsEventEntity
+import com.nearwake.core.datastore.UserPreferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -87,14 +88,16 @@ data class DiagnosticsUiState(
     val stateLabel: String = "No active trip",
     val registeredGeofences: List<String> = emptyList(),
     val recentEvents: List<DiagnosticsEventUiModel> = emptyList(),
+    val diagnosticsLoggingEnabled: Boolean = false,
     val exportText: String? = null,
 )
 
 @HiltViewModel
 class DiagnosticsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    userPreferencesDataStore: UserPreferencesDataStore,
     tripSessionDao: TripSessionDao,
-    diagnosticsEventDao: DiagnosticsEventDao,
+    private val diagnosticsEventDao: DiagnosticsEventDao,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(DiagnosticsUiState())
@@ -103,9 +106,10 @@ class DiagnosticsViewModel @Inject constructor(
     init {
         scope.launch {
             combine(
+                userPreferencesDataStore.preferences,
                 tripSessionDao.observeTripSessions(),
                 diagnosticsEventDao.observeRecentEvents(limit = 20),
-            ) { sessions, recentEvents ->
+            ) { preferences, sessions, recentEvents ->
                 val session = sessions.firstOrNull()
                 DiagnosticsUiState(
                     buildInfo = context.toBuildInfoUiModel(),
@@ -114,6 +118,7 @@ class DiagnosticsViewModel @Inject constructor(
                     stateLabel = session?.state?.name ?: "No active trip",
                     registeredGeofences = session?.geofenceIds.orEmpty(),
                     recentEvents = recentEvents.map { it.toUiModel() },
+                    diagnosticsLoggingEnabled = preferences.diagnosticsEnabled,
                 )
             }.collect { uiState ->
                 mutableState.value = uiState.copy(exportText = mutableState.value.exportText)
@@ -135,6 +140,12 @@ class DiagnosticsViewModel @Inject constructor(
         mutableState.value = mutableState.value.copy(
             exportText = buildDiagnosticsExport(mutableState.value),
         )
+    }
+
+    fun clearDiagnostics() {
+        scope.launch {
+            diagnosticsEventDao.clearAll()
+        }
     }
 
     fun clearExport() {
