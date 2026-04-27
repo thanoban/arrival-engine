@@ -22,6 +22,11 @@ class DiagnosticsExportTest {
                         DiagnosticsPermissionStatusUiModel("Background location", granted = false),
                     ),
                 ),
+                environment = DiagnosticsEnvironmentUiModel(
+                    powerSaverLabel = "Off",
+                    batteryOptimizationLabel = "Standard battery optimization",
+                    networkLabel = "Connected",
+                ),
                 stateLabel = "APPROACH",
                 registeredGeofences = listOf("dest-1", "dest-2"),
                 recentEvents = listOf(
@@ -40,6 +45,9 @@ class DiagnosticsExportTest {
         assertTrue(export.contains("Device: Google Pixel 8 · Android 15"))
         assertTrue(export.contains("Permission readiness: Limited"))
         assertTrue(export.contains("Background location: Needed"))
+        assertTrue(export.contains("Power saver: Off"))
+        assertTrue(export.contains("Battery optimization: Standard battery optimization"))
+        assertTrue(export.contains("Network: Connected"))
         assertTrue(export.contains("Service state: APPROACH"))
         assertTrue(export.contains("- dest-1"))
         assertTrue(export.contains("2026-04-27 11:45:00 Alert Fired [abc12345]"))

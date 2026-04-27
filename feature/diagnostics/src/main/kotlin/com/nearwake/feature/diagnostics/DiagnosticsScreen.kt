@@ -117,6 +117,25 @@ fun DiagnosticsScreen(
             }
 
             SurfaceCard {
+                NearWakeSectionHeader(text = "Environment")
+                Text(
+                    text = "Power saver: ${state.environment.powerSaverLabel}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = "Battery optimization: ${state.environment.batteryOptimizationLabel}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = "Network: ${state.environment.networkLabel}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+
+            SurfaceCard {
                 NearWakeSectionHeader(text = "Services")
                 NearWakeStateChip(
                     label = state.stateLabel.replace('_', ' ').lowercase().replaceFirstChar(Char::uppercase),

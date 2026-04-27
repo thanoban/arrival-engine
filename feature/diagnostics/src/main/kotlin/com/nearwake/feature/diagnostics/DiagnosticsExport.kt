@@ -13,6 +13,10 @@ internal fun buildDiagnosticsExport(state: DiagnosticsUiState): String = buildSt
         appendLine("${permission.title}: ${if (permission.granted) "Granted" else "Needed"}")
     }
     appendLine()
+    appendLine("Power saver: ${state.environment.powerSaverLabel}")
+    appendLine("Battery optimization: ${state.environment.batteryOptimizationLabel}")
+    appendLine("Network: ${state.environment.networkLabel}")
+    appendLine()
     appendLine("Service state: ${state.stateLabel}")
     appendLine()
     appendLine("Registered geofences:")

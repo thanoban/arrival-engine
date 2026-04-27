@@ -1,9 +1,12 @@
 package com.nearwake.feature.diagnostics
 
 import android.Manifest
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.PowerManager
 import androidx.lifecycle.ViewModel
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -56,6 +59,12 @@ data class DiagnosticsPermissionSummaryUiModel(
     val statuses: List<DiagnosticsPermissionStatusUiModel>,
 )
 
+data class DiagnosticsEnvironmentUiModel(
+    val powerSaverLabel: String,
+    val batteryOptimizationLabel: String,
+    val networkLabel: String,
+)
+
 data class DiagnosticsUiState(
     val buildInfo: DiagnosticsBuildInfoUiModel = DiagnosticsBuildInfoUiModel(
         appVersionLabel = "",
@@ -66,6 +75,11 @@ data class DiagnosticsUiState(
         readinessLabel = "",
         summary = "",
         statuses = emptyList(),
+    ),
+    val environment: DiagnosticsEnvironmentUiModel = DiagnosticsEnvironmentUiModel(
+        powerSaverLabel = "",
+        batteryOptimizationLabel = "",
+        networkLabel = "",
     ),
     val stateLabel: String = "No active trip",
     val registeredGeofences: List<String> = emptyList(),
@@ -93,6 +107,7 @@ class DiagnosticsViewModel @Inject constructor(
                 DiagnosticsUiState(
                     buildInfo = context.toBuildInfoUiModel(),
                     permissions = context.toPermissionSummaryUiModel(),
+                    environment = context.toEnvironmentUiModel(),
                     stateLabel = session?.state?.name ?: "No active trip",
                     registeredGeofences = session?.geofenceIds.orEmpty(),
                     recentEvents = recentEvents.map { it.toUiModel() },
@@ -212,6 +227,26 @@ private fun Context.toPermissionSummaryUiModel(): DiagnosticsPermissionSummaryUi
                 relevant = activityRecognitionRelevant,
             ),
         ),
+    )
+}
+
+private fun Context.toEnvironmentUiModel(): DiagnosticsEnvironmentUiModel {
+    val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+    val networkLabel = when {
+        capabilities == null -> "Offline"
+        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) -> "Connected"
+        else -> "Limited"
+    }
+    return DiagnosticsEnvironmentUiModel(
+        powerSaverLabel = if (powerManager.isPowerSaveMode) "On" else "Off",
+        batteryOptimizationLabel = if (powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            "Ignoring optimizations"
+        } else {
+            "Standard battery optimization"
+        },
+        networkLabel = networkLabel,
     )
 }
 
