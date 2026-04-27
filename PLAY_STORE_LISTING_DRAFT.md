@@ -89,3 +89,7 @@ Still needed before final submission:
 - [ ] feature graphic if used
 - [ ] privacy policy URL
 - [ ] final wording review after field testing
+
+Supporting draft already available in-repo:
+
+- [x] privacy policy text draft
