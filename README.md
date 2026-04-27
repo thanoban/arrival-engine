@@ -25,6 +25,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - Learned commute predictions can now schedule flexible leave-by departure reminders with reboot recovery.
 - The permissions screen now reads live Android permission state, stages requests, and routes denied cases to app settings.
 - Trip setup, live trip, monitoring service recovery, and trip summary screens now surface real persisted route/session data instead of only placeholder values.
+- The diagnostics screen can now export field-test snapshots with event timestamps, build/device info, permission readiness, and environment state.
 
 ## Docs
 
@@ -47,6 +48,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - Light/dark theme support was added with semantic design-system colors and a Settings appearance control.
 - Departure reminders now use a tested planner, flexible alarms, a dedicated notification channel, and boot rescheduling.
 - Permission readiness now reflects real runtime state instead of placeholder values and can request or deep-link to the needed Android settings.
+- Diagnostics export now captures event timing plus build, permission, and environment context for field testing.
 - Route snapshots are cached per trip and shown in trip setup, live trip, and trip summary flows.
 - `core:network` now provides shared `OkHttpClient`, shared `Json`, and a `Retrofit.Builder`.
 - `TripMonitoringService` now restores and persists `TripSession` state through Room while it runs.

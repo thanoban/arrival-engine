@@ -15,7 +15,7 @@ Use it when you want to answer:
 
 ## 1. Current Stage
 
-As of 2026-04-26, NearWake is:
+As of 2026-04-27, NearWake is:
 
 - build-ready
 - feature-complete for the current MVP direction
@@ -121,6 +121,7 @@ Current local persistence includes:
 Current exported user data path:
 
 - CSV trip export from History
+- Diagnostics export from the Diagnostics screen
 
 Current privacy posture to preserve in release material:
 
@@ -128,6 +129,13 @@ Current privacy posture to preserve in release material:
 - no account required for core value
 - no continuous cloud location history store in the current app path
 - diagnostics logging is user-toggleable
+
+Current field-test evidence support already in app:
+
+- diagnostics export with recent event timestamps
+- diagnostics export with app version, build type, and device context
+- diagnostics export with live permission-readiness state
+- diagnostics export with power-saver, battery-optimization, and network context
 
 Before store submission, prepare:
 
