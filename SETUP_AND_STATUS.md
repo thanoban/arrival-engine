@@ -83,6 +83,8 @@ These are the main remaining gaps before calling the project fully finished:
 - real-device validation for flexible reminder delivery timing
 - release/store readiness items such as privacy/distribution/final hardening
 
+The repo now includes concrete drafts and runbooks for the remaining release-prep paperwork, so the open work is increasingly manual validation and publication rather than missing project structure.
+
 So the app is substantial and usable for development, and most remaining work is now release validation rather than missing architecture.
 
 ## 3.1 Problem And Scope Reference

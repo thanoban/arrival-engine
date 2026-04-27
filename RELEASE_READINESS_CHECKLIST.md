@@ -8,6 +8,7 @@ Use [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md) for the c
 Use [PRIVACY_POLICY_DRAFT.md](PRIVACY_POLICY_DRAFT.md) for the current publishable-policy draft.
 Use [PLAY_CONSOLE_DISCLOSURE_DRAFT.md](PLAY_CONSOLE_DISCLOSURE_DRAFT.md) for the current Play Console disclosure-answer draft.
 Use [APP_SIGNING_SETUP_GUIDE.md](APP_SIGNING_SETUP_GUIDE.md) for the local release-signing setup plan.
+Use [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md) for the final manual submission sequence.
 Use [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md) for the current listing copy and screenshot-prep draft.
 
 Use it when you want to answer:
