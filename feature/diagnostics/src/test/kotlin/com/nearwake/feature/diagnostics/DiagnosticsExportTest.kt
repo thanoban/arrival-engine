@@ -11,6 +11,7 @@ class DiagnosticsExportTest {
                 buildInfo = DiagnosticsBuildInfoUiModel(
                     appVersionLabel = "0.1.0 (1)",
                     buildTypeLabel = "Debug",
+                    gitShaLabel = "abc123def456",
                     deviceLabel = "Google Pixel 8 · Android 15",
                 ),
                 permissions = DiagnosticsPermissionSummaryUiModel(
@@ -42,6 +43,7 @@ class DiagnosticsExportTest {
 
         assertTrue(export.contains("App version: 0.1.0 (1)"))
         assertTrue(export.contains("Build type: Debug"))
+        assertTrue(export.contains("Git revision: abc123def456"))
         assertTrue(export.contains("Device: Google Pixel 8 · Android 15"))
         assertTrue(export.contains("Permission readiness: Limited"))
         assertTrue(export.contains("Background location: Needed"))

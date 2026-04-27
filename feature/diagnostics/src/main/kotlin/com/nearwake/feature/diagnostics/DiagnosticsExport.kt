@@ -5,6 +5,7 @@ internal fun buildDiagnosticsExport(state: DiagnosticsUiState): String = buildSt
     appendLine()
     appendLine("App version: ${state.buildInfo.appVersionLabel}")
     appendLine("Build type: ${state.buildInfo.buildTypeLabel}")
+    appendLine("Git revision: ${state.buildInfo.gitShaLabel}")
     appendLine("Device: ${state.buildInfo.deviceLabel}")
     appendLine()
     appendLine("Permission readiness: ${state.permissions.readinessLabel}")

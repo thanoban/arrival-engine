@@ -98,6 +98,16 @@ fun DiagnosticsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
+                    text = "Git revision",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = state.buildInfo.gitShaLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
                     text = "Device",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onBackground,

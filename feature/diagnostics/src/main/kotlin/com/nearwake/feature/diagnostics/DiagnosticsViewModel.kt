@@ -45,6 +45,7 @@ data class DiagnosticsEventUiModel(
 data class DiagnosticsBuildInfoUiModel(
     val appVersionLabel: String,
     val buildTypeLabel: String,
+    val gitShaLabel: String,
     val deviceLabel: String,
 )
 
@@ -70,6 +71,7 @@ data class DiagnosticsUiState(
     val buildInfo: DiagnosticsBuildInfoUiModel = DiagnosticsBuildInfoUiModel(
         appVersionLabel = "",
         buildTypeLabel = "",
+        gitShaLabel = "",
         deviceLabel = "",
     ),
     val permissions: DiagnosticsPermissionSummaryUiModel = DiagnosticsPermissionSummaryUiModel(
@@ -188,6 +190,7 @@ private fun Context.toBuildInfoUiModel(): DiagnosticsBuildInfoUiModel {
     return DiagnosticsBuildInfoUiModel(
         appVersionLabel = "$versionName ($versionCode)",
         buildTypeLabel = BuildConfig.BUILD_TYPE.replaceFirstChar(Char::uppercase),
+        gitShaLabel = BuildConfig.BUILD_GIT_SHA,
         deviceLabel = "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}",
     )
 }

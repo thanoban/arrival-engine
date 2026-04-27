@@ -1,9 +1,20 @@
+fun configuredGitSha(): String =
+    runCatching {
+        providers.exec {
+            commandLine("git", "rev-parse", "--short=12", "HEAD")
+        }.standardOutput.asText.get().trim()
+    }.getOrDefault("unknown")
+
 plugins {
     alias(libs.plugins.nearwake.android.feature)
 }
 
 android {
     namespace = "com.nearwake.feature.diagnostics"
+
+    defaultConfig {
+        buildConfigField("String", "BUILD_GIT_SHA", "\"${configuredGitSha()}\"")
+    }
 }
 
 dependencies {
