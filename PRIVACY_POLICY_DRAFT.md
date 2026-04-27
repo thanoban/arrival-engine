@@ -4,6 +4,7 @@ This file is a working draft for a publishable privacy policy.
 
 It is not legal advice.
 Replace any placeholder contact details before using it publicly.
+Use [privacy-policy.html](privacy-policy.html) if you want the same draft as a simple hostable page file.
 
 ## 1. Overview
 

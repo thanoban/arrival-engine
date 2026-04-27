@@ -93,3 +93,4 @@ Still needed before final submission:
 Supporting draft already available in-repo:
 
 - [x] privacy policy text draft
+- [x] hostable privacy policy page file

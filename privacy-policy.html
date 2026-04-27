@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NearWake Privacy Policy</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7fb;
+      --surface: #ffffff;
+      --text: #141821;
+      --muted: #5a6476;
+      --border: #d8dce6;
+      --accent: #2158d6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1218;
+        --surface: #171c24;
+        --text: #eef2fb;
+        --muted: #a8b1c3;
+        --border: #2a3240;
+        --accent: #7ca5ff;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 40px 20px 72px;
+    }
+
+    article {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px 24px;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      line-height: 1.25;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    p, li {
+      font-size: 1rem;
+    }
+
+    .meta {
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    a {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <article>
+      <h1>NearWake Privacy Policy</h1>
+      <p class="meta">Draft policy page. Replace placeholder contact details before public release.</p>
+
+      <h2>1. Overview</h2>
+      <p>NearWake is an Android app that helps users monitor trips, receive arrival alerts, and set departure reminders.</p>
+      <p>NearWake is designed around local-first behavior. The current app flow does not require an account for its core trip-alert features.</p>
+
+      <h2>2. Information NearWake Stores</h2>
+      <p>NearWake may store the following information on the device:</p>
+      <ul>
+        <li>saved places</li>
+        <li>trip records</li>
+        <li>trip session state</li>
+        <li>route snapshots</li>
+        <li>alert events</li>
+        <li>diagnostics events, when diagnostics logging is enabled</li>
+        <li>commute predictions used for departure reminders</li>
+        <li>user preferences such as theme, alert defaults, and monitoring settings</li>
+      </ul>
+
+      <h2>3. Location Data</h2>
+      <p>NearWake uses location information during trip monitoring so it can estimate proximity to the destination and decide when to alert the user.</p>
+      <p>In the current app design, trip-related location context is stored locally on the device as part of trip/session and route-supporting app data. The app is not designed around a continuous cloud location-history account service for its core flow.</p>
+
+      <h2>4. Diagnostics Data</h2>
+      <p>If diagnostics logging is enabled, NearWake stores recent troubleshooting events on the device to help explain missed, late, or degraded monitoring behavior.</p>
+      <p>Diagnostics logging can be turned off from Settings.</p>
+      <p>Stored diagnostics can be cleared from the Diagnostics screen. Diagnostics are also removed if the app's local data is cleared by the user.</p>
+
+      <h2>5. Notifications And Permissions</h2>
+      <p>NearWake may request permissions such as notifications, precise location, background location, and activity recognition.</p>
+      <p>These permissions support arrival alerts, departure reminders, active trip monitoring, and power-aware monitoring behavior. If some permissions are denied, parts of the app may become less reliable or unavailable.</p>
+
+      <h2>6. Data Sharing</h2>
+      <p>The current NearWake app flow is designed around local persistence first.</p>
+      <p>The app can share user-initiated exports such as CSV trip-history exports and Diagnostics text exports from the Diagnostics screen. These exports are only shared when the user chooses to export them.</p>
+
+      <h2>7. Third-Party Services</h2>
+      <p>If the app is configured with a Google API key, NearWake may use Google services for destination search and transit route preview or routing support.</p>
+      <p>The exact data handling for those services is also governed by the relevant third-party provider terms and policies.</p>
+
+      <h2>8. Retention</h2>
+      <p>NearWake keeps local app data until the user removes it, clears specific in-app data where supported, or uninstalls or clears the app's local storage.</p>
+      <p>Diagnostics events are intended to be short-lived troubleshooting data and can be cleared manually from the Diagnostics screen.</p>
+
+      <h2>9. User Choices</h2>
+      <ul>
+        <li>disable diagnostics logging</li>
+        <li>clear stored diagnostics events</li>
+        <li>control Android permissions through system settings</li>
+        <li>remove app data through Android app-management controls</li>
+      </ul>
+
+      <h2>10. Children</h2>
+      <p>NearWake is not specifically directed to children.</p>
+
+      <h2>11. Changes To This Policy</h2>
+      <p>This privacy policy may be updated as the product changes.</p>
+
+      <h2>12. Contact</h2>
+      <p>Before public release, replace this section with real contact details such as a support email, developer or company name, and website or policy host URL.</p>
+    </article>
+  </main>
+</body>
+</html>
