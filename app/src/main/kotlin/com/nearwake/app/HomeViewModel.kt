@@ -1,23 +1,19 @@
 package com.nearwake.app
 
 import androidx.lifecycle.ViewModel
-import com.nearwake.application.monitoring.StartTripMonitoringUseCase
+import com.nearwake.application.trip.RearmTripUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.SavedPlaceEntity
 import com.nearwake.core.database.entity.TripEntity
 import com.nearwake.core.database.entity.TripSessionEntity
-import com.nearwake.domain.location.model.LatLng
-import com.nearwake.domain.location.repository.LocationRepository
-import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
 import com.nearwake.domain.trip.model.isTerminal
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +24,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 data class HomeUiState(
     val headline: String = "Travel calmer on the rides that are easiest to miss.",
@@ -71,9 +66,7 @@ class HomeViewModel @Inject constructor(
     private val tripDao: TripDao,
     private val tripSessionDao: TripSessionDao,
     private val savedPlaceDao: SavedPlaceDao,
-    private val locationRepository: LocationRepository,
-    private val routingRepository: RoutingRepository,
-    private val startTripMonitoring: StartTripMonitoringUseCase,
+    private val rearmTrip: RearmTripUseCase,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(HomeUiState())
@@ -141,52 +134,8 @@ class HomeViewModel @Inject constructor(
 
     fun rearmLastTrip(onStarted: (String) -> Unit) {
         scope.launch {
-            val sourceTrip = latestRearmTripId?.let { tripId -> latestTripsById[tripId] ?: tripDao.getTripById(tripId) }
-                ?: return@launch
-            val place = latestPlacesById[sourceTrip.destinationId] ?: savedPlaceDao.getSavedPlaceById(sourceTrip.destinationId)
-                ?: return@launch
-
-            val tripId = UUID.randomUUID().toString()
-            val now = Clock.System.now()
-            val routeSnapshot = runCatching {
-                val origin = locationRepository.getLastKnownLocation()
-                if (origin != null) {
-                    routingRepository.fetchRoute(
-                        origin = origin,
-                        destination = LatLng(lat = place.lat, lng = place.lng),
-                    ).getOrNull()
-                } else {
-                    null
-                }
-            }.getOrNull()
-
-            routeSnapshot?.let { snapshot ->
-                routingRepository.cacheRouteForTrip(tripId = tripId, routeSnapshot = snapshot)
-            }
-
-            savedPlaceDao.upsertSavedPlace(place.copy(lastUsedAt = now))
-            tripDao.upsertTrip(
-                TripEntity(
-                    id = tripId,
-                    destinationId = place.id,
-                    alertLeadMinutes = sourceTrip.alertLeadMinutes,
-                    alertIntensity = sourceTrip.alertIntensity,
-                    createdAt = now,
-                ),
-            )
-            tripSessionDao.upsertTripSession(
-                TripSessionEntity(
-                    tripId = tripId,
-                    state = TripState.Armed,
-                    monitoringMode = MonitoringMode.GEOFENCE_ONLY,
-                    confidence = Confidence.HIGH,
-                    geofenceIds = emptyList(),
-                    lastEtaMinutes = routeSnapshot?.totalDurationMinutes ?: 35,
-                    updatedAt = now,
-                ),
-            )
-            startTripMonitoring(tripId)
-            onStarted(tripId)
+            val sourceTripId = latestRearmTripId ?: return@launch
+            rearmTrip(sourceTripId)?.let(onStarted)
         }
     }
 

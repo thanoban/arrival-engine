@@ -3,23 +3,17 @@ package com.nearwake.feature.tripsetup
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.nearwake.application.monitoring.StartTripMonitoringUseCase
+import com.nearwake.application.trip.StartTripRequest
+import com.nearwake.application.trip.StartTripUseCase
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.core.database.dao.SavedPlaceDao
-import com.nearwake.core.database.dao.TripDao
-import com.nearwake.core.database.dao.TripSessionDao
-import com.nearwake.core.database.entity.TripEntity
-import com.nearwake.core.database.entity.TripSessionEntity
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.location.repository.LocationRepository
 import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
-import com.nearwake.domain.trip.model.Confidence
-import com.nearwake.domain.trip.model.MonitoringMode
-import com.nearwake.domain.trip.model.TripState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,12 +42,10 @@ data class TripSetupUiState(
 class TripSetupViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val savedPlaceDao: SavedPlaceDao,
-    private val tripDao: TripDao,
-    private val tripSessionDao: TripSessionDao,
     private val locationRepository: LocationRepository,
     private val routingRepository: RoutingRepository,
     private val userPreferencesDataStore: UserPreferencesDataStore,
-    private val startTripMonitoring: StartTripMonitoringUseCase,
+    private val startTrip: StartTripUseCase,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val placeId = savedStateHandle.get<String>(PLACE_ID_ARG).orEmpty()
@@ -107,38 +99,16 @@ class TripSetupViewModel @Inject constructor(
 
     fun startTrip(onStarted: (String) -> Unit) {
         scope.launch {
-            val place = savedPlaceDao.getSavedPlaceById(placeId) ?: return@launch
-            val tripId = UUID.randomUUID().toString()
-            val now = Clock.System.now()
             val uiState = mutableState.value
-            previewRouteSnapshot?.let { routeSnapshot ->
-                routingRepository.cacheRouteForTrip(tripId = tripId, routeSnapshot = routeSnapshot)
-            }
-
-            savedPlaceDao.upsertSavedPlace(place.copy(lastUsedAt = now))
-            tripDao.upsertTrip(
-                TripEntity(
-                    id = tripId,
-                    destinationId = place.id,
+            startTrip(
+                StartTripRequest(
+                    placeId = placeId,
                     alertLeadMinutes = uiState.alertLeadMinutes,
                     alertIntensity = uiState.alertIntensity,
                     alertMode = uiState.alertMode,
-                    createdAt = now,
+                    previewRouteSnapshot = previewRouteSnapshot,
                 ),
-            )
-            tripSessionDao.upsertTripSession(
-                TripSessionEntity(
-                    tripId = tripId,
-                    state = TripState.Armed,
-                    monitoringMode = MonitoringMode.GEOFENCE_ONLY,
-                    confidence = Confidence.HIGH,
-                    geofenceIds = emptyList(),
-                    lastEtaMinutes = previewRouteSnapshot?.totalDurationMinutes ?: 35,
-                    updatedAt = now,
-                ),
-            )
-            startTripMonitoring(tripId)
-            onStarted(tripId)
+            )?.let(onStarted)
         }
     }
 

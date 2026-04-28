@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":domain:trip"))
     implementation(project(":domain:location"))
     implementation(project(":domain:routing"))
+    implementation(project(":ports:persistence"))
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

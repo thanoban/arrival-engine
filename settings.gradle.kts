@@ -21,6 +21,7 @@ include(":app")
 
 // Application
 include(":application:monitoring")
+include(":application:trip")
 
 // Core
 include(":core:common")
@@ -39,6 +40,7 @@ include(":domain:commute")
 
 // Ports
 include(":ports:monitoring")
+include(":ports:persistence")
 
 // Data
 include(":data:location")

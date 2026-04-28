@@ -45,6 +45,7 @@ android {
 
 dependencies {
     implementation(project(":application:monitoring"))
+    implementation(project(":application:trip"))
 
     // Core
     implementation(project(":core:common"))
