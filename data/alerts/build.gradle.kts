@@ -9,6 +9,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":ports:monitoring"))
     implementation(project(":core:common"))
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))

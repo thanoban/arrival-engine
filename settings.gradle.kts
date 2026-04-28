@@ -19,6 +19,9 @@ rootProject.name = "NearWake"
 
 include(":app")
 
+// Application
+include(":application:monitoring")
+
 // Core
 include(":core:common")
 include(":core:database")
@@ -33,6 +36,9 @@ include(":domain:trip")
 include(":domain:location")
 include(":domain:routing")
 include(":domain:commute")
+
+// Ports
+include(":ports:monitoring")
 
 // Data
 include(":data:location")

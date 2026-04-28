@@ -1,12 +1,12 @@
 package com.nearwake.feature.alerts
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.nearwake.application.monitoring.StartTripMonitoringUseCase
+import com.nearwake.application.monitoring.StopTripMonitoringUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
-import com.nearwake.data.alerts.TripMonitoringService
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.Confidence
@@ -14,7 +14,6 @@ import com.nearwake.domain.trip.model.isTerminal
 import com.nearwake.domain.trip.engine.RecoveryGuidanceMode
 import com.nearwake.domain.trip.engine.RecoveryPlanner
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +46,8 @@ class RecoveryViewModel @Inject constructor(
     savedPlaceDao: SavedPlaceDao,
     private val tripSessionDao: TripSessionDao,
     private val routingRepository: RoutingRepository,
-    @ApplicationContext private val appContext: Context,
+    private val startTripMonitoring: StartTripMonitoringUseCase,
+    private val stopTripMonitoring: StopTripMonitoringUseCase,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val recoveryPlanner = RecoveryPlanner()
@@ -116,7 +116,7 @@ class RecoveryViewModel @Inject constructor(
 
     fun resumeMonitoring(onResumed: (String) -> Unit) {
         if (!mutableState.value.canResumeMonitoring) return
-        TripMonitoringService.start(appContext, tripId)
+        startTripMonitoring(tripId)
         onResumed(tripId)
     }
 
@@ -126,7 +126,7 @@ class RecoveryViewModel @Inject constructor(
                 tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
             }
             tripSessionDao.deleteTripSession(tripId)
-            TripMonitoringService.stop(appContext)
+            stopTripMonitoring()
             onEnded()
         }
     }

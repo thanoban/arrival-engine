@@ -1,15 +1,14 @@
 package com.nearwake.feature.tripsetup
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.nearwake.application.monitoring.StartTripMonitoringUseCase
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.TripEntity
 import com.nearwake.core.database.entity.TripSessionEntity
-import com.nearwake.data.alerts.TripMonitoringService
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.location.repository.LocationRepository
 import com.nearwake.domain.routing.model.RouteSnapshot
@@ -20,7 +19,6 @@ import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -55,7 +53,7 @@ class TripSetupViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
     private val routingRepository: RoutingRepository,
     private val userPreferencesDataStore: UserPreferencesDataStore,
-    @ApplicationContext private val appContext: Context,
+    private val startTripMonitoring: StartTripMonitoringUseCase,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val placeId = savedStateHandle.get<String>(PLACE_ID_ARG).orEmpty()
@@ -139,7 +137,7 @@ class TripSetupViewModel @Inject constructor(
                     updatedAt = now,
                 ),
             )
-            TripMonitoringService.start(appContext, tripId)
+            startTripMonitoring(tripId)
             onStarted(tripId)
         }
     }

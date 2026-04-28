@@ -44,6 +44,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":application:monitoring"))
+
     // Core
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))

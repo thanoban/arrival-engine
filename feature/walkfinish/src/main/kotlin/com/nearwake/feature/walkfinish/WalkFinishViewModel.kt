@@ -1,15 +1,13 @@
 package com.nearwake.feature.walkfinish
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.nearwake.application.monitoring.StopTripMonitoringUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
-import com.nearwake.data.alerts.TripMonitoringService
 import com.nearwake.domain.location.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -46,7 +44,7 @@ class WalkFinishViewModel @Inject constructor(
     private val tripDao: TripDao,
     savedPlaceDao: SavedPlaceDao,
     private val tripSessionDao: TripSessionDao,
-    @ApplicationContext private val appContext: Context,
+    private val stopTripMonitoring: StopTripMonitoringUseCase,
 ) : ViewModel() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
@@ -179,6 +177,6 @@ class WalkFinishViewModel @Inject constructor(
             tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
         }
         tripSessionDao.deleteTripSession(tripId)
-        TripMonitoringService.stop(appContext)
+        stopTripMonitoring()
     }
 }
