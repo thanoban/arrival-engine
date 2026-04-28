@@ -18,13 +18,15 @@ For the current store-facing copy draft, read [PLAY_STORE_LISTING_DRAFT.md](PLAY
 For the final manual store-submission sequence, read [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md).
 For product problem, current scope, features, and technology choices in a comparison-friendly format, read [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md).
 For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md).
+For the target production module boundaries and current migration direction, read [TARGET_PRODUCTION_ARCHITECTURE.md](TARGET_PRODUCTION_ARCHITECTURE.md).
 
 ## Current Status
 
-- Multi-module clean architecture is in place across `app`, `core`, `domain`, `data`, and `feature` modules.
+- Multi-module architecture is in place across `app`, `application`, `core`, `domain`, `ports`, `data`, and `feature` modules.
 - The trip engine, Room database, DataStore, and background monitoring stack are implemented and wired together.
 - The app persists selected places, trips, route snapshots, and trip sessions through Room-backed flows.
 - The Android toolchain is bootstrapped in-repo with the Gradle wrapper.
+- The architecture-hardening pass has started: monitoring control and trip start/re-arm flows now route through application-layer use cases instead of direct screen-to-service shortcuts.
 - `data:routing` now includes a working Google Transit provider, Room-backed route cache, and shared network wiring in `core:network`.
 - `data:location` now includes Google Places-backed destination search with a local fallback when the API key is not configured.
 - Light, dark, and system theme modes are persisted through DataStore and selectable from Settings.
@@ -50,6 +52,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md): final manual sequence for field-test closeout, privacy hosting, signing, and Play submission
 - [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md): problem statement, scope, features, weaknesses, and technology choices for competitor comparison
 - [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md): dedicated plan for the upcoming modern UI/frontend pass
+- [TARGET_PRODUCTION_ARCHITECTURE.md](TARGET_PRODUCTION_ARCHITECTURE.md): target production module boundaries and the current migration status
 - [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
 - [corrections.md](corrections.md): correction log and resolved repo issues
 
@@ -65,11 +68,17 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - `core:network` now provides shared `OkHttpClient`, shared `Json`, and a `Retrofit.Builder`.
 - `TripMonitoringService` now restores and persists `TripSession` state through Room while it runs.
 - History/detail UI now shows route summary, last ETA, and confidence information from persisted session data.
+- Monitoring start/stop control now flows through `:application:monitoring` and `:ports:monitoring`.
+- Trip start and one-tap re-arm now flow through `:application:trip` and `:ports:persistence`.
 
 ## Module Layout
 
 ```text
 :app
+
+:application:monitoring
+:application:trip
+
 :core:common
 :core:database
 :core:datastore
@@ -81,12 +90,17 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 :domain:trip
 :domain:location
 :domain:routing
+:domain:commute
+
+:ports:monitoring
+:ports:persistence
 
 :data:location
 :data:motion
 :data:routing
 :data:alerts
 :data:analytics
+:data:patterns
 
 :feature:onboarding
 :feature:permissions
@@ -98,6 +112,8 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 :feature:settings
 :feature:diagnostics
 :feature:departure
+:feature:walkfinish
+:feature:companion
 ```
 
 ## Prerequisites
@@ -163,6 +179,7 @@ For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MOD
 - If `MAPS_API_KEY` is present, place search can use Google Places and trip setup can fetch a Google transit preview; if not, the app falls back gracefully to local sample search and destination-only monitoring.
 - The current UI is no longer just a shell: destination selection, trip setup, live trip, alert dismissal, appearance settings, diagnostics, and history/summary screens all flow through persisted app data.
 - `TripMonitoringService` now uses Room-backed `TripSession` restore/save behavior, which better matches the plan's recovery and process-death requirements.
+- The repo is moving toward a production modular-monolith shape where features call application use cases, application use cases depend on ports, and data modules implement those ports.
 - `SETUP_AND_STATUS.md` now contains the detailed answer for what you need to provide to build/run the app and what is still unfinished.
 - `REQUIRED_UPDATES_AND_APIS.md` now contains the dedicated checklist of what you still need to update outside the codebase.
 - `UI_MODERNIZATION_PLAN.md` now contains the screen-by-screen plan for the future visual redesign pass.

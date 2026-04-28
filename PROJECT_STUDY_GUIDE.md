@@ -45,8 +45,10 @@ This repo uses many Gradle modules so each part has a clear job.
 Think of the architecture like a company:
 
 - `app` is the front desk that wires everything together
+- `application:*` modules are the operations team that runs product workflows
 - `feature:*` modules are the screens the user sees
 - `domain:*` modules are the business rules
+- `ports:*` modules describe the interfaces the inner layers expect
 - `data:*` modules are the real Android implementations
 - `core:*` modules are shared tools and infrastructure
 
@@ -94,6 +96,36 @@ Examples:
 
 The `domain` layer says what the app needs.
 The `data` layer says how Android will actually do it.
+
+### `application`
+
+The `application` layer is the workflow coordinator.
+
+This layer owns things like:
+
+- starting a trip
+- re-arming a previous trip
+- starting or stopping monitoring
+
+Why it matters:
+
+- it keeps orchestration out of screens
+- it keeps workflow logic out of runtime classes
+- it gives the product a clean place for non-trivial use cases
+
+### `ports`
+
+The `ports` layer defines interfaces for the outside world.
+
+Examples:
+
+- monitoring control
+- workflow-oriented persistence
+
+Why it exists:
+
+- inner logic depends on interfaces, not concrete Android classes
+- `data` modules can implement these ports without leaking their details upward
 
 ### `feature`
 
@@ -152,6 +184,18 @@ Important files:
 - `app/src/main/kotlin/com/nearwake/app/MainActivity.kt`
 - `app/src/main/kotlin/com/nearwake/app/NearWakeNavHost.kt`
 - `app/src/main/kotlin/com/nearwake/app/NearWakeRoute.kt`
+
+### `:application:monitoring`
+
+Purpose:
+
+- start and stop monitoring through application-layer use cases
+
+### `:application:trip`
+
+Purpose:
+
+- own trip start and one-tap re-arm workflows
 
 ### `:core:common`
 
@@ -299,6 +343,18 @@ Why it exists:
 
 - keeps future route-aware work separate from Android implementation details
 
+### `:ports:monitoring`
+
+Purpose:
+
+- define how application logic asks monitoring to start or stop
+
+### `:ports:persistence`
+
+Purpose:
+
+- define workflow-oriented persistence interfaces such as trip lifecycle save/load operations
+
 ### `:data:location`
 
 Purpose:
@@ -431,8 +487,9 @@ Not every module is allowed to depend on every other module.
 
 The intended direction is:
 
-- `feature:*` depends on `core:*` and `domain:*`
-- `data:*` depends on `core:*` and `domain:*`
+- `feature:*` depends on `application:*`, `core:*`, and `domain:*`
+- `application:*` depends on `domain:*` and `ports:*`
+- `data:*` depends on `core:*`, `domain:*`, and `ports:*`
 - `domain:*` stays as pure as possible
 - `app` can depend on everything because it assembles the final application
 
@@ -549,6 +606,11 @@ Why a foreground service:
 - monitoring must remain reliable
 - the user must know the app is actively doing background work
 - Android gives foreground services more permission to keep running
+
+Current architecture note:
+
+- features no longer need to start or stop the service directly
+- that control now flows through `:application:monitoring` and `:ports:monitoring`
 
 Current implementation note:
 
@@ -927,7 +989,8 @@ Use it when:
 In this repo:
 
 - ViewModels drive screens
-- `TripMonitoringService` handles active monitoring
+- application use cases coordinate product workflows
+- `TripMonitoringService` handles active monitoring runtime
 - `TripRecoveryWorker` handles restart/recovery checks
 
 ## 12. What Is Already Built
@@ -943,6 +1006,8 @@ At a high level, the repo already has these major pieces:
 - shared network foundation in `core:network`
 - Google transit route fetching and Room-backed route cache
 - persisted trip flow across UI screens
+- application-layer monitoring boundary
+- application-layer trip start and re-arm workflows
 - route preview wiring in trip setup
 - route summary wiring in live trip and trip history detail
 - onboarding persistence
@@ -985,16 +1050,16 @@ Why `MAPS_API_KEY` matters:
 - without the key, the app falls back to destination-only mode
 - with the key, trip setup/live/history can show richer route data
 
-What API should be enabled first:
+What APIs should be enabled for the current full experience:
 
 - `Directions API`
+- `Places API`
 
-What is not fully wired yet:
+What is still outside the current scope:
 
-- real Google Places-backed search flow
 - map-heavy UI
 
-So one Google key with `Directions API` enabled is the most useful current addition.
+So one Google key with both `Directions API` and `Places API` enabled is the most useful current addition.
 
 ## 14. Beginner Reading Order
 

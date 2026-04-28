@@ -20,12 +20,13 @@ It is a buildable Android app with real architecture and multiple working flows.
 
 What is already implemented:
 
-- multi-module architecture across `app`, `core`, `domain`, `data`, and `feature`
+- multi-module architecture across `app`, `application`, `core`, `domain`, `ports`, `data`, and `feature`
 - Compose navigation and screen flow
 - Room database and DAOs
 - DataStore preferences
 - trip engine/state machine
 - background monitoring service
+- application-layer monitoring and trip-start orchestration
 - WorkManager trip recovery
 - route preview and route cache
 - Google transit routing integration
@@ -43,6 +44,7 @@ What this means in practice:
 - the backend is not required for the current app
 - the app can run in a degraded destination-only mode without a Google routing key
 - release-hardening support inside the repo is substantially in place
+- the architecture hardening pass is underway without removing any shipped features
 
 ## 2. What Is Finished
 
@@ -73,6 +75,8 @@ These infrastructure areas are also in place:
 - Room persistence
 - DataStore
 - shared network module
+- application use-case modules for monitoring and trip creation
+- ports for monitoring control and workflow-oriented persistence
 - test coverage for major domain/data slices
 
 ## 3. What Is Still Not Finished

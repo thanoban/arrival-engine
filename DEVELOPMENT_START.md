@@ -38,7 +38,7 @@ BUILD SUCCESSFUL
 - Keep each finished part small and independently verifiable.
 - Commit and push each finished part separately.
 - Do not include generated/editor folders in commits.
-- Preserve the existing module structure: `app`, `core`, `domain`, `data`, and `feature`.
+- Preserve the existing module structure: `app`, `application`, `core`, `domain`, `ports`, `data`, and `feature`.
 - Add production features through the correct layer, not as screen-only shortcuts.
 - Keep docs honest: separate implemented, partial, and planned work.
 
@@ -72,8 +72,38 @@ NearWake is already beyond scaffold stage. The app currently has:
 - CSV trip export from history.
 - Persisted light, dark, and system appearance modes.
 - Flexible leave-by reminders from learned commute predictions.
+- Application-layer monitoring start/stop boundary.
+- Application-layer trip start and re-arm workflows.
 
 ## Main Open Development Slices
+
+### Slice 0 - Production Architecture Hardening
+
+Status:
+
+```text
+In progress
+```
+
+Target:
+
+- move orchestration out of feature ViewModels
+- move direct runtime control behind ports and application use cases
+- preserve all shipped user-facing behavior while tightening dependency direction
+
+Completed so far:
+
+- Added `:application:monitoring` and `:ports:monitoring`.
+- Removed direct screen/app calls to `TripMonitoringService.start/stop`.
+- Added `:application:trip` and `:ports:persistence`.
+- Moved trip start and one-tap re-arm orchestration into application use cases.
+- Added a Room-backed `TripLifecycleStore` adapter behind a persistence port.
+
+Still remaining in this slice:
+
+- Move cancel / complete / recovery flows into the application layer.
+- Pull more read-side screen state away from direct DAO/entity assembly.
+- Continue shrinking runtime/service responsibility where it owns product workflow instead of runtime concerns.
 
 ### Slice 1 - Wire Departure Reminders Into The App
 
@@ -252,9 +282,10 @@ Code-side release-hardening support now in place:
 
 ## Recommended First Implementation Order
 
-1. Run field testing and release hardening.
+1. Continue production architecture hardening.
+2. Run field testing and release hardening.
 
-This order keeps work useful immediately while reducing risk. Departure reminders are reachable and scheduled, destination search has a provider-backed path with local fallback, and appearance mode is configurable from Settings.
+This order keeps the next changes scalable instead of piling more features onto loose boundaries. Departure reminders are reachable and scheduled, destination search has a provider-backed path with local fallback, appearance mode is configurable from Settings, and the next meaningful risk is architecture discipline rather than missing top-level screens.
 
 ## Standard Verification Set
 

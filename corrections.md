@@ -181,4 +181,4 @@ class AlertReminderReceiver : BroadcastReceiver() {
 
 This is the correct approach: BroadcastReceivers can't inject into Services directly, so a singleton SharedFlow acts as the bridge. No change needed.
 
-**`TripMonitoringStarter.kt` added in `data/alerts`** — helper to start/stop the foreground service. Clean separation. No change needed.
+**Monitoring boundary updated** — direct screen/app calls to `TripMonitoringService` have now been replaced by `:application:monitoring` + `:ports:monitoring`. This is a stronger long-term boundary than direct service control from UI-facing layers.

@@ -2,7 +2,7 @@
 
 **Package:** `com.nearwake.app`
 **Platform:** Android-first (Kotlin + Jetpack Compose)
-**Last updated:** 2026-04-26
+**Last updated:** 2026-04-29
 
 ---
 
@@ -21,7 +21,7 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 
 | # | Pillar | Status |
 |---|--------|--------|
-| 1 | Depart on time | 🟡 In progress — all modules built and passing, Worker + nav wiring pending |
+| 1 | Depart on time | ✅ Done |
 | 2 | Board right | ✅ Done |
 | 3 | Ride awake or asleep | ✅ Done |
 | 4 | Transfer confidently | ✅ Done |
@@ -43,7 +43,7 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 | **Wave A — Stage A/B notification channels** | `NotificationHelper.kt`, `TripMonitoringService.kt` | CHANNEL_APPROACH (gentle), CHANNEL_IMMINENT (HIGH + vibration 200/100/400ms) |
 | **Wave A — Bias-early engine** | `AlertStageEvaluator.kt` | 1.0×/1.15×/1.25× multipliers by confidence + mode |
 | **Wave A — OEM Reliability** | `OemReliability.kt`, `SettingsScreen.kt` | Samsung/Xiaomi/OPPO/Pixel vendor-specific guidance |
-| **Wave A — One-tap re-arm** | `HomeViewModel.kt`, `HomeScreen.kt` | Skips setup, reuses last trip settings, starts service directly |
+| **Wave A — One-tap re-arm** | `HomeViewModel.kt`, `HomeScreen.kt`, `:application:trip` | Skips setup, reuses last trip settings, now routed through application use cases |
 | **Wave C — Per-leg confidence** | `RouteSignalQuality.kt`, `Stop.kt`, `TransferMonitor.kt`, `TransferProgressCard.kt` | Medium/Low signal chip per transfer leg |
 | **Wave C — Transfer notifications** | `NotificationHelper.kt` | Transfer uses CHANNEL_APPROACH, boarding warning uses CHANNEL_IMMINENT |
 | **Wave E — Diagnostics "why fired"** | `DiagnosticsViewModel.kt`, `DiagnosticsScreen.kt`, `AlertOrchestrator.kt` | Enriched payloads: confidence, stage, distance, ETA per alert |
@@ -52,130 +52,52 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 | **Wave D — core:database v5** | `CommutePredictionEntity.kt`, `CommutePredictionDao.kt`, `NearWakeDatabase.kt`, `DatabaseModule.kt` | MIGRATION_4_5, new commute_predictions table |
 | **Wave D — data:patterns** | `CommutePredictionRepository.kt` | Refresh predictions from TripDao + SavedPlaceDao |
 | **Wave D — feature:departure** | `DepartureViewModel.kt`, `DepartureReminderScreen.kt` | Today's predictions, "Start trip" CTA |
+| **Wave D — departure reminder scheduling** | `DepartureReminderScheduler.kt`, `AlertReminderReceiver.kt`, `BootReceiver.kt` | Flexible leave-by reminders, dedicated channel, boot reschedule |
+| **Wave E — Google Places search** | `GooglePlacesSearchRepository.kt`, `LocationModule.kt`, `PlaceSearchScreen.kt` | Provider-backed destination search with local fallback |
+| **Wave E — persisted theme modes** | `ThemeRepository.kt`, `MainActivity.kt`, `SettingsScreen.kt` | `SYSTEM`, `LIGHT`, `DARK` modes persisted in DataStore |
+| **Slice 5 — field-test diagnostics exports** | `DiagnosticsViewModel.kt`, `DiagnosticsScreen.kt` | Event timestamps, permission snapshot, environment snapshot, build/device context |
+| **Wave F — architecture hardening slice A** | `:application:monitoring`, `:ports:monitoring` | Start/stop monitoring now flows through a monitoring port |
+| **Wave F — architecture hardening slice B** | `:application:trip`, `:ports:persistence`, `TripLifecycleStore` | Trip start and re-arm moved out of screen-level orchestration |
 
-### What is in progress (ready to push)
+### What is in progress
 
 | Item | Status |
 |------|--------|
-| Wave D modules (`domain:commute`, `data:patterns`, `feature:departure`, `core:database` v5) | Build passes — not yet committed/pushed |
-| `DepartureReminderScreen` nav wiring | Not yet wired into NavGraph |
-| Departure reminder notification (AlarmManager) | Not yet implemented |
+| Production architecture hardening | In progress — cancel/complete/recovery flows and read-side cleanup still need to move toward the application/ports boundary |
+| Field testing and release validation | In progress — repo-side support is in place, but real-device trips and final store assets still remain |
 
 ### What is not started yet
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| **Light/Dark theme** | High | See full plan below — adds `lightColorScheme`, `ThemeMode` DataStore key, Settings toggle |
-| **DepartureReminder Worker** | Medium | AlarmManager or WorkManager to fire notification before predicted departure |
-| **Google Places Autocomplete** | Medium | Replace 3 hardcoded samples in `PlaceSearchViewModel` with real API |
-| **Accessibility audit** | Medium | TalkBack pass, 48dp targets, 4.5:1 contrast in light mode |
+| **Architecture read-side cleanup** | High | Pull more feature screen state away from direct DAO/entity assembly |
+| **Runtime/service slimming** | High | Reduce `TripMonitoringService` responsibility so it owns runtime mechanics more than product workflow |
+| **Accessibility audit** | Medium | TalkBack pass, 48dp targets, 4.5:1 contrast in both modes |
 | **Lock-screen widget** | Low | AppWidgetProvider + RemoteViews (defer to post-1.0 if notification coverage sufficient) |
-| **Field test protocol** | Pre-launch | 30+ real trips, 10+ screen-off, 10+ tunnel/poor signal |
-| **Play Store listing** | Pre-launch | Positioning, screenshots, commitments copy |
+| **Manual field-test execution** | Pre-launch | 30+ real trips, 10+ screen-off, 10+ tunnel/poor signal |
+| **Final store-submission execution** | Pre-launch | Final screenshots/assets, hosted privacy-policy URL, signing secrets, Play Console submission |
 
 ---
 
-## Light / Dark Mode — Full Implementation Plan
+## Light / Dark Mode — Implementation Summary
 
-### Decision
+This work is complete.
 
-The app was built dark-first. Light mode is now a first-class requirement. The approach:
+Delivered behavior:
 
-- **Dark mode:** existing color tokens, unchanged
-- **Light mode:** a parallel set of background/surface/text tokens, same semantic accent colors
-- **Default:** follow system setting (`isSystemInDarkTheme()`)
-- **User override:** Light / Dark / System — three-chip selector in Settings → Appearance
-- **Persistence:** DataStore key `theme_mode` with values `SYSTEM`, `LIGHT`, `DARK`
-- **Theme resolved at:** `MainActivity` (read DataStore → pass `darkTheme: Boolean` to `NearWakeTheme`)
+- the app now supports `SYSTEM`, `LIGHT`, and `DARK` appearance modes
+- the user can change the mode from Settings → Appearance
+- the selected mode persists through DataStore
+- `MainActivity` resolves the chosen mode and applies it through `NearWakeTheme`
+- shared design-system colors now support both dark and light surfaces
 
----
+Acceptance status:
 
-### Token Map — Dark vs Light
-
-| Token | Dark | Light |
-|-------|------|-------|
-| `BgBase` | `#0A0B0D` | `#F8F9FA` |
-| `BgSurface` | `#111316` | `#FFFFFF` |
-| `BgElevated` | `#181B1F` | `#F1F3F5` |
-| `BgHighest` | `#1F2327` | `#E8EAED` |
-| `BorderSubtle` | `#22262B` | `#E2E5E9` |
-| `BorderDefault` | `#2C3137` | `#CDD1D6` |
-| `TextPrimary` | `#F5F6F7` | `#0D0E10` |
-| `TextSecondary` | `#A8ADB4` | `#4A5056` |
-| `TextTertiary` | `#6E747C` | `#7A8087` |
-| `TextDisabled` | `#434950` | `#B0B5BB` |
-| `SafeBase` | `#22C55E` | `#22C55E` (same) |
-| `SafeSoft` | `#0F2A1A` | `#DCFCE7` |
-| `SafeBorder` | `#1A4A2E` | `#86EFAC` |
-| `MonitoringBase` | `#38BDF8` | `#0284C7` (darkened for contrast on white) |
-| `MonitoringSoft` | `#0A2A3A` | `#E0F2FE` |
-| `MonitoringBorder` | `#164C66` | `#7DD3FC` |
-| `ApproachBase` | `#F59E0B` | `#D97706` (darkened for contrast) |
-| `ApproachSoft` | `#2A1F0A` | `#FEF3C7` |
-| `ApproachBorder` | `#4C3A14` | `#FCD34D` |
-| `AlertBase` | `#EF4444` | `#DC2626` (darkened for contrast) |
-| `AlertIntense` | `#FF4444` | `#DC2626` |
-| `AlertSoft` | `#2A0F0F` | `#FEE2E2` |
-| `AlertBorder` | `#661818` | `#FCA5A5` |
-
-Semantic accent colors (SafeBase/MonitoringBase/ApproachBase/AlertBase) are used directly on both light and dark surfaces. The light-mode variants of the "active" colors (Monitoring/Approach/Alert) are slightly darkened to maintain 4.5:1 contrast on white.
-
----
-
-### Architecture Changes
-
-**1. `NearWakeColors.kt`** — split into `NearWakeDarkColors` and `NearWakeLightColors` objects, plus a `NearWakeColors` resolved instance that references whichever is active via `CompositionLocal`.
-
-**2. `LocalNearWakeColors` CompositionLocal** — provides the correct color set. Components read colors from here instead of hardcoding `NearWakeColors.X`. Existing references continue to work because `NearWakeColors` stays as the accessor.
-
-**3. `NearWakeTheme.kt`** — `NearWakeTheme(darkTheme: Boolean)` already has this parameter (currently ignored). Wire it: if `darkTheme = true` use dark color scheme + dark tokens, else use light.
-
-**4. `ThemeMode.kt`** (new, in `core:datastore`) — enum `SYSTEM`, `LIGHT`, `DARK` + DataStore key.
-
-**5. `ThemeRepository.kt`** (new, in `core:datastore`) — `observeThemeMode(): Flow<ThemeMode>`, `setThemeMode(mode)`.
-
-**6. `MainActivity.kt`** — collect `ThemeRepository.observeThemeMode()`, resolve `darkTheme: Boolean` (`DARK` → true, `LIGHT` → false, `SYSTEM` → `isSystemInDarkTheme()`), pass to `NearWakeTheme`.
-
-**7. `SettingsScreen.kt`** — add "Appearance" section with three `NearWakeSelectableChip`s: System / Light / Dark. Write to `ThemeRepository` on tap.
-
-**8. `SettingsViewModel.kt`** — inject `ThemeRepository`, expose `themeMode: ThemeMode` in state, add `setThemeMode(mode)`.
-
----
-
-### Files to Change
-
-| File | Change |
-|------|--------|
-| `core/designsystem/NearWakeColors.kt` | Add `NearWakeLightColors`, `NearWakeDarkColors`, `LocalNearWakeColors` CompositionLocal |
-| `core/designsystem/NearWakeTheme.kt` | Wire `darkTheme` param to choose color set + M3 color scheme |
-| `core/datastore/ThemeMode.kt` | New enum + DataStore key constant |
-| `core/datastore/ThemeRepository.kt` | New repository: observe + set theme mode |
-| `app/src/main/.../MainActivity.kt` | Collect theme mode, resolve darkTheme, pass to NearWakeTheme |
-| `feature/settings/SettingsViewModel.kt` | Inject ThemeRepository, expose themeMode in state |
-| `feature/settings/SettingsScreen.kt` | Add "Appearance" section with System/Light/Dark chip row |
-
----
-
-### What Does NOT Change
-
-- Navigation routes — unchanged
-- ViewModel state contracts — unchanged
-- Room schema — unchanged
-- All screens — they inherit theme via `MaterialTheme` automatically
-- Alert screen — `AlertIntense` used directly as background; in light mode it's `#DC2626` (still unmistakable red)
-- Accent animation on LiveTripScreen — unchanged, semantic colors work on both backgrounds
-
----
-
-### Acceptance Criteria for Light/Dark
-
-1. All screens visually correct in light mode — no dark text on dark bg, no light text on light bg
-2. 4.5:1 contrast ratio on all text in both modes (AAA on Alert screen)
-3. System preference respected by default
-4. User override persists across app restarts
-5. Theme switch in Settings applies immediately without restart
-6. No hardcoded `NearWakeColors.BgBase` etc. — all background/surface/text tokens resolved via `LocalNearWakeColors`
-7. Debug and release builds pass
+1. Theme selection is available in Settings
+2. System preference is respected by default
+3. User override persists across app restarts
+4. Theme changes apply without restart
+5. Debug and release builds pass with the current theme implementation
 
 ---
 
@@ -204,22 +126,33 @@ Semantic accent colors (SafeBase/MonitoringBase/ApproachBase/AlertBase) are used
 - [x] TransferMonitor (UI strip, CHANNEL_APPROACH notifications)
 - [x] Per-leg confidence chip in transfer strip (RouteSignalQuality on Stop)
 
-### Wave D — Journey Extension 🟡 In progress
+### Wave D — Journey Extension ✅ Complete
 - [x] `:domain:commute` — CommutePrediction, CommutePredictionEngine
 - [x] `:core:database` v5 — CommutePredictionEntity, DAO, MIGRATION_4_5
 - [x] `:data:patterns` — CommutePredictionRepository
 - [x] `:feature:departure` — DepartureReminderScreen, DepartureViewModel
 - [x] **Room KSP build failure fixed** — schema v5 generated, full build passes
-- [ ] Departure reminder notification (AlarmManager) — "Leave by HH:MM for Destination"
-- [ ] Wire DepartureReminderScreen into NavGraph
+- [x] Departure reminder notification scheduling — "Leave by HH:MM for Destination"
+- [x] Departure screen wired into NavGraph and reachable in-app
 
-### Wave E — Polish and Public Beta 🟡 Partial
+### Wave E — Polish and Public Beta 🟡 Manual validation remaining
 - [x] Enriched diagnostics "why fired" — confidence, stage, distance, ETA per event
 - [x] CSV trip log export with share sheet
-- [ ] **Light / Dark Mode** — see full plan above
-- [ ] Google Places Autocomplete (replace stub in PlaceSearchViewModel)
-- [ ] Full field test protocol (30+ real trips)
-- [ ] Play Store listing
+- [x] Light / dark / system theme support
+- [x] Google Places-backed search with local fallback
+- [x] Field-test protocol and runbook
+- [x] Play Store listing draft and release-prep docs
+- [ ] Real-device field testing
+- [ ] Final screenshots/assets and store submission execution
+
+### Wave F — Production Architecture Hardening 🟡 In progress
+- [x] `:application:monitoring` + `:ports:monitoring`
+- [x] `:application:trip` + `:ports:persistence`
+- [x] monitoring start/stop moved behind a monitoring gateway
+- [x] trip start and one-tap re-arm moved into application use cases
+- [ ] cancel / complete / recovery workflow migration
+- [ ] read-side cleanup away from direct DAO/entity assembly
+- [ ] slimmer runtime/service responsibilities
 
 ---
 
@@ -240,12 +173,12 @@ Semantic accent colors (SafeBase/MonitoringBase/ApproachBase/AlertBase) are used
 | `data/patterns/CommutePredictionRepository.kt` | Refresh predictions from trip history |
 | `core/database/NearWakeDatabase.kt` | Room DB v5 with CommutePredictionEntity |
 | `core/database/di/DatabaseModule.kt` | Migrations 1→5, CommutePredictionDao provision |
-| `core/designsystem/NearWakeColors.kt` | Color tokens — dark + **light variants needed** |
-| `core/designsystem/NearWakeTheme.kt` | Theme composition — **wire darkTheme param** |
+| `core/designsystem/NearWakeColors.kt` | Color tokens for dark and light appearance modes |
+| `core/designsystem/NearWakeTheme.kt` | Theme composition and runtime appearance resolution |
 | `feature/livetrip/LiveTripScreen.kt` | Trip monitoring UI with animated accent |
 | `feature/departure/DepartureReminderScreen.kt` | Today's predicted departures |
 | `feature/history/HistoryScreen.kt` | History list + Export button |
-| `feature/settings/SettingsScreen.kt` | Settings + OEM reliability + **Appearance section needed** |
+| `feature/settings/SettingsScreen.kt` | Settings, OEM reliability guidance, and Appearance controls |
 | `app/HomeScreen.kt` | Home with one-tap re-arm |
 
 ---
