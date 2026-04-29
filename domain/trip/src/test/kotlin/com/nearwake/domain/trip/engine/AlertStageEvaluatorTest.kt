@@ -3,6 +3,7 @@ package com.nearwake.domain.trip.engine
 import com.google.common.truth.Truth.assertThat
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertStage
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.TripRule
 import com.nearwake.domain.trip.model.TripState
@@ -42,6 +43,45 @@ class AlertStageEvaluatorTest {
         )
 
         assertThat(stage).isEqualTo(AlertStage.IMMINENT)
+    }
+
+    @Test
+    fun `distance trigger ignores eta and enters approach from configured radius`() {
+        val stage = evaluator.evaluate(
+            currentStage = AlertStage.MONITORING,
+            tripState = TripState.MonitoringLowPower,
+            rule = TripRule(
+                alertLeadMinutes = 10,
+                alertTriggerMode = AlertTriggerMode.DISTANCE,
+                alertDistanceMeters = 500,
+            ),
+            alertMode = AlertMode.ACTIVE,
+            confidence = Confidence.HIGH,
+            etaMinutes = 2,
+            distanceMeters = 480.0,
+            destinationGeofenceEntered = false,
+        )
+
+        assertThat(stage).isEqualTo(AlertStage.APPROACH)
+    }
+
+    @Test
+    fun `time trigger reaches approach at selected lead minutes`() {
+        val stage = evaluator.evaluate(
+            currentStage = AlertStage.MONITORING,
+            tripState = TripState.MonitoringLowPower,
+            rule = TripRule(
+                alertLeadMinutes = 10,
+                alertTriggerMode = AlertTriggerMode.TIME,
+            ),
+            alertMode = AlertMode.ACTIVE,
+            confidence = Confidence.HIGH,
+            etaMinutes = 10,
+            distanceMeters = 900.0,
+            destinationGeofenceEntered = false,
+        )
+
+        assertThat(stage).isEqualTo(AlertStage.APPROACH)
     }
 
     @Test

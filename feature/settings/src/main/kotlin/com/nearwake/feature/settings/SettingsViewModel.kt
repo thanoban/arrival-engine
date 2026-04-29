@@ -5,6 +5,8 @@ import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.core.datastore.model.ThemeMode
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertTriggerMode
+import com.nearwake.domain.trip.model.TripRule
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -18,6 +20,8 @@ import kotlinx.coroutines.launch
 
 data class SettingsUiState(
     val defaultAlertLeadMinutes: Int = 10,
+    val defaultAlertTriggerMode: AlertTriggerMode = AlertTriggerMode.TIME,
+    val defaultAlertDistanceMeters: Int = TripRule.DEFAULT_ALERT_DISTANCE_METERS,
     val alertIntensity: AlertIntensity = AlertIntensity.STANDARD,
     val alertMode: AlertMode = AlertMode.ACTIVE,
     val backgroundMonitoringEnabled: Boolean = true,
@@ -38,6 +42,8 @@ class SettingsViewModel @Inject constructor(
             userPreferencesDataStore.preferences.collect { preferences ->
                 mutableState.value = SettingsUiState(
                     defaultAlertLeadMinutes = preferences.defaultAlertLeadMinutes,
+                    defaultAlertTriggerMode = preferences.defaultAlertTriggerMode,
+                    defaultAlertDistanceMeters = preferences.defaultAlertDistanceMeters,
                     alertIntensity = preferences.defaultAlertIntensity,
                     alertMode = preferences.defaultAlertMode,
                     backgroundMonitoringEnabled = preferences.backgroundMonitoringEnabled,
@@ -51,6 +57,18 @@ class SettingsViewModel @Inject constructor(
     fun updateLeadMinutes(minutes: Int) {
         scope.launch {
             userPreferencesDataStore.updateDefaultAlertLeadMinutes(minutes)
+        }
+    }
+
+    fun updateAlertTriggerMode(triggerMode: AlertTriggerMode) {
+        scope.launch {
+            userPreferencesDataStore.updateDefaultAlertTriggerMode(triggerMode)
+        }
+    }
+
+    fun updateAlertDistanceMeters(distanceMeters: Int) {
+        scope.launch {
+            userPreferencesDataStore.updateDefaultAlertDistanceMeters(distanceMeters)
         }
     }
 

@@ -491,6 +491,8 @@ class TripMonitoringService : Service() {
             tripId = trip.id,
             destinationName = destination.name,
             alertLeadMinutes = trip.alertLeadMinutes,
+            alertTriggerMode = trip.alertTriggerMode,
+            alertDistanceMeters = trip.alertDistanceMeters,
             alertIntensity = trip.alertIntensity,
             alertMode = trip.alertMode,
             destination = LatLng(lat = destination.lat, lng = destination.lng),

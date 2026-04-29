@@ -10,6 +10,8 @@ import com.nearwake.core.datastore.model.ThemeMode
 import com.nearwake.core.datastore.model.UserPreferences
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertTriggerMode
+import com.nearwake.domain.trip.model.TripRule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -19,6 +21,11 @@ class UserPreferencesDataStore(
     val preferences: Flow<UserPreferences> = dataStore.data.map { preferences ->
         UserPreferences(
             defaultAlertLeadMinutes = preferences[DEFAULT_ALERT_LEAD_MINUTES] ?: 10,
+            defaultAlertTriggerMode = preferences[DEFAULT_ALERT_TRIGGER_MODE]
+                ?.let(AlertTriggerMode::valueOf)
+                ?: AlertTriggerMode.TIME,
+            defaultAlertDistanceMeters = preferences[DEFAULT_ALERT_DISTANCE_METERS]
+                ?: TripRule.DEFAULT_ALERT_DISTANCE_METERS,
             defaultAlertIntensity = preferences[DEFAULT_ALERT_INTENSITY]
                 ?.let(AlertIntensity::valueOf)
                 ?: AlertIntensity.STANDARD,
@@ -37,6 +44,18 @@ class UserPreferencesDataStore(
     suspend fun updateDefaultAlertLeadMinutes(minutes: Int) {
         dataStore.edit { preferences ->
             preferences[DEFAULT_ALERT_LEAD_MINUTES] = minutes
+        }
+    }
+
+    suspend fun updateDefaultAlertTriggerMode(triggerMode: AlertTriggerMode) {
+        dataStore.edit { preferences ->
+            preferences[DEFAULT_ALERT_TRIGGER_MODE] = triggerMode.name
+        }
+    }
+
+    suspend fun updateDefaultAlertDistanceMeters(distanceMeters: Int) {
+        dataStore.edit { preferences ->
+            preferences[DEFAULT_ALERT_DISTANCE_METERS] = distanceMeters
         }
     }
 
@@ -91,6 +110,8 @@ class UserPreferencesDataStore(
     suspend fun updateAll(values: UserPreferences) {
         dataStore.edit { preferences ->
             preferences[DEFAULT_ALERT_LEAD_MINUTES] = values.defaultAlertLeadMinutes
+            preferences[DEFAULT_ALERT_TRIGGER_MODE] = values.defaultAlertTriggerMode.name
+            preferences[DEFAULT_ALERT_DISTANCE_METERS] = values.defaultAlertDistanceMeters
             preferences[DEFAULT_ALERT_INTENSITY] = values.defaultAlertIntensity.name
             preferences[DEFAULT_ALERT_MODE] = values.defaultAlertMode.name
             preferences[BACKGROUND_MONITORING_ENABLED] = values.backgroundMonitoringEnabled
@@ -104,6 +125,8 @@ class UserPreferencesDataStore(
 
     companion object {
         private val DEFAULT_ALERT_LEAD_MINUTES = intPreferencesKey("default_alert_lead_minutes")
+        private val DEFAULT_ALERT_TRIGGER_MODE = stringPreferencesKey("default_alert_trigger_mode")
+        private val DEFAULT_ALERT_DISTANCE_METERS = intPreferencesKey("default_alert_distance_meters")
         private val DEFAULT_ALERT_INTENSITY = stringPreferencesKey("default_alert_intensity")
         private val DEFAULT_ALERT_MODE = stringPreferencesKey("default_alert_mode")
         private val BACKGROUND_MONITORING_ENABLED = booleanPreferencesKey("background_monitoring_enabled")

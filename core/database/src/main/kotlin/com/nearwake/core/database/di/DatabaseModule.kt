@@ -34,6 +34,7 @@ object DatabaseModule {
         .addMigrations(MIGRATION_2_3)
         .addMigrations(MIGRATION_3_4)
         .addMigrations(MIGRATION_4_5)
+        .addMigrations(MIGRATION_5_6)
         .build()
 
     @Provides
@@ -117,6 +118,23 @@ object DatabaseModule {
                     `updated_at` TEXT NOT NULL,
                     PRIMARY KEY(`id`)
                 )
+                """.trimIndent(),
+            )
+        }
+    }
+
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
+                ALTER TABLE `trips`
+                ADD COLUMN `alert_trigger_mode` TEXT NOT NULL DEFAULT 'TIME'
+                """.trimIndent(),
+            )
+            database.execSQL(
+                """
+                ALTER TABLE `trips`
+                ADD COLUMN `alert_distance_meters` INTEGER NOT NULL DEFAULT 500
                 """.trimIndent(),
             )
         }

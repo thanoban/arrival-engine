@@ -10,6 +10,8 @@ data class Trip(
     val id: String,
     val destination: SavedPlace,
     val alertLeadMinutes: Int,
+    val alertTriggerMode: AlertTriggerMode = AlertTriggerMode.TIME,
+    val alertDistanceMeters: Int = TripRule.DEFAULT_ALERT_DISTANCE_METERS,
     val alertIntensity: AlertIntensity,
     val alertMode: AlertMode,
     val routeSnapshot: RouteSnapshot? = null,

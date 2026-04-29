@@ -36,6 +36,8 @@ class TripLifecycleStoreImpl @Inject constructor(
                 id = trip.id,
                 destinationId = trip.destinationId,
                 alertLeadMinutes = trip.alertLeadMinutes,
+                alertTriggerMode = trip.alertTriggerMode,
+                alertDistanceMeters = trip.alertDistanceMeters,
                 alertIntensity = trip.alertIntensity,
                 alertMode = trip.alertMode,
             )
@@ -53,6 +55,8 @@ class TripLifecycleStoreImpl @Inject constructor(
                 id = command.id,
                 destinationId = command.destinationId,
                 alertLeadMinutes = command.alertLeadMinutes,
+                alertTriggerMode = command.alertTriggerMode,
+                alertDistanceMeters = command.alertDistanceMeters,
                 alertIntensity = command.alertIntensity,
                 alertMode = command.alertMode,
                 createdAt = command.createdAt,

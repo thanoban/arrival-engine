@@ -92,6 +92,7 @@ Workflow orchestration:
 - start a trip
 - re-arm a previous trip
 - start or stop monitoring
+- preserve trip-level alert preferences such as `Time`, `Distance`, or `Both`
 - later: cancel trip, complete trip, export diagnostics, schedule reminders
 
 ### `domain:*`
@@ -201,3 +202,5 @@ NearWake should scale as a **modular Android monolith with hexagonal boundaries*
 - `data` for concrete adapters
 
 That keeps current features intact while making the repo safer for long-term growth.
+
+A good current example is the configurable early-alert work: the trigger mode and distance are modeled in `domain:trip`, persisted through Room/DataStore adapters, surfaced through application-backed trip flows, and then consumed by feature screens and runtime monitoring without turning the UI into the business-logic owner.

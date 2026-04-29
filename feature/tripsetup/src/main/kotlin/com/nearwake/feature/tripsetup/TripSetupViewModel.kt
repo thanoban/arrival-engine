@@ -13,6 +13,8 @@ import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertTriggerMode
+import com.nearwake.domain.trip.model.TripRule
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +34,8 @@ data class TripSetupUiState(
     val etaLabel: String = "Checking route",
     val routeSummary: String = "NearWake will fall back to destination-only monitoring if a transit route is unavailable.",
     val alertLeadMinutes: Int = 10,
+    val alertTriggerMode: AlertTriggerMode = AlertTriggerMode.TIME,
+    val alertDistanceMeters: Int = TripRule.DEFAULT_ALERT_DISTANCE_METERS,
     val alertIntensity: AlertIntensity = AlertIntensity.STANDARD,
     val alertMode: AlertMode = AlertMode.ACTIVE,
     val backgroundMonitoringEnabled: Boolean = true,
@@ -58,6 +62,8 @@ class TripSetupViewModel @Inject constructor(
             val preferences = userPreferencesDataStore.preferences.first()
             mutableState.value = mutableState.value.copy(
                 alertLeadMinutes = preferences.defaultAlertLeadMinutes,
+                alertTriggerMode = preferences.defaultAlertTriggerMode,
+                alertDistanceMeters = preferences.defaultAlertDistanceMeters,
                 alertIntensity = preferences.defaultAlertIntensity,
                 alertMode = preferences.defaultAlertMode,
                 backgroundMonitoringEnabled = preferences.backgroundMonitoringEnabled,
@@ -85,6 +91,14 @@ class TripSetupViewModel @Inject constructor(
         mutableState.value = mutableState.value.copy(alertLeadMinutes = minutes)
     }
 
+    fun selectAlertTriggerMode(triggerMode: AlertTriggerMode) {
+        mutableState.value = mutableState.value.copy(alertTriggerMode = triggerMode)
+    }
+
+    fun selectAlertDistanceMeters(distanceMeters: Int) {
+        mutableState.value = mutableState.value.copy(alertDistanceMeters = distanceMeters)
+    }
+
     fun selectIntensity(intensity: AlertIntensity) {
         mutableState.value = mutableState.value.copy(alertIntensity = intensity)
     }
@@ -104,6 +118,8 @@ class TripSetupViewModel @Inject constructor(
                 StartTripRequest(
                     placeId = placeId,
                     alertLeadMinutes = uiState.alertLeadMinutes,
+                    alertTriggerMode = uiState.alertTriggerMode,
+                    alertDistanceMeters = uiState.alertDistanceMeters,
                     alertIntensity = uiState.alertIntensity,
                     alertMode = uiState.alertMode,
                     previewRouteSnapshot = previewRouteSnapshot,

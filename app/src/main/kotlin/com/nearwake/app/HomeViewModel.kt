@@ -9,6 +9,7 @@ import com.nearwake.core.database.entity.SavedPlaceEntity
 import com.nearwake.core.database.entity.TripEntity
 import com.nearwake.core.database.entity.TripSessionEntity
 import com.nearwake.domain.trip.model.AlertStage
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
@@ -175,7 +176,11 @@ class HomeViewModel @Inject constructor(
         place: SavedPlaceEntity?,
     ): HomeRearmTrip? {
         place ?: return null
-        val leadLabel = if (trip.alertLeadMinutes == 0) "Nearby alert" else "${trip.alertLeadMinutes} min early"
+        val leadLabel = formatAlertPreference(
+            triggerMode = trip.alertTriggerMode,
+            alertLeadMinutes = trip.alertLeadMinutes,
+            alertDistanceMeters = trip.alertDistanceMeters,
+        )
         val intensityLabel = trip.alertIntensity.name.lowercase().replaceFirstChar(Char::uppercase)
         return HomeRearmTrip(
             sourceTripId = trip.id,
@@ -201,7 +206,11 @@ class HomeViewModel @Inject constructor(
             else -> HomeStatusTone.Approaching
         }
         val timestamp = trip.createdAt.toString().replace('T', ' ').take(16)
-        val lead = if (trip.alertLeadMinutes == 0) "Nearby" else "${trip.alertLeadMinutes} min early"
+        val lead = formatAlertPreference(
+            triggerMode = trip.alertTriggerMode,
+            alertLeadMinutes = trip.alertLeadMinutes,
+            alertDistanceMeters = trip.alertDistanceMeters,
+        )
         return HomeRecentTrip(
             tripId = trip.id,
             destinationName = place.name,
@@ -210,4 +219,27 @@ class HomeViewModel @Inject constructor(
             statusTone = tone,
         )
     }
+
+    private fun formatAlertPreference(
+        triggerMode: AlertTriggerMode,
+        alertLeadMinutes: Int,
+        alertDistanceMeters: Int,
+    ): String = when (triggerMode) {
+        AlertTriggerMode.TIME ->
+            if (alertLeadMinutes == 0) "Nearby alert" else "${alertLeadMinutes} min early"
+        AlertTriggerMode.DISTANCE -> "${alertDistanceMeters.toDistanceLabel()} away"
+        AlertTriggerMode.BOTH -> buildString {
+            append(if (alertLeadMinutes == 0) "Nearby" else "${alertLeadMinutes} min")
+            append(" or ")
+            append(alertDistanceMeters.toDistanceLabel())
+        }
+    }
+
+    private fun Int.toDistanceLabel(): String =
+        if (this >= 1000) {
+            val kilometers = this / 1000.0
+            if (kilometers % 1.0 == 0.0) "${kilometers.toInt()} km" else "${kilometers} km"
+        } else {
+            "$this m"
+        }
 }

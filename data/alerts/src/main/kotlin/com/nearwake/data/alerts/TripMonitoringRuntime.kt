@@ -10,6 +10,7 @@ import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.AlertIntensity
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.TripRule
 import com.nearwake.domain.trip.model.TripSession
 import com.nearwake.domain.trip.model.TripState
@@ -56,6 +57,8 @@ class TripMonitoringRuntime @Inject constructor(
         tripId: String,
         destinationName: String = "Destination",
         alertLeadMinutes: Int,
+        alertTriggerMode: AlertTriggerMode = AlertTriggerMode.TIME,
+        alertDistanceMeters: Int = TripRule.DEFAULT_ALERT_DISTANCE_METERS,
         alertIntensity: AlertIntensity,
         alertMode: AlertMode = AlertMode.ACTIVE,
         destination: LatLng,
@@ -72,7 +75,16 @@ class TripMonitoringRuntime @Inject constructor(
             destination = destination,
             tripRule = TripRule(
                 alertLeadMinutes = alertLeadMinutes,
-                approachRadiusMeters = if (batterySaverMode) BATTERY_SAVER_APPROACH_RADIUS else TripRule.DEFAULT_APPROACH_RADIUS_METERS,
+                alertTriggerMode = alertTriggerMode,
+                alertDistanceMeters = alertDistanceMeters,
+                approachRadiusMeters = when (alertTriggerMode) {
+                    AlertTriggerMode.DISTANCE -> alertDistanceMeters.toFloat()
+                    AlertTriggerMode.TIME,
+                    AlertTriggerMode.BOTH -> maxOf(
+                        alertDistanceMeters.toFloat(),
+                        if (batterySaverMode) BATTERY_SAVER_APPROACH_RADIUS else TripRule.DEFAULT_APPROACH_RADIUS_METERS,
+                    )
+                },
             ),
             geofenceIds = buildGeofenceIds(tripId),
             hasCachedRoute = hasCachedRoute,

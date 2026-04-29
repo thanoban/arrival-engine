@@ -30,6 +30,7 @@ import com.nearwake.core.ui.NearWakeTextButton
 import com.nearwake.core.ui.SurfaceCard
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertTriggerMode
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -85,6 +86,26 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
                     Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
                         Text(
+                            text = "Default trigger",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                        ) {
+                            AlertTriggerMode.entries.forEach { triggerMode ->
+                                NearWakeSelectableChip(
+                                    selected = state.defaultAlertTriggerMode == triggerMode,
+                                    onClick = { viewModel.updateAlertTriggerMode(triggerMode) },
+                                    label = triggerMode.label,
+                                )
+                            }
+                        }
+                    }
+                    if (state.defaultAlertTriggerMode.usesTimeTrigger()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        Text(
                             text = "Default lead time",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onBackground,
@@ -98,12 +119,34 @@ fun SettingsScreen(
                                 onClick = { viewModel.updateLeadMinutes(0) },
                                 label = "Nearby",
                             )
-                            listOf(5, 10, 15).forEach { minutes ->
+                            listOf(2, 5, 10, 15).forEach { minutes ->
                                 NearWakeSelectableChip(
                                     selected = state.defaultAlertLeadMinutes == minutes,
                                     onClick = { viewModel.updateLeadMinutes(minutes) },
                                     label = "$minutes min",
                                 )
+                            }
+                        }
+                    }
+                    }
+                    if (state.defaultAlertTriggerMode.usesDistanceTrigger()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                            Text(
+                                text = "Default distance",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                            ) {
+                                listOf(500, 1000, 1500, 2000).forEach { distanceMeters ->
+                                    NearWakeSelectableChip(
+                                        selected = state.defaultAlertDistanceMeters == distanceMeters,
+                                        onClick = { viewModel.updateAlertDistanceMeters(distanceMeters) },
+                                        label = distanceMeters.toDistanceLabel(),
+                                    )
+                                }
                             }
                         }
                     }
@@ -215,11 +258,30 @@ private val AlertMode.label: String
         AlertMode.SLEEP -> "Sleep"
     }
 
+private val AlertTriggerMode.label: String
+    get() = when (this) {
+        AlertTriggerMode.TIME -> "Time"
+        AlertTriggerMode.DISTANCE -> "Distance"
+        AlertTriggerMode.BOTH -> "Both"
+    }
+
 private val ThemeMode.label: String
     get() = when (this) {
         ThemeMode.SYSTEM -> "System"
         ThemeMode.LIGHT -> "Light"
         ThemeMode.DARK -> "Dark"
+    }
+
+private fun AlertTriggerMode.usesTimeTrigger(): Boolean = this != AlertTriggerMode.DISTANCE
+
+private fun AlertTriggerMode.usesDistanceTrigger(): Boolean = this != AlertTriggerMode.TIME
+
+private fun Int.toDistanceLabel(): String =
+    if (this >= 1000) {
+        val kilometers = this / 1000.0
+        if (kilometers % 1.0 == 0.0) "${kilometers.toInt()} km" else "${kilometers} km"
+    } else {
+        "$this m"
     }
 
 @Composable

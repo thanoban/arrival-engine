@@ -25,6 +25,7 @@ class AlertStageEvaluator {
             isImminent(
                 alertMode = alertMode,
                 confidence = confidence,
+                rule = rule,
                 etaMinutes = etaMinutes,
                 distanceMeters = distanceMeters,
             ) -> AlertStage.IMMINENT
@@ -32,6 +33,7 @@ class AlertStageEvaluator {
             isApproach(
                 alertMode = alertMode,
                 confidence = confidence,
+                rule = rule,
                 etaMinutes = etaMinutes,
                 distanceMeters = distanceMeters,
             ) -> AlertStage.APPROACH
@@ -54,27 +56,40 @@ class AlertStageEvaluator {
     private fun isApproach(
         alertMode: AlertMode,
         confidence: Confidence,
+        rule: TripRule,
         etaMinutes: Int?,
         distanceMeters: Double?,
     ): Boolean {
         val biasMultiplier = stageBiasMultiplier(confidence = confidence, alertMode = alertMode)
-        val approachEtaMinutes = ceil(APPROACH_ETA_MINUTES * biasMultiplier).toInt()
-        val approachDistanceMeters = APPROACH_DISTANCE_METERS * biasMultiplier
-        return (etaMinutes != null && etaMinutes <= approachEtaMinutes) ||
-            (distanceMeters != null && distanceMeters <= approachDistanceMeters)
+        val approachEtaMinutes = ceil(rule.alertLeadMinutes * biasMultiplier).toInt()
+        val approachDistanceMeters = rule.alertDistanceMeters * biasMultiplier
+        val triggeredByEta = rule.usesTimeTrigger() &&
+            etaMinutes != null &&
+            approachEtaMinutes > 0 &&
+            etaMinutes <= approachEtaMinutes
+        val triggeredByDistance = rule.usesDistanceTrigger() &&
+            distanceMeters != null &&
+            distanceMeters <= approachDistanceMeters
+        return triggeredByEta || triggeredByDistance
     }
 
     private fun isImminent(
         alertMode: AlertMode,
         confidence: Confidence,
+        rule: TripRule,
         etaMinutes: Int?,
         distanceMeters: Double?,
     ): Boolean {
         val biasMultiplier = stageBiasMultiplier(confidence = confidence, alertMode = alertMode)
         val imminentEtaMinutes = ceil(IMMINENT_ETA_MINUTES * biasMultiplier).toInt()
         val imminentDistanceMeters = IMMINENT_DISTANCE_METERS * biasMultiplier
-        return (etaMinutes != null && etaMinutes <= imminentEtaMinutes) ||
-            (distanceMeters != null && distanceMeters <= imminentDistanceMeters)
+        val triggeredByEta = rule.usesTimeTrigger() &&
+            etaMinutes != null &&
+            etaMinutes <= imminentEtaMinutes
+        val triggeredByDistance = rule.usesDistanceTrigger() &&
+            distanceMeters != null &&
+            distanceMeters <= imminentDistanceMeters
+        return triggeredByEta || triggeredByDistance
     }
 
     private fun stageBiasMultiplier(
@@ -87,9 +102,7 @@ class AlertStageEvaluator {
     }
 
     companion object {
-        private const val APPROACH_ETA_MINUTES = 5.0
         private const val IMMINENT_ETA_MINUTES = 2.0
-        private const val APPROACH_DISTANCE_METERS = 500.0
         private const val IMMINENT_DISTANCE_METERS = 150.0
     }
 }

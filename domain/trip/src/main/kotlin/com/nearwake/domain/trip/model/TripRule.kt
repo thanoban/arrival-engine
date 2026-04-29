@@ -6,6 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TripRule(
     val alertLeadMinutes: Int,
+    val alertTriggerMode: AlertTriggerMode = AlertTriggerMode.TIME,
+    val alertDistanceMeters: Int = DEFAULT_ALERT_DISTANCE_METERS,
     val approachRadiusMeters: Float = DEFAULT_APPROACH_RADIUS_METERS,
     val destinationRadiusMeters: Float = DEFAULT_DESTINATION_RADIUS_METERS,
     val offlineBiasPercent: Int = DEFAULT_OFFLINE_BIAS_PERCENT,
@@ -21,7 +23,12 @@ data class TripRule(
         }
     }
 
+    fun usesTimeTrigger(): Boolean = alertTriggerMode.usesTimeTrigger()
+
+    fun usesDistanceTrigger(): Boolean = alertTriggerMode.usesDistanceTrigger()
+
     companion object {
+        const val DEFAULT_ALERT_DISTANCE_METERS = 500
         const val DEFAULT_APPROACH_RADIUS_METERS = 1_500f
         const val DEFAULT_DESTINATION_RADIUS_METERS = 300f
         const val DEFAULT_OFFLINE_BIAS_PERCENT = 20

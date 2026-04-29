@@ -48,6 +48,8 @@ class RearmTripUseCase @Inject constructor(
                 id = tripId,
                 destinationId = place.id,
                 alertLeadMinutes = sourceTrip.alertLeadMinutes,
+                alertTriggerMode = sourceTrip.alertTriggerMode,
+                alertDistanceMeters = sourceTrip.alertDistanceMeters,
                 alertIntensity = sourceTrip.alertIntensity,
                 alertMode = sourceTrip.alertMode,
                 createdAt = now,

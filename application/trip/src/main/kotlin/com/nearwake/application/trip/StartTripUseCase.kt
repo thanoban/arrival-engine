@@ -5,6 +5,7 @@ import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
@@ -18,6 +19,8 @@ import kotlinx.datetime.Clock
 data class StartTripRequest(
     val placeId: String,
     val alertLeadMinutes: Int,
+    val alertTriggerMode: AlertTriggerMode,
+    val alertDistanceMeters: Int,
     val alertIntensity: AlertIntensity,
     val alertMode: AlertMode,
     val previewRouteSnapshot: RouteSnapshot? = null,
@@ -43,6 +46,8 @@ class StartTripUseCase @Inject constructor(
                 id = tripId,
                 destinationId = place.id,
                 alertLeadMinutes = request.alertLeadMinutes,
+                alertTriggerMode = request.alertTriggerMode,
+                alertDistanceMeters = request.alertDistanceMeters,
                 alertIntensity = request.alertIntensity,
                 alertMode = request.alertMode,
                 createdAt = now,

@@ -58,6 +58,7 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 | **Slice 5 — field-test diagnostics exports** | `DiagnosticsViewModel.kt`, `DiagnosticsScreen.kt` | Event timestamps, permission snapshot, environment snapshot, build/device context |
 | **Wave F — architecture hardening slice A** | `:application:monitoring`, `:ports:monitoring` | Start/stop monitoring now flows through a monitoring port |
 | **Wave F — architecture hardening slice B** | `:application:trip`, `:ports:persistence`, `TripLifecycleStore` | Trip start and re-arm moved out of screen-level orchestration |
+| **Wave F — configurable alert triggers** | `domain:trip`, `core:database`, `core:datastore`, `feature:tripsetup`, `feature:settings`, `feature:history`, `data:alerts` | Users can choose `Time`, `Distance`, or `Both`, with persisted defaults and trip/history/export coverage |
 
 ### What is in progress
 
@@ -150,6 +151,7 @@ Acceptance status:
 - [x] `:application:trip` + `:ports:persistence`
 - [x] monitoring start/stop moved behind a monitoring gateway
 - [x] trip start and one-tap re-arm moved into application use cases
+- [x] early-alert trigger preferences now flow through domain rules, persistence, settings, runtime, history, and export
 - [ ] cancel / complete / recovery workflow migration
 - [ ] read-side cleanup away from direct DAO/entity assembly
 - [ ] slimmer runtime/service responsibilities

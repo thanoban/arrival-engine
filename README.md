@@ -34,6 +34,7 @@ For the target production module boundaries and current migration direction, rea
 - The permissions screen now reads live Android permission state, stages requests, and routes denied cases to app settings.
 - Trip setup, live trip, monitoring service recovery, and trip summary screens now surface real persisted route/session data instead of only placeholder values.
 - The diagnostics screen can now export field-test snapshots with event timestamps, build/device info, permission readiness, and environment state.
+- Users can now choose early alerts by `Time`, `Distance`, or `Both`, with defaults persisted in Settings and preserved on trips, re-arm flows, history, and CSV export.
 
 ## Docs
 
@@ -70,6 +71,7 @@ For the target production module boundaries and current migration direction, rea
 - History/detail UI now shows route summary, last ETA, and confidence information from persisted session data.
 - Monitoring start/stop control now flows through `:application:monitoring` and `:ports:monitoring`.
 - Trip start and one-tap re-arm now flow through `:application:trip` and `:ports:persistence`.
+- Early-alert preferences can now be configured as `Time`, `Distance`, or `Both`, with user-selected distance thresholds and persisted defaults.
 
 ## Module Layout
 

@@ -5,6 +5,7 @@ import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertStage
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
@@ -20,6 +21,7 @@ class TripMonitoringRuntimeTest {
         val context = runtime.buildContext(
             tripId = "trip-1",
             alertLeadMinutes = 10,
+            alertTriggerMode = AlertTriggerMode.TIME,
             alertIntensity = AlertIntensity.STANDARD,
             destination = LatLng(lat = 6.9271, lng = 79.8612),
             hasCachedRoute = true,
@@ -36,10 +38,28 @@ class TripMonitoringRuntimeTest {
     }
 
     @Test
+    fun `distance-only triggers use configured geofence radius`() {
+        val context = runtime.buildContext(
+            tripId = "trip-distance",
+            alertLeadMinutes = 10,
+            alertTriggerMode = AlertTriggerMode.DISTANCE,
+            alertDistanceMeters = 1000,
+            alertIntensity = AlertIntensity.STANDARD,
+            destination = LatLng(lat = 6.9271, lng = 79.8612),
+            hasCachedRoute = true,
+        )
+
+        val geofences = runtime.buildGeofences(context)
+
+        assertThat(geofences[0].radiusMeters).isEqualTo(1000f)
+    }
+
+    @Test
     fun `applyLocationUpdate escalates low power session into approach mode`() {
         val context = runtime.buildContext(
             tripId = "trip-2",
             alertLeadMinutes = 10,
+            alertTriggerMode = AlertTriggerMode.TIME,
             alertIntensity = AlertIntensity.STANDARD,
             destination = LatLng(lat = 6.9271, lng = 79.8612),
             hasCachedRoute = true,
@@ -62,7 +82,7 @@ class TripMonitoringRuntimeTest {
         assertThat(update.engineResult).isNotNull()
         assertThat(update.session.state).isEqualTo(TripState.MonitoringApproach)
         assertThat(update.session.monitoringMode).isEqualTo(MonitoringMode.PRECISE_BURST)
-        assertThat(update.session.alertStage).isEqualTo(AlertStage.MONITORING)
+        assertThat(update.session.alertStage).isEqualTo(AlertStage.APPROACH)
         assertThat(update.session.lastKnownLat).isWithin(0.000001).of(6.9000)
         assertThat(update.session.lastEtaMinutes).isEqualTo(8)
     }
@@ -72,6 +92,7 @@ class TripMonitoringRuntimeTest {
         val context = runtime.buildContext(
             tripId = "trip-3",
             alertLeadMinutes = 5,
+            alertTriggerMode = AlertTriggerMode.TIME,
             alertIntensity = AlertIntensity.LOUD,
             destination = LatLng(lat = 6.9271, lng = 79.8612),
             hasCachedRoute = true,

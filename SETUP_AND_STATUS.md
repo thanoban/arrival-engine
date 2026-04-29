@@ -35,6 +35,7 @@ What is already implemented:
 - flexible leave-by reminders from learned commute predictions
 - runtime permission readiness and Android settings guidance
 - persisted trip/session/history flows
+- configurable early-alert triggers with `Time`, `Distance`, and `Both` modes
 - diagnostics and settings screens backed by real data
 
 What this means in practice:
@@ -64,6 +65,7 @@ These areas are meaningfully developed:
 - departure reminder scheduling
 - diagnostics
 - diagnostics export for field-test evidence
+- configurable alert trigger defaults in Settings
 - route cache and route summaries
 - monitoring session persistence
 
@@ -90,6 +92,11 @@ These are the main remaining gaps before calling the project fully finished:
 The repo now includes concrete drafts and runbooks for the remaining release-prep paperwork, so the open work is increasingly manual validation and publication rather than missing project structure.
 
 So the app is substantial and usable for development, and most remaining work is now release validation rather than missing architecture.
+
+One notable current product capability:
+
+- users can arm a trip with an early alert based on ETA, distance, or whichever threshold happens first
+- those trigger preferences are preserved through trip persistence, re-arm, history, and CSV export
 
 ## 3.1 Problem And Scope Reference
 

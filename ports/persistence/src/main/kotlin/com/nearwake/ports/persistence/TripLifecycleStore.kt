@@ -3,6 +3,7 @@ package com.nearwake.ports.persistence
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertStage
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
@@ -20,6 +21,8 @@ data class PersistedTrip(
     val id: String,
     val destinationId: String,
     val alertLeadMinutes: Int,
+    val alertTriggerMode: AlertTriggerMode,
+    val alertDistanceMeters: Int,
     val alertIntensity: AlertIntensity,
     val alertMode: AlertMode,
 )
@@ -28,6 +31,8 @@ data class SaveTripCommand(
     val id: String,
     val destinationId: String,
     val alertLeadMinutes: Int,
+    val alertTriggerMode: AlertTriggerMode,
+    val alertDistanceMeters: Int,
     val alertIntensity: AlertIntensity,
     val alertMode: AlertMode,
     val createdAt: Instant,

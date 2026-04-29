@@ -23,8 +23,13 @@ class ApproachEvaluator(
             approachBufferMinutes = approachBufferMinutes,
             confidence = confidence,
         )
-        val triggeredByEta = etaMinutes != null && etaMinutes <= effectiveThresholdMinutes
-        val triggeredByDistance = distanceMeters != null && distanceMeters <= tripRule.approachRadiusMeters
+        val triggeredByEta = tripRule.usesTimeTrigger() &&
+            etaMinutes != null &&
+            effectiveThresholdMinutes > 0 &&
+            etaMinutes <= effectiveThresholdMinutes
+        val triggeredByDistance = tripRule.usesDistanceTrigger() &&
+            distanceMeters != null &&
+            distanceMeters <= tripRule.alertDistanceMeters
         return ApproachDecision(
             shouldEscalate = triggeredByEta || triggeredByDistance,
             effectiveThresholdMinutes = effectiveThresholdMinutes,

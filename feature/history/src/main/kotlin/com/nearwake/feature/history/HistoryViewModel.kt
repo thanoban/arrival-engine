@@ -8,6 +8,7 @@ import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.SavedPlaceEntity
 import com.nearwake.core.database.entity.TripEntity
 import com.nearwake.domain.routing.repository.RoutingRepository
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -136,9 +137,7 @@ class TripSummaryViewModel @Inject constructor(
                         else -> "Ended early"
                     },
                     startedLabel = trip?.createdAt?.toReadableLabel().orEmpty(),
-                    alertLeadLabel = trip?.alertLeadMinutes?.let { minutes ->
-                        if (minutes == 0) "Alert when nearby" else "Alert $minutes minutes early"
-                    }.orEmpty(),
+                    alertLeadLabel = trip?.toAlertPreferenceLabel().orEmpty(),
                     alertIntensityLabel = trip?.alertIntensity?.name?.toDisplayLabel().orEmpty(),
                     monitoringLabel = session?.monitoringMode?.name?.toDisplayLabel() ?: "Not monitoring",
                     routeSummary = routeSnapshot?.toRouteSummary() ?: "Destination-only monitoring",
@@ -181,6 +180,27 @@ private fun String.toDisplayLabel(): String =
 
 private fun kotlinx.datetime.Instant.toReadableLabel(): String =
     toString().replace('T', ' ').take(16)
+
+private fun TripEntity.toAlertPreferenceLabel(): String = when (alertTriggerMode) {
+    AlertTriggerMode.TIME ->
+        if (alertLeadMinutes == 0) "Alert when nearby" else "Alert $alertLeadMinutes minutes early"
+    AlertTriggerMode.DISTANCE -> "Alert ${alertDistanceMeters.toDistanceLabel()} away"
+    AlertTriggerMode.BOTH -> buildString {
+        append("Alert ")
+        append(if (alertLeadMinutes == 0) "nearby" else "$alertLeadMinutes minutes early")
+        append(" or ")
+        append(alertDistanceMeters.toDistanceLabel())
+        append(" away")
+    }
+}
+
+private fun Int.toDistanceLabel(): String =
+    if (this >= 1000) {
+        val kilometers = this / 1000.0
+        if (kilometers % 1.0 == 0.0) "${kilometers.toInt()} km" else "${kilometers} km"
+    } else {
+        "$this m"
+    }
 
 private fun com.nearwake.domain.routing.model.RouteSnapshot.toRouteSummary(): String {
     val stopLabel = if (stops.size == 1) "1 stop" else "${stops.size} stops"

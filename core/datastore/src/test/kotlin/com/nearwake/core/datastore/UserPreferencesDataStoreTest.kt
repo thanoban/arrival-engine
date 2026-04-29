@@ -2,6 +2,7 @@ package com.nearwake.core.datastore
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.nearwake.core.datastore.model.ThemeMode
+import com.nearwake.domain.trip.model.AlertTriggerMode
 import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
@@ -21,6 +22,8 @@ class UserPreferencesDataStoreTest {
         val preferences = store.preferences.first()
 
         assertEquals(ThemeMode.SYSTEM, preferences.themeMode)
+        assertEquals(AlertTriggerMode.TIME, preferences.defaultAlertTriggerMode)
+        assertEquals(500, preferences.defaultAlertDistanceMeters)
         assertEquals(true, preferences.departureRemindersEnabled)
     }
 
@@ -40,6 +43,18 @@ class UserPreferencesDataStoreTest {
         store.setDepartureRemindersEnabled(false)
 
         assertEquals(false, store.preferences.first().departureRemindersEnabled)
+    }
+
+    @Test
+    fun `alert trigger mode and distance persist`() = runTest {
+        val store = userPreferencesDataStore()
+
+        store.updateDefaultAlertTriggerMode(AlertTriggerMode.BOTH)
+        store.updateDefaultAlertDistanceMeters(1500)
+
+        val preferences = store.preferences.first()
+        assertEquals(AlertTriggerMode.BOTH, preferences.defaultAlertTriggerMode)
+        assertEquals(1500, preferences.defaultAlertDistanceMeters)
     }
 
     private fun TestScope.userPreferencesDataStore(): UserPreferencesDataStore =

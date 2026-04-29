@@ -7,6 +7,8 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
+import com.nearwake.domain.trip.model.AlertTriggerMode
+import com.nearwake.domain.trip.model.TripRule
 import kotlinx.datetime.Instant
 
 @Entity(
@@ -28,6 +30,10 @@ data class TripEntity(
     val destinationId: String,
     @ColumnInfo(name = "alert_lead_min")
     val alertLeadMinutes: Int,
+    @ColumnInfo(name = "alert_trigger_mode")
+    val alertTriggerMode: AlertTriggerMode = AlertTriggerMode.TIME,
+    @ColumnInfo(name = "alert_distance_meters")
+    val alertDistanceMeters: Int = TripRule.DEFAULT_ALERT_DISTANCE_METERS,
     @ColumnInfo(name = "alert_intensity")
     val alertIntensity: AlertIntensity,
     @ColumnInfo(name = "alert_mode")

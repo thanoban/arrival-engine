@@ -9,7 +9,7 @@ internal fun buildTripCsv(
     places: Map<String, SavedPlaceEntity>,
     sessions: Map<String, TripSessionEntity>,
 ): String = buildString {
-    appendLine("date,destination,address,alert_lead_minutes,alert_intensity,status,monitoring_mode,confidence,eta_at_last_check_minutes,duration_minutes")
+    appendLine("date,destination,address,alert_trigger_mode,alert_lead_minutes,alert_distance_meters,alert_intensity,status,monitoring_mode,confidence,eta_at_last_check_minutes,duration_minutes")
     trips.forEach { trip ->
         val place = places[trip.destinationId]
         val session = sessions[trip.id]
@@ -22,7 +22,9 @@ internal fun buildTripCsv(
             trip.createdAt.toString().take(16).replace('T', ' '),
             place?.name.csvEscape(),
             place?.address.csvEscape(),
+            trip.alertTriggerMode.name,
             trip.alertLeadMinutes.toString(),
+            trip.alertDistanceMeters.toString(),
             trip.alertIntensity.name,
             when {
                 trip.completedAt != null -> "Completed"

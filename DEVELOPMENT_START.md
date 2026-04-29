@@ -74,6 +74,7 @@ NearWake is already beyond scaffold stage. The app currently has:
 - Flexible leave-by reminders from learned commute predictions.
 - Application-layer monitoring start/stop boundary.
 - Application-layer trip start and re-arm workflows.
+- Configurable early-alert triggers with `Time`, `Distance`, and `Both` modes plus persisted Settings defaults.
 
 ## Main Open Development Slices
 
@@ -98,6 +99,7 @@ Completed so far:
 - Added `:application:trip` and `:ports:persistence`.
 - Moved trip start and one-tap re-arm orchestration into application use cases.
 - Added a Room-backed `TripLifecycleStore` adapter behind a persistence port.
+- Added first-class alert-trigger preferences that flow through domain rules, persistence, settings defaults, trip setup, re-arm, history, and export without bypassing the current boundary direction.
 
 Still remaining in this slice:
 
