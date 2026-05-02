@@ -114,6 +114,7 @@ These are not current build blockers, but they will matter before calling the pr
 
 For the full release-prep checklist, field-test matrix, and permission disclosure map, use [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md).
 For local release-signing preparation, use [APP_SIGNING_SETUP_GUIDE.md](APP_SIGNING_SETUP_GUIDE.md).
+For the Sri Lanka transport-data production path, official-source links, and contact checklist, use [SRI_LANKA_PRODUCTION_DATA_PLAN.md](SRI_LANKA_PRODUCTION_DATA_PLAN.md).
 
 ## 7. Recommended Google Key Setup
 
@@ -164,3 +165,5 @@ That is enough for the current repo to build and use the route-aware and provide
   - exact external values/services you still need to update or provide
 - `RELEASE_READINESS_CHECKLIST.md`
   - pre-release validation, field testing, and disclosure prep
+- `SRI_LANKA_PRODUCTION_DATA_PLAN.md`
+  - Sri Lanka transport-data sources, official contact path, and production data strategy

@@ -12,6 +12,7 @@ Use it when you want to know:
 - how to verify the project on your machine
 
 If you want the product-side reference for competitor comparison, scope decisions, and technology choices, read [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md).
+If you want the Sri Lanka-specific transport-data sourcing and production-data plan, read [SRI_LANKA_PRODUCTION_DATA_PLAN.md](SRI_LANKA_PRODUCTION_DATA_PLAN.md).
 
 ## 1. Current Project Condition
 

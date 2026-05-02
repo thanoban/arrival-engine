@@ -249,3 +249,23 @@ NearWake does not beat Transit on map features or Moovit on ticketing. It beats 
 - Confidence threshold calibration (from field test data)
 - Permission copy wording
 - New feature modules (Pillars 1–4, 6–8) — all additive, no breaking changes
+
+---
+
+## 16. Sri Lanka-First Data Direction
+
+If NearWake focuses on Sri Lanka as its strongest launch market, the search and data layers should become more local instead of depending only on generic global place search.
+
+The recommended direction is:
+
+- public official transport documents now
+- normalized NearWake-owned schema
+- route-number and landmark-first search
+- official structured exports later when available
+
+Use [SRI_LANKA_PRODUCTION_DATA_PLAN.md](SRI_LANKA_PRODUCTION_DATA_PLAN.md) for:
+
+- why PDF is enough to start but not ideal forever
+- which official sources to use first
+- what to ask NTC and Sri Lanka Railways for
+- how to structure the production data pipeline

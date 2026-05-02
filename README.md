@@ -15,6 +15,7 @@ For the current privacy policy draft, read [PRIVACY_POLICY_DRAFT.md](PRIVACY_POL
 For the hostable privacy policy page, read [privacy-policy.html](privacy-policy.html).
 For the current Play Console disclosure-answer draft, read [PLAY_CONSOLE_DISCLOSURE_DRAFT.md](PLAY_CONSOLE_DISCLOSURE_DRAFT.md).
 For release-signing preparation, read [APP_SIGNING_SETUP_GUIDE.md](APP_SIGNING_SETUP_GUIDE.md).
+For the Sri Lanka transport-data sourcing, official-source strategy, and production data checklist, read [SRI_LANKA_PRODUCTION_DATA_PLAN.md](SRI_LANKA_PRODUCTION_DATA_PLAN.md).
 For a copy-paste project context prompt you can hand to another LLM, read [LLM_PROJECT_CONTEXT_PROMPT.md](LLM_PROJECT_CONTEXT_PROMPT.md).
 For the current store-facing copy draft, read [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md).
 For the final manual store-submission sequence, read [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md).
@@ -51,6 +52,7 @@ For the target production module boundaries and current migration direction, rea
 - [privacy-policy.html](privacy-policy.html): simple hostable privacy-policy page file
 - [PLAY_CONSOLE_DISCLOSURE_DRAFT.md](PLAY_CONSOLE_DISCLOSURE_DRAFT.md): draft Play Console permission and policy answers
 - [APP_SIGNING_SETUP_GUIDE.md](APP_SIGNING_SETUP_GUIDE.md): local release-signing preparation guide
+- [SRI_LANKA_PRODUCTION_DATA_PLAN.md](SRI_LANKA_PRODUCTION_DATA_PLAN.md): Sri Lanka transport-data source tiers, official-contact path, and production data plan
 - [LLM_PROJECT_CONTEXT_PROMPT.md](LLM_PROJECT_CONTEXT_PROMPT.md): ready-to-copy full-project prompt for other LLMs
 - [PLAY_STORE_LISTING_DRAFT.md](PLAY_STORE_LISTING_DRAFT.md): draft short description, full description, and screenshot checklist for store release prep
 - [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md): final manual sequence for field-test closeout, privacy hosting, signing, and Play submission

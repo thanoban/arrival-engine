@@ -628,6 +628,7 @@ Good default files to read alongside this one:
 - `PRODUCT_COMPARE_REFERENCE.md`
 - `SETUP_AND_STATUS.md`
 - `REQUIRED_UPDATES_AND_APIS.md`
+- `SRI_LANKA_PRODUCTION_DATA_PLAN.md`
 - `TARGET_PRODUCTION_ARCHITECTURE.md`
 - `UI_MODERNIZATION_PLAN.md`
 - `PROJECT_STUDY_GUIDE.md`
@@ -668,4 +669,3 @@ The key idea to protect during all future work is simple:
 
 NearWake is not trying to be the best transit planner.
 It is trying to be the most trustworthy app for not missing your stop.
-
