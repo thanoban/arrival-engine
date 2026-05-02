@@ -3,6 +3,7 @@
 NearWake is an Android-first arrival alarm app for buses, trains, and transfers. The app is built around an offline-first monitoring flow: pick a destination, arm a trip quickly, let the background engine monitor quietly, and surface an alert before the user misses the stop.
 
 If you are studying the project from the beginning, read [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md) alongside `PLAN.md`.
+If you want the whole project explained in one consolidated markdown, read [NEARWAKE_MASTER_REFERENCE.md](NEARWAKE_MASTER_REFERENCE.md).
 For the practical current-state checklist, env/API setup, and what is finished vs not finished, read [SETUP_AND_STATUS.md](SETUP_AND_STATUS.md).
 For the active development-start tracker and next implementation slices, read [DEVELOPMENT_START.md](DEVELOPMENT_START.md).
 For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md).
@@ -57,6 +58,7 @@ For the target production module boundaries and current migration direction, rea
 - [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md): dedicated plan for the upcoming modern UI/frontend pass
 - [TARGET_PRODUCTION_ARCHITECTURE.md](TARGET_PRODUCTION_ARCHITECTURE.md): target production module boundaries and the current migration status
 - [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
+- [NEARWAKE_MASTER_REFERENCE.md](NEARWAKE_MASTER_REFERENCE.md): single-file consolidated project reference
 - [corrections.md](corrections.md): correction log and resolved repo issues
 
 ## Recent Implemented Slices
