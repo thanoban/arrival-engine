@@ -35,6 +35,7 @@ object DatabaseModule {
         .addMigrations(MIGRATION_3_4)
         .addMigrations(MIGRATION_4_5)
         .addMigrations(MIGRATION_5_6)
+        .addMigrations(MIGRATION_6_7)
         .build()
 
     @Provides
@@ -135,6 +136,23 @@ object DatabaseModule {
                 """
                 ALTER TABLE `trips`
                 ADD COLUMN `alert_distance_meters` INTEGER NOT NULL DEFAULT 500
+                """.trimIndent(),
+            )
+        }
+    }
+
+    private val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
+                CREATE INDEX IF NOT EXISTS `index_commute_predictions_destination_id`
+                ON `commute_predictions` (`destination_id`)
+                """.trimIndent(),
+            )
+            database.execSQL(
+                """
+                CREATE INDEX IF NOT EXISTS `index_saved_places_last_used_at`
+                ON `saved_places` (`last_used_at`)
                 """.trimIndent(),
             )
         }

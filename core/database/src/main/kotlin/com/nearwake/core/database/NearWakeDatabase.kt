@@ -31,7 +31,7 @@ import com.nearwake.core.database.entity.TripSessionEntity
         RouteSnapshotEntity::class,
         CommutePredictionEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 @TypeConverters(

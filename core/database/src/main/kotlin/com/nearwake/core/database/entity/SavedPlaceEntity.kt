@@ -2,10 +2,16 @@ package com.nearwake.core.database.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.datetime.Instant
 
-@Entity(tableName = "saved_places")
+@Entity(
+    tableName = "saved_places",
+    indices = [
+        Index(value = ["last_used_at"]),
+    ],
+)
 data class SavedPlaceEntity(
     @PrimaryKey
     val id: String,

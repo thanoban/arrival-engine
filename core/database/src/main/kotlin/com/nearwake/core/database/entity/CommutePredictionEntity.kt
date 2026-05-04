@@ -2,10 +2,16 @@ package com.nearwake.core.database.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.datetime.Instant
 
-@Entity(tableName = "commute_predictions")
+@Entity(
+    tableName = "commute_predictions",
+    indices = [
+        Index(value = ["destination_id"]),
+    ],
+)
 data class CommutePredictionEntity(
     @PrimaryKey
     val id: String,
