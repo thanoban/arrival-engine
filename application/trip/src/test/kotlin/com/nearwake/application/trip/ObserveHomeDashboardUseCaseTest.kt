@@ -82,6 +82,10 @@ class ObserveHomeDashboardUseCaseTest {
 
         override suspend fun getTrip(tripId: String): PersistedTrip? = null
 
+        override suspend fun updateTripAlertMode(tripId: String, alertMode: AlertMode) = Unit
+
+        override suspend fun clearTripSession(tripId: String) = Unit
+
         override suspend fun markPlaceUsed(placeId: String, usedAt: Instant) = Unit
 
         override suspend fun saveTrip(command: SaveTripCommand) = Unit

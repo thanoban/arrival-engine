@@ -76,6 +76,10 @@ interface TripLifecycleStore {
 
     suspend fun getTrip(tripId: String): PersistedTrip?
 
+    suspend fun updateTripAlertMode(tripId: String, alertMode: AlertMode)
+
+    suspend fun clearTripSession(tripId: String)
+
     suspend fun markPlaceUsed(placeId: String, usedAt: Instant)
 
     suspend fun saveTrip(command: SaveTripCommand)

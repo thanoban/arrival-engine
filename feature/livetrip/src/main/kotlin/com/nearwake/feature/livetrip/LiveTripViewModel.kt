@@ -5,7 +5,8 @@ import android.os.BatteryManager
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nearwake.application.monitoring.StopTripMonitoringUseCase
+import com.nearwake.application.trip.CancelTripUseCase
+import com.nearwake.application.trip.UpdateTripAlertModeUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
@@ -53,7 +54,8 @@ class LiveTripViewModel @Inject constructor(
     private val tripSessionDao: TripSessionDao,
     private val routingRepository: RoutingRepository,
     @ApplicationContext private val appContext: Context,
-    private val stopTripMonitoring: StopTripMonitoringUseCase,
+    private val updateTripAlertMode: UpdateTripAlertModeUseCase,
+    private val cancelTrip: CancelTripUseCase,
 ) : ViewModel() {
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(LiveTripUiState(tripId = tripId))
@@ -109,15 +111,13 @@ class LiveTripViewModel @Inject constructor(
 
     fun updateAlertMode(mode: AlertMode) {
         viewModelScope.launch {
-            val trip = tripDao.getTripById(tripId) ?: return@launch
-            tripDao.upsertTrip(trip.copy(alertMode = mode))
+            updateTripAlertMode(tripId, mode)
         }
     }
 
     fun cancelTrip(onCancelled: () -> Unit) {
         viewModelScope.launch {
-            tripSessionDao.deleteTripSession(tripId)
-            stopTripMonitoring()
+            cancelTrip(tripId)
             onCancelled()
         }
     }

@@ -42,6 +42,16 @@ class TripLifecycleStoreImpl @Inject constructor(
     override suspend fun getTrip(tripId: String): PersistedTrip? =
         tripDao.getTripById(tripId)?.toPersistedTrip()
 
+    override suspend fun updateTripAlertMode(tripId: String, alertMode: com.nearwake.domain.trip.model.AlertMode) {
+        tripDao.getTripById(tripId)?.let { trip ->
+            tripDao.upsertTrip(trip.copy(alertMode = alertMode))
+        }
+    }
+
+    override suspend fun clearTripSession(tripId: String) {
+        tripSessionDao.deleteTripSession(tripId)
+    }
+
     override suspend fun markPlaceUsed(placeId: String, usedAt: kotlinx.datetime.Instant) {
         savedPlaceDao.getSavedPlaceById(placeId)?.let { place ->
             savedPlaceDao.upsertSavedPlace(place.copy(lastUsedAt = usedAt))
