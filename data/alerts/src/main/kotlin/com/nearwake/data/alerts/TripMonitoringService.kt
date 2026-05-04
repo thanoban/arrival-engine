@@ -449,21 +449,17 @@ class TripMonitoringService : Service() {
                 }
 
                 TripSideEffect.FireArrivalAlert -> {
+                    val distanceMeters = resolveAlertDistanceMeters(
+                        session = result.session,
+                        context = context,
+                    )
                     alertOrchestrator.fireAlert(
                         tripId = context.tripId,
                         intensity = context.alertIntensity,
                         mode = context.alertMode,
                         confidence = result.session.confidence.name,
                         stage = result.session.alertStage.name,
-                        distanceMeters = result.session.lastKnownLat?.let { lat ->
-                            result.session.lastKnownLng?.let { lng ->
-                                tripMonitoringRuntime.distanceToDestination(
-                                    lat = lat,
-                                    lng = lng,
-                                    destination = context.destination,
-                                )
-                            }
-                        },
+                        distanceMeters = distanceMeters,
                         etaMinutes = result.session.lastEtaMinutes,
                     )
                 }
@@ -534,6 +530,30 @@ class TripMonitoringService : Service() {
                     )
                 }
         }
+    }
+
+    private suspend fun resolveAlertDistanceMeters(
+        session: TripSession,
+        context: MonitoredTripContext,
+    ): Double? {
+        val lastKnownLocation = lastKnownLocationOrNull(session)
+        if (lastKnownLocation == null) {
+            diagnosticsLogger.log(
+                eventType = "alert_distance_unavailable",
+                tripId = session.tripId,
+                payload = buildJsonObject {
+                    put("reason", "missing_last_known_location")
+                    put("stage", session.alertStage.name)
+                },
+            )
+            return null
+        }
+
+        return tripMonitoringRuntime.distanceToDestination(
+            lat = lastKnownLocation.lat,
+            lng = lastKnownLocation.lng,
+            destination = context.destination,
+        )
     }
 
     private fun readBatteryPercent(): Int {
@@ -665,11 +685,7 @@ class TripMonitoringService : Service() {
             return
         }
 
-        val previousLocation = previousSession.lastKnownLat?.let { lat ->
-            previousSession.lastKnownLng?.let { lng ->
-                LatLng(lat = lat, lng = lng)
-            }
-        } ?: return
+        val previousLocation = lastKnownLocationOrNull(previousSession) ?: return
 
         val routeSnapshot = context.routeSnapshot ?: return
         val result = boardingValidator.evaluate(
@@ -710,6 +726,16 @@ class TripMonitoringService : Service() {
                     },
                 )
             }
+        }
+    }
+
+    private fun lastKnownLocationOrNull(session: TripSession): LatLng? {
+        val lat = session.lastKnownLat
+        val lng = session.lastKnownLng
+        return if (lat != null && lng != null) {
+            LatLng(lat = lat, lng = lng)
+        } else {
+            null
         }
     }
 
