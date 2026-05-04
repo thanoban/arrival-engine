@@ -23,6 +23,7 @@ data class DepartureUiState(
     val isRefreshing: Boolean = false,
     val remindersEnabled: Boolean = true,
     val scheduleStatus: String = "Checking reminders.",
+    val errorMessage: String? = null,
 )
 
 data class DeparturePredictionUiModel(
@@ -59,12 +60,18 @@ class DepartureViewModel @Inject constructor(
                         predictions = predictions.toUiModels(),
                         remindersEnabled = remindersEnabled,
                         scheduleStatus = scheduleStatus,
+                        errorMessage = null,
                     )
                 }
         }
         viewModelScope.launch {
             mutableState.value = mutableState.value.copy(isRefreshing = true)
             runCatching { repository.refreshPredictions() }
+                .onFailure { error ->
+                    mutableState.value = mutableState.value.copy(
+                        errorMessage = error.message ?: "Could not refresh learned departures.",
+                    )
+                }
             mutableState.value = mutableState.value.copy(isRefreshing = false)
         }
     }

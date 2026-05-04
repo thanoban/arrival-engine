@@ -20,6 +20,7 @@ data class CompanionUiState(
     val title: String = "Arrival confirmation",
     val messagePreview: String = "I arrived safely.",
     val smsPreview: String = "I arrived safely.",
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

@@ -3,6 +3,7 @@ package com.nearwake.feature.departure
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.data.alerts.DepartureReminderScheduler
 import com.nearwake.data.patterns.CommutePredictionRepository
@@ -29,11 +30,18 @@ class DepartureReminderBootReceiver : BroadcastReceiver() {
                 val preferences = userPreferencesDataStore.preferences.first()
                 if (preferences.departureRemindersEnabled) {
                     runCatching { commutePredictionRepository.refreshPredictions() }
+                        .onFailure { error ->
+                            Log.w(TAG, "Could not refresh departure predictions after boot", error)
+                        }
                     departureReminderScheduler.scheduleToday(commutePredictionRepository.getPredictions())
                 }
             } finally {
                 pendingResult.finish()
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "DepartureReminderBoot"
     }
 }

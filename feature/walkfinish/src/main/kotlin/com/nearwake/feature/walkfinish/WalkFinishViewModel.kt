@@ -33,6 +33,7 @@ data class WalkFinishUiState(
     val instructionLabel: String = "Walk toward the destination and confirm when you arrive.",
     val arrivalHint: String = "NearWake will consider you arrived once you are within about 30m.",
     val canConfirmArrival: Boolean = false,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

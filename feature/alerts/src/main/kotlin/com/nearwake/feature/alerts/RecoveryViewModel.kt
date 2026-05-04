@@ -34,6 +34,7 @@ data class RecoveryUiState(
     val returnStopLabel: String? = null,
     val walkBackLabel: String? = null,
     val canResumeMonitoring: Boolean = false,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

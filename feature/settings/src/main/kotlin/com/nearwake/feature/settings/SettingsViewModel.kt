@@ -24,6 +24,7 @@ data class SettingsUiState(
     val backgroundMonitoringEnabled: Boolean = true,
     val diagnosticsEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

@@ -42,6 +42,7 @@ data class LiveTripUiState(
     val alertMode: AlertMode = AlertMode.ACTIVE,
     val alertStage: AlertStage = AlertStage.MONITORING,
     val transferSteps: List<TransferProgressUiState> = emptyList(),
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

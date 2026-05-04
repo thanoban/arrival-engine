@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 
 data class NearWakeAppUiState(
     val startDestination: String? = null,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

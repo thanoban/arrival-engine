@@ -30,6 +30,7 @@ data class HomeUiState(
     val activeTrip: HomeActiveTrip? = null,
     val rearmTrip: HomeRearmTrip? = null,
     val recentTrips: List<HomeRecentTrip> = emptyList(),
+    val errorMessage: String? = null,
 )
 
 data class HomeActiveTrip(

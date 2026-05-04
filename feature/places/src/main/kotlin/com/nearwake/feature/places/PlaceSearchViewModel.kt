@@ -34,7 +34,7 @@ data class PlaceSearchUiState(
     val results: List<PlaceSearchResultUiModel> = emptyList(),
     val savedPlaces: List<SavedPlaceUiModel> = emptyList(),
     val isSearching: Boolean = false,
-    val message: String? = null,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel
@@ -64,7 +64,7 @@ class PlaceSearchViewModel @Inject constructor(
     fun updateQuery(value: String) {
         query.value = value
         mutableState.update { state ->
-            state.copy(query = value, message = null)
+            state.copy(query = value, errorMessage = null)
         }
     }
 
@@ -73,7 +73,7 @@ class PlaceSearchViewModel @Inject constructor(
             val resolved = placeSearchRepository.resolvePlace(result.id)
                 .onFailure {
                     mutableState.update { state ->
-                        state.copy(message = "Could not load that place. Try another result.")
+                        state.copy(errorMessage = "Could not load that place. Try another result.")
                     }
                 }
                 .getOrNull()
@@ -105,12 +105,12 @@ class PlaceSearchViewModel @Inject constructor(
     private suspend fun search(currentQuery: String) {
         if (currentQuery.trim().length < 2) {
             mutableState.update { state ->
-                state.copy(results = emptyList(), isSearching = false, message = null)
+                state.copy(results = emptyList(), isSearching = false, errorMessage = null)
             }
             return
         }
         mutableState.update { state ->
-            state.copy(isSearching = true, message = null)
+            state.copy(isSearching = true, errorMessage = null)
         }
         placeSearchRepository.searchPlaces(currentQuery)
             .onSuccess { results ->
@@ -118,7 +118,7 @@ class PlaceSearchViewModel @Inject constructor(
                     state.copy(
                         results = results.map { result -> result.toUiModel() },
                         isSearching = false,
-                        message = null,
+                        errorMessage = null,
                     )
                 }
             }
@@ -127,7 +127,7 @@ class PlaceSearchViewModel @Inject constructor(
                     state.copy(
                         results = emptyList(),
                         isSearching = false,
-                        message = "Place search is unavailable right now.",
+                        errorMessage = "Place search is unavailable right now.",
                     )
                 }
             }

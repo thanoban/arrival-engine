@@ -37,6 +37,7 @@ data class TripSetupUiState(
     val alertMode: AlertMode = AlertMode.ACTIVE,
     val backgroundMonitoringEnabled: Boolean = true,
     val canStart: Boolean = false,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

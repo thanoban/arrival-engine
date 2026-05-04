@@ -87,6 +87,7 @@ data class DiagnosticsUiState(
     val recentEvents: List<DiagnosticsEventUiModel> = emptyList(),
     val diagnosticsLoggingEnabled: Boolean = false,
     val exportText: String? = null,
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

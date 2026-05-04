@@ -67,6 +67,17 @@ fun DepartureReminderScreen(
                 )
             }
 
+            state.errorMessage?.let { errorMessage ->
+                SurfaceCard {
+                    NearWakeSectionHeader(text = "Scheduling issue")
+                    Text(
+                        text = errorMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
             if (state.isRefreshing) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

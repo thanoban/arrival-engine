@@ -16,6 +16,7 @@ data class OnboardingUiState(
         "Monitor in the background",
         "Wake up before you miss the stop",
     ),
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

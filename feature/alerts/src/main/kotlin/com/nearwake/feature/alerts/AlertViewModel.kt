@@ -19,6 +19,7 @@ data class AlertUiState(
     val tripId: String = "",
     val destinationName: String = "Arrival alert",
     val etaLabel: String = "~8 min away",
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

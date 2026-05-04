@@ -29,6 +29,7 @@ data class TripHistoryItemUiModel(
 data class HistoryUiState(
     val trips: List<TripHistoryItemUiModel> = emptyList(),
     val exportCsvText: String? = null,
+    val errorMessage: String? = null,
 )
 
 data class TripSummaryUiState(
@@ -42,6 +43,7 @@ data class TripSummaryUiState(
     val routeSummary: String = "Destination-only monitoring",
     val etaLabel: String = "",
     val confidenceLabel: String = "",
+    val errorMessage: String? = null,
 )
 
 @HiltViewModel

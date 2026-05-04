@@ -75,6 +75,7 @@ data class PermissionsUiState(
     val summary: String = "NearWake cannot reliably alert you until core permissions are enabled.",
     val primaryAction: PermissionPromptAction = PermissionPromptAction.REQUEST_CORE,
     val primaryButtonLabel: String = "Request core permissions",
+    val errorMessage: String? = null,
 )
 
 class PermissionsViewModel : ViewModel() {
