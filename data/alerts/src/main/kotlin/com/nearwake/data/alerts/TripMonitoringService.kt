@@ -43,7 +43,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -101,10 +100,8 @@ class TripMonitoringService : Service() {
     }
 
     override fun onDestroy() {
-        runBlocking {
-            locationJob?.cancel()
-            tripCleanupUseCase()
-        }
+        locationJob?.cancel()
+        launchCleanup(activeSession?.tripId)
         stopForeground(STOP_FOREGROUND_REMOVE)
         serviceScope.cancel()
         super.onDestroy()
@@ -461,7 +458,7 @@ class TripMonitoringService : Service() {
                 }
 
                 TripSideEffect.CleanupMonitoring -> {
-                    tripCleanupUseCase()
+                    launchCleanup(context.tripId)
                     stopSelf()
                 }
 
@@ -484,23 +481,48 @@ class TripMonitoringService : Service() {
     }
 
     private suspend fun loadTripContext(tripId: String): MonitoredTripContext? {
-        val trip = tripDao.getTripById(tripId) ?: return null
-        val destination = savedPlaceDao.getSavedPlaceById(trip.destinationId) ?: return null
-        val cachedRoute = routingRepository.getCachedRoute(tripId)
-        return tripMonitoringRuntime.buildContext(
-            tripId = trip.id,
-            destinationName = destination.name,
-            alertLeadMinutes = trip.alertLeadMinutes,
-            alertTriggerMode = trip.alertTriggerMode,
-            alertDistanceMeters = trip.alertDistanceMeters,
-            alertIntensity = trip.alertIntensity,
-            alertMode = trip.alertMode,
-            destination = LatLng(lat = destination.lat, lng = destination.lng),
-            hasCachedRoute = cachedRoute != null,
-            routeSnapshot = cachedRoute,
-            initialEtaMinutes = cachedRoute?.totalDurationMinutes,
-            batterySaverMode = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
-        )
+        return runCatching {
+            val trip = tripDao.getTripById(tripId) ?: return null
+            val destination = savedPlaceDao.getSavedPlaceById(trip.destinationId) ?: return null
+            val cachedRoute = routingRepository.getCachedRoute(tripId)
+            tripMonitoringRuntime.buildContext(
+                tripId = trip.id,
+                destinationName = destination.name,
+                alertLeadMinutes = trip.alertLeadMinutes,
+                alertTriggerMode = trip.alertTriggerMode,
+                alertDistanceMeters = trip.alertDistanceMeters,
+                alertIntensity = trip.alertIntensity,
+                alertMode = trip.alertMode,
+                destination = LatLng(lat = destination.lat, lng = destination.lng),
+                hasCachedRoute = cachedRoute != null,
+                routeSnapshot = cachedRoute,
+                initialEtaMinutes = cachedRoute?.totalDurationMinutes,
+                batterySaverMode = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
+            )
+        }.onFailure { error ->
+            diagnosticsLogger.log(
+                eventType = "monitoring_service_trip_context_failed",
+                tripId = tripId,
+                payload = buildJsonObject {
+                    put("message", error.message.orEmpty())
+                },
+            )
+        }.getOrNull()
+    }
+
+    private fun launchCleanup(tripId: String?) {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            runCatching { tripCleanupUseCase() }
+                .onFailure { error ->
+                    diagnosticsLogger.log(
+                        eventType = "monitoring_cleanup_failed",
+                        tripId = tripId,
+                        payload = buildJsonObject {
+                            put("message", error.message.orEmpty())
+                        },
+                    )
+                }
+        }
     }
 
     private fun readBatteryPercent(): Int {
