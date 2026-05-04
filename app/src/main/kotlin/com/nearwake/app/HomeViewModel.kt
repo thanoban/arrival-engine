@@ -1,6 +1,7 @@
 package com.nearwake.app
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.application.trip.RearmTripUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
@@ -16,10 +17,6 @@ import com.nearwake.domain.trip.model.TripState
 import com.nearwake.domain.trip.model.isTerminal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -69,7 +66,6 @@ class HomeViewModel @Inject constructor(
     private val savedPlaceDao: SavedPlaceDao,
     private val rearmTrip: RearmTripUseCase,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = mutableState.asStateFlow()
 
@@ -78,7 +74,7 @@ class HomeViewModel @Inject constructor(
     private var latestRearmTripId: String? = null
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(
                 tripDao.observeTrips(),
                 tripSessionDao.observeTripSessions(),
@@ -134,15 +130,10 @@ class HomeViewModel @Inject constructor(
     }
 
     fun rearmLastTrip(onStarted: (String) -> Unit) {
-        scope.launch {
+        viewModelScope.launch {
             val sourceTripId = latestRearmTripId ?: return@launch
             rearmTrip(sourceTripId)?.let(onStarted)
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 
     private fun buildActiveTrip(

@@ -2,6 +2,7 @@ package com.nearwake.feature.tripsetup
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.application.monitoring.StartTripMonitoringUseCase
 import com.nearwake.application.trip.StartTripRequest
 import com.nearwake.application.trip.StartTripUseCase
@@ -17,10 +18,6 @@ import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.TripRule
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,14 +48,13 @@ class TripSetupViewModel @Inject constructor(
     private val userPreferencesDataStore: UserPreferencesDataStore,
     private val startTrip: StartTripUseCase,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val placeId = savedStateHandle.get<String>(PLACE_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(TripSetupUiState())
     val state: StateFlow<TripSetupUiState> = mutableState.asStateFlow()
     private var previewRouteSnapshot: RouteSnapshot? = null
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             val preferences = userPreferencesDataStore.preferences.first()
             mutableState.value = mutableState.value.copy(
                 alertLeadMinutes = preferences.defaultAlertLeadMinutes,
@@ -69,7 +65,7 @@ class TripSetupViewModel @Inject constructor(
                 backgroundMonitoringEnabled = preferences.backgroundMonitoringEnabled,
             )
         }
-        scope.launch {
+        viewModelScope.launch {
             val place = savedPlaceDao.getSavedPlaceById(placeId)
             mutableState.value = mutableState.value.copy(
                 destinationName = place?.name ?: "Destination unavailable",
@@ -112,7 +108,7 @@ class TripSetupViewModel @Inject constructor(
     }
 
     fun startTrip(onStarted: (String) -> Unit) {
-        scope.launch {
+        viewModelScope.launch {
             val uiState = mutableState.value
             startTrip(
                 StartTripRequest(
@@ -126,11 +122,6 @@ class TripSetupViewModel @Inject constructor(
                 ),
             )?.let(onStarted)
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 
     private suspend fun loadRoutePreview(destination: LatLng) {

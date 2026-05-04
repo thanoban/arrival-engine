@@ -2,6 +2,7 @@ package com.nearwake.feature.walkfinish
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.application.monitoring.StopTripMonitoringUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
@@ -16,10 +17,6 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,13 +43,12 @@ class WalkFinishViewModel @Inject constructor(
     private val tripSessionDao: TripSessionDao,
     private val stopTripMonitoring: StopTripMonitoringUseCase,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(WalkFinishUiState(tripId = tripId))
     val state: StateFlow<WalkFinishUiState> = mutableState.asStateFlow()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(
                 tripDao.observeTripById(tripId),
                 savedPlaceDao.observeSavedPlaces(),
@@ -113,7 +109,7 @@ class WalkFinishViewModel @Inject constructor(
 
     fun confirmArrival(onArrived: () -> Unit) {
         if (!mutableState.value.canConfirmArrival) return
-        scope.launch {
+        viewModelScope.launch {
             completeTrip()
             onArrived()
         }
@@ -121,15 +117,10 @@ class WalkFinishViewModel @Inject constructor(
 
     fun confirmArrivalAndShare(onReadyToShare: (String) -> Unit) {
         if (!mutableState.value.canConfirmArrival) return
-        scope.launch {
+        viewModelScope.launch {
             completeTrip()
             onReadyToShare(tripId)
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 
     private fun distanceMeters(first: LatLng, second: LatLng): Double {

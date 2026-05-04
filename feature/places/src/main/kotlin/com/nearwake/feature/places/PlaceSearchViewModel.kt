@@ -1,16 +1,13 @@
 package com.nearwake.feature.places
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.entity.SavedPlaceEntity
 import com.nearwake.domain.location.model.PlaceSearchResult
 import com.nearwake.domain.location.repository.PlaceSearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,20 +42,19 @@ class PlaceSearchViewModel @Inject constructor(
     private val savedPlaceDao: SavedPlaceDao,
     private val placeSearchRepository: PlaceSearchRepository,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val query = MutableStateFlow("")
     private val mutableState = MutableStateFlow(PlaceSearchUiState())
     val state: StateFlow<PlaceSearchUiState> = mutableState.asStateFlow()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             savedPlaceDao.observeSavedPlaces().collect { savedPlaces ->
                 mutableState.update { state ->
                     state.copy(savedPlaces = savedPlaces.map { place -> place.toUiModel() })
                 }
             }
         }
-        scope.launch {
+        viewModelScope.launch {
             query.collectLatest { currentQuery ->
                 search(currentQuery)
             }
@@ -73,7 +69,7 @@ class PlaceSearchViewModel @Inject constructor(
     }
 
     fun selectResult(result: PlaceSearchResultUiModel, onSaved: (String) -> Unit) {
-        scope.launch {
+        viewModelScope.launch {
             val resolved = placeSearchRepository.resolvePlace(result.id)
                 .onFailure {
                     mutableState.update { state ->
@@ -98,17 +94,12 @@ class PlaceSearchViewModel @Inject constructor(
     }
 
     fun selectSavedPlace(placeId: String, onSaved: (String) -> Unit) {
-        scope.launch {
+        viewModelScope.launch {
             savedPlaceDao.getSavedPlaceById(placeId)?.let { place ->
                 savedPlaceDao.upsertSavedPlace(place.copy(lastUsedAt = Clock.System.now()))
             }
             onSaved(placeId)
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 
     private suspend fun search(currentQuery: String) {

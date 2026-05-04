@@ -2,6 +2,7 @@ package com.nearwake.feature.alerts
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.application.monitoring.StartTripMonitoringUseCase
 import com.nearwake.application.monitoring.StopTripMonitoringUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
@@ -15,10 +16,6 @@ import com.nearwake.domain.trip.engine.RecoveryGuidanceMode
 import com.nearwake.domain.trip.engine.RecoveryPlanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,14 +46,13 @@ class RecoveryViewModel @Inject constructor(
     private val startTripMonitoring: StartTripMonitoringUseCase,
     private val stopTripMonitoring: StopTripMonitoringUseCase,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val recoveryPlanner = RecoveryPlanner()
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(RecoveryUiState(tripId = tripId))
     val state: StateFlow<RecoveryUiState> = mutableState.asStateFlow()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(
                 tripDao.observeTripById(tripId),
                 savedPlaceDao.observeSavedPlaces(),
@@ -121,7 +117,7 @@ class RecoveryViewModel @Inject constructor(
     }
 
     fun endTrip(onEnded: () -> Unit) {
-        scope.launch {
+        viewModelScope.launch {
             tripDao.getTripById(tripId)?.let { trip ->
                 tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
             }
@@ -129,11 +125,6 @@ class RecoveryViewModel @Inject constructor(
             stopTripMonitoring()
             onEnded()
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 
     companion object {

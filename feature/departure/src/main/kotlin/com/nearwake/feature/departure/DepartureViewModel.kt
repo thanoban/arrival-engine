@@ -1,6 +1,7 @@
 package com.nearwake.feature.departure
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.data.alerts.DepartureReminderScheduleResult
 import com.nearwake.data.alerts.DepartureReminderScheduler
@@ -8,10 +9,6 @@ import com.nearwake.data.patterns.CommutePredictionRepository
 import com.nearwake.domain.commute.CommutePrediction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,12 +39,11 @@ class DepartureViewModel @Inject constructor(
     private val userPreferencesDataStore: UserPreferencesDataStore,
     private val departureReminderScheduler: DepartureReminderScheduler,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(DepartureUiState())
     val state: StateFlow<DepartureUiState> = mutableState.asStateFlow()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.preferences
                 .combine(repository.observePredictions()) { preferences, predictions ->
                     preferences.departureRemindersEnabled to predictions
@@ -66,7 +62,7 @@ class DepartureViewModel @Inject constructor(
                     )
                 }
         }
-        scope.launch {
+        viewModelScope.launch {
             mutableState.value = mutableState.value.copy(isRefreshing = true)
             runCatching { repository.refreshPredictions() }
             mutableState.value = mutableState.value.copy(isRefreshing = false)
@@ -74,14 +70,9 @@ class DepartureViewModel @Inject constructor(
     }
 
     fun setDepartureRemindersEnabled(enabled: Boolean) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.setDepartureRemindersEnabled(enabled)
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 }
 

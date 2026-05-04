@@ -2,15 +2,12 @@ package com.nearwake.app
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.data.alerts.worker.TripRecoveryScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,13 +22,12 @@ class NearWakeAppViewModel @Inject constructor(
     private val userPreferencesDataStore: UserPreferencesDataStore,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(NearWakeAppUiState())
     val state: StateFlow<NearWakeAppUiState> = mutableState.asStateFlow()
 
     init {
         TripRecoveryScheduler.enqueue(appContext)
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.preferences.collect { preferences ->
                 mutableState.value = NearWakeAppUiState(
                     startDestination = if (preferences.onboardingCompleted) {
@@ -42,10 +38,5 @@ class NearWakeAppViewModel @Inject constructor(
                 )
             }
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 }

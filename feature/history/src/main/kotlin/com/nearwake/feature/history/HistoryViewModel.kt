@@ -2,6 +2,7 @@ package com.nearwake.feature.history
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
@@ -11,10 +12,6 @@ import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertTriggerMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,7 +50,6 @@ class HistoryViewModel @Inject constructor(
     savedPlaceDao: SavedPlaceDao,
     tripSessionDao: TripSessionDao,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(HistoryUiState())
     val state: StateFlow<HistoryUiState> = mutableState.asStateFlow()
 
@@ -62,7 +58,7 @@ class HistoryViewModel @Inject constructor(
     private var latestSessions: Map<String, TripSessionEntity> = emptyMap()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(
                 tripDao.observeTrips(),
                 savedPlaceDao.observeSavedPlaces(),
@@ -98,11 +94,6 @@ class HistoryViewModel @Inject constructor(
     fun clearExport() {
         mutableState.value = mutableState.value.copy(exportCsvText = null)
     }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
-    }
 }
 
 @HiltViewModel
@@ -113,13 +104,12 @@ class TripSummaryViewModel @Inject constructor(
     tripSessionDao: TripSessionDao,
     private val routingRepository: RoutingRepository,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(TripSummaryUiState())
     val state: StateFlow<TripSummaryUiState> = mutableState.asStateFlow()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(
                 tripDao.observeTripById(tripId),
                 savedPlaceDao.observeSavedPlaces(),
@@ -148,11 +138,6 @@ class TripSummaryViewModel @Inject constructor(
                 mutableState.value = uiState
             }
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 
     companion object {

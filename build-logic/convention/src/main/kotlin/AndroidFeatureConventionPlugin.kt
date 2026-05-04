@@ -15,6 +15,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", "androidx.hilt:hilt-navigation-compose:1.2.0")
                 add("implementation", "androidx.navigation:navigation-compose:2.8.5")
                 add("implementation", "androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+                add("implementation", "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
                 add("implementation", "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
                 add("testImplementation", project(":core:testing"))
                 add("androidTestImplementation", project(":core:testing"))

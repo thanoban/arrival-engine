@@ -1,6 +1,7 @@
 package com.nearwake.feature.settings
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import com.nearwake.core.datastore.model.ThemeMode
 import com.nearwake.domain.trip.model.AlertIntensity
@@ -9,10 +10,6 @@ import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.TripRule
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,12 +30,11 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val userPreferencesDataStore: UserPreferencesDataStore,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = mutableState.asStateFlow()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.preferences.collect { preferences ->
                 mutableState.value = SettingsUiState(
                     defaultAlertLeadMinutes = preferences.defaultAlertLeadMinutes,
@@ -55,55 +51,50 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun updateLeadMinutes(minutes: Int) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.updateDefaultAlertLeadMinutes(minutes)
         }
     }
 
     fun updateAlertTriggerMode(triggerMode: AlertTriggerMode) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.updateDefaultAlertTriggerMode(triggerMode)
         }
     }
 
     fun updateAlertDistanceMeters(distanceMeters: Int) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.updateDefaultAlertDistanceMeters(distanceMeters)
         }
     }
 
     fun updateAlertIntensity(intensity: AlertIntensity) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.updateDefaultAlertIntensity(intensity)
         }
     }
 
     fun updateAlertMode(mode: AlertMode) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.updateDefaultAlertMode(mode)
         }
     }
 
     fun setBackgroundMonitoringEnabled(enabled: Boolean) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.setBackgroundMonitoringEnabled(enabled)
         }
     }
 
     fun setDiagnosticsEnabled(enabled: Boolean) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.setDiagnosticsEnabled(enabled)
         }
     }
 
     fun updateThemeMode(themeMode: ThemeMode) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.updateThemeMode(themeMode)
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 }

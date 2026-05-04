@@ -1,13 +1,10 @@
 package com.nearwake.feature.onboarding
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,19 +22,13 @@ data class OnboardingUiState(
 class OnboardingViewModel @Inject constructor(
     private val userPreferencesDataStore: UserPreferencesDataStore,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = mutableState.asStateFlow()
 
     fun completeOnboarding(onCompleted: () -> Unit) {
-        scope.launch {
+        viewModelScope.launch {
             userPreferencesDataStore.setOnboardingCompleted(true)
             onCompleted()
         }
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 }

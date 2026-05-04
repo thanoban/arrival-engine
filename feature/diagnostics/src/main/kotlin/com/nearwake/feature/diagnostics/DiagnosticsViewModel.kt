@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.nearwake.core.database.dao.DiagnosticsEventDao
@@ -17,10 +18,6 @@ import com.nearwake.core.datastore.UserPreferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -99,12 +96,11 @@ class DiagnosticsViewModel @Inject constructor(
     tripSessionDao: TripSessionDao,
     private val diagnosticsEventDao: DiagnosticsEventDao,
 ) : ViewModel() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(DiagnosticsUiState())
     val state: StateFlow<DiagnosticsUiState> = mutableState.asStateFlow()
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(
                 userPreferencesDataStore.preferences,
                 tripSessionDao.observeTripSessions(),
@@ -143,18 +139,13 @@ class DiagnosticsViewModel @Inject constructor(
     }
 
     fun clearDiagnostics() {
-        scope.launch {
+        viewModelScope.launch {
             diagnosticsEventDao.clearAll()
         }
     }
 
     fun clearExport() {
         mutableState.value = mutableState.value.copy(exportText = null)
-    }
-
-    override fun onCleared() {
-        scope.cancel()
-        super.onCleared()
     }
 }
 
