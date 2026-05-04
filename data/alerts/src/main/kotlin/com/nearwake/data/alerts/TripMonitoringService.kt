@@ -43,6 +43,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -64,6 +66,7 @@ class TripMonitoringService : Service() {
     @Inject lateinit var alertOrchestrator: AlertOrchestrator
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val stateMutex = Mutex()
     private val boardingValidator = BoardingValidator()
     private val transferMonitor = TransferMonitor()
     private var activeSession: TripSession? = null
@@ -90,7 +93,9 @@ class TripMonitoringService : Service() {
                 )
                 val tripId = intent.getStringExtra(EXTRA_TRIP_ID) ?: return START_STICKY
                 serviceScope.launch {
-                    startMonitoring(tripId)
+                    stateMutex.withLock {
+                        startMonitoring(tripId)
+                    }
                 }
             }
 
@@ -150,51 +155,55 @@ class TripMonitoringService : Service() {
     private fun observeSignals() {
         serviceScope.launch {
             GeofenceEventBus.events.collect { event ->
-                val context = activeContext ?: return@collect
-                val session = activeSession ?: return@collect
+                stateMutex.withLock {
+                    val context = activeContext ?: return@withLock
+                    val session = activeSession ?: return@withLock
 
-                if (event.errorCode == GeofenceStatusCodes.GEOFENCE_NOT_AVAILABLE) {
-                    diagnosticsLogger.log(
-                        eventType = "geofence_not_available",
-                        tripId = session.tripId,
-                        payload = buildJsonObject {},
-                    )
-                    startTracking(MonitoringMode.BALANCED)
-                    return@collect
-                }
+                    if (event.errorCode == GeofenceStatusCodes.GEOFENCE_NOT_AVAILABLE) {
+                        diagnosticsLogger.log(
+                            eventType = "geofence_not_available",
+                            tripId = session.tripId,
+                            payload = buildJsonObject {},
+                        )
+                        startTracking(MonitoringMode.BALANCED)
+                        return@withLock
+                    }
 
-                if (event.transitionType != Geofence.GEOFENCE_TRANSITION_ENTER) {
-                    return@collect
-                }
+                    if (event.transitionType != Geofence.GEOFENCE_TRANSITION_ENTER) {
+                        return@withLock
+                    }
 
-                when (tripMonitoringRuntime.classifySignal(event.geofenceIds)) {
-                    GeofenceSignal.APPROACH -> applyEngineResult(
-                        result = tripEngine.onEvent(session, TripEvent.ApproachGeofenceEntered),
-                        eventName = "ApproachGeofenceEntered",
-                        context = context,
-                        extraPayload = buildJsonObject {
-                            put("ids", event.geofenceIds.joinToString(","))
-                        },
-                    )
+                    when (tripMonitoringRuntime.classifySignal(event.geofenceIds)) {
+                        GeofenceSignal.APPROACH -> applyEngineResult(
+                            result = tripEngine.onEvent(session, TripEvent.ApproachGeofenceEntered),
+                            eventName = "ApproachGeofenceEntered",
+                            context = context,
+                            extraPayload = buildJsonObject {
+                                put("ids", event.geofenceIds.joinToString(","))
+                            },
+                        )
 
-                    GeofenceSignal.DESTINATION -> handleDestinationReached(context)
-                    null -> Unit
+                        GeofenceSignal.DESTINATION -> handleDestinationReached(context)
+                        null -> Unit
+                    }
                 }
             }
         }
 
         serviceScope.launch {
             ActivityTransitionEventBus.events.collect { motion ->
-                val context = activeContext ?: return@collect
-                val session = activeSession ?: return@collect
-                applyEngineResult(
-                    result = tripEngine.onEvent(session, TripEvent.MotionDetected),
-                    eventName = "MotionDetected",
-                    context = context,
-                    extraPayload = buildJsonObject {
-                        put("motion_type", motion.type.name)
-                    },
-                )
+                stateMutex.withLock {
+                    val context = activeContext ?: return@withLock
+                    val session = activeSession ?: return@withLock
+                    applyEngineResult(
+                        result = tripEngine.onEvent(session, TripEvent.MotionDetected),
+                        eventName = "MotionDetected",
+                        context = context,
+                        extraPayload = buildJsonObject {
+                            put("motion_type", motion.type.name)
+                        },
+                    )
+                }
             }
         }
     }
@@ -266,7 +275,9 @@ class TripMonitoringService : Service() {
         val updates = locationStrategyOrchestrator.escalate(mode, balancedMinDistanceMeters = minDistance)
         locationJob = serviceScope.launch {
             updates.collectLatest { location ->
-                handleLocationUpdate(context, location)
+                stateMutex.withLock {
+                    handleLocationUpdate(context, location)
+                }
             }
         }
     }
