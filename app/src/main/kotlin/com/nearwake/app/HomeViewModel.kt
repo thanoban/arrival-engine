@@ -2,25 +2,14 @@ package com.nearwake.app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nearwake.application.trip.HomeDashboardTone
+import com.nearwake.application.trip.ObserveHomeDashboardUseCase
 import com.nearwake.application.trip.RearmTripUseCase
-import com.nearwake.core.database.dao.SavedPlaceDao
-import com.nearwake.core.database.dao.TripDao
-import com.nearwake.core.database.dao.TripSessionDao
-import com.nearwake.core.database.entity.SavedPlaceEntity
-import com.nearwake.core.database.entity.TripEntity
-import com.nearwake.core.database.entity.TripSessionEntity
-import com.nearwake.domain.trip.model.AlertStage
-import com.nearwake.domain.trip.model.AlertTriggerMode
-import com.nearwake.domain.trip.model.Confidence
-import com.nearwake.domain.trip.model.MonitoringMode
-import com.nearwake.domain.trip.model.TripState
-import com.nearwake.domain.trip.model.isTerminal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
@@ -62,70 +51,46 @@ enum class HomeStatusTone {
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val tripDao: TripDao,
-    private val tripSessionDao: TripSessionDao,
-    private val savedPlaceDao: SavedPlaceDao,
+    observeHomeDashboard: ObserveHomeDashboardUseCase,
     private val rearmTrip: RearmTripUseCase,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = mutableState.asStateFlow()
 
-    private var latestTripsById: Map<String, TripEntity> = emptyMap()
-    private var latestPlacesById: Map<String, SavedPlaceEntity> = emptyMap()
     private var latestRearmTripId: String? = null
 
     init {
         viewModelScope.launch {
-            combine(
-                tripDao.observeTrips(),
-                tripSessionDao.observeTripSessions(),
-                savedPlaceDao.observeSavedPlaces(),
-            ) { trips, sessions, places ->
-                val tripsById = trips.associateBy { trip -> trip.id }
-                val placesById = places.associateBy { place -> place.id }
-                latestTripsById = tripsById
-                latestPlacesById = placesById
-
-                val activeSession = sessions.firstOrNull { session -> !session.state.isTerminal }
-                val activeTrip = activeSession
-                    ?.let { session -> tripsById[session.tripId]?.let { trip -> session to trip } }
-                    ?.let { (session, trip) -> buildActiveTrip(session, trip, placesById[trip.destinationId]) }
-
-                val rearmableTrip = trips.firstOrNull { trip ->
-                    trip.completedAt != null && placesById[trip.destinationId] != null
-                }
-                latestRearmTripId = rearmableTrip?.id
-
-                HomeUiState(
-                    headline = when {
-                        activeTrip != null -> "NearWake is already guarding your current ride."
-                        rearmableTrip != null -> "Your last commute is ready to arm again."
-                        else -> "Travel calmer on the rides that are easiest to miss."
-                    },
-                    statusLabel = when {
-                        activeTrip != null -> "Monitoring now"
-                        rearmableTrip != null -> "Ready to re-arm"
-                        else -> "Awaiting trip"
-                    },
-                    statusTone = when {
-                        activeTrip != null -> HomeStatusTone.Monitoring
-                        rearmableTrip != null -> HomeStatusTone.Safe
-                        else -> HomeStatusTone.Neutral
-                    },
-                    activeTrip = activeTrip,
-                    rearmTrip = rearmableTrip?.let { trip ->
-                        buildRearmTrip(trip = trip, place = placesById[trip.destinationId])
-                    },
-                    recentTrips = trips.mapNotNull { trip ->
-                        buildRecentTrip(
-                            trip = trip,
-                            place = placesById[trip.destinationId],
-                            session = sessions.firstOrNull { session -> session.tripId == trip.id },
+            observeHomeDashboard().collect { dashboard ->
+                latestRearmTripId = dashboard.rearmTrip?.sourceTripId
+                mutableState.value = HomeUiState(
+                    headline = dashboard.headline,
+                    statusLabel = dashboard.statusLabel,
+                    statusTone = dashboard.statusTone.toUiTone(),
+                    activeTrip = dashboard.activeTrip?.let { trip ->
+                        HomeActiveTrip(
+                            tripId = trip.tripId,
+                            destinationName = trip.destinationName,
+                            subtitle = trip.subtitle,
                         )
-                    }.take(5),
+                    },
+                    rearmTrip = dashboard.rearmTrip?.let { trip ->
+                        HomeRearmTrip(
+                            sourceTripId = trip.sourceTripId,
+                            destinationName = trip.destinationName,
+                            subtitle = trip.subtitle,
+                        )
+                    },
+                    recentTrips = dashboard.recentTrips.map { trip ->
+                        HomeRecentTrip(
+                            tripId = trip.tripId,
+                            destinationName = trip.destinationName,
+                            subtitle = trip.subtitle,
+                            statusLabel = trip.statusLabel,
+                            statusTone = trip.statusTone.toUiTone(),
+                        )
+                    },
                 )
-            }.collect { uiState ->
-                mutableState.value = uiState
             }
         }
     }
@@ -136,102 +101,11 @@ class HomeViewModel @Inject constructor(
             rearmTrip(sourceTripId)?.let(onStarted)
         }
     }
+}
 
-    private fun buildActiveTrip(
-        session: TripSessionEntity,
-        trip: TripEntity,
-        place: SavedPlaceEntity?,
-    ): HomeActiveTrip? {
-        place ?: return null
-        val confidenceLabel = when (session.confidence) {
-            Confidence.HIGH -> "High confidence"
-            Confidence.DEGRADED -> "Medium confidence"
-            Confidence.OFFLINE -> "Low confidence"
-        }
-        val stageLabel = when (session.alertStage) {
-            AlertStage.APPROACH -> "Approach window"
-            AlertStage.IMMINENT -> "Get ready"
-            AlertStage.ARRIVAL -> "Arrival alert"
-            AlertStage.RECOVERY -> "Recovery mode"
-            else -> "Monitoring"
-        }
-        val etaLabel = session.lastEtaMinutes?.let { minutes -> "~$minutes min" } ?: "ETA updating"
-        return HomeActiveTrip(
-            tripId = trip.id,
-            destinationName = place.name,
-            subtitle = "$stageLabel · $etaLabel · $confidenceLabel",
-        )
-    }
-
-    private fun buildRearmTrip(
-        trip: TripEntity,
-        place: SavedPlaceEntity?,
-    ): HomeRearmTrip? {
-        place ?: return null
-        val leadLabel = formatAlertPreference(
-            triggerMode = trip.alertTriggerMode,
-            alertLeadMinutes = trip.alertLeadMinutes,
-            alertDistanceMeters = trip.alertDistanceMeters,
-        )
-        val intensityLabel = trip.alertIntensity.name.lowercase().replaceFirstChar(Char::uppercase)
-        return HomeRearmTrip(
-            sourceTripId = trip.id,
-            destinationName = place.name,
-            subtitle = "$leadLabel · $intensityLabel",
-        )
-    }
-
-    private fun buildRecentTrip(
-        trip: TripEntity,
-        place: SavedPlaceEntity?,
-        session: TripSessionEntity?,
-    ): HomeRecentTrip? {
-        place ?: return null
-        val status = when {
-            session != null && !session.state.isTerminal -> "Monitoring now"
-            trip.completedAt != null -> "Completed"
-            else -> "Ready to re-arm"
-        }
-        val tone = when (status) {
-            "Completed" -> HomeStatusTone.Safe
-            "Monitoring now" -> HomeStatusTone.Monitoring
-            else -> HomeStatusTone.Approaching
-        }
-        val timestamp = trip.createdAt.toString().replace('T', ' ').take(16)
-        val lead = formatAlertPreference(
-            triggerMode = trip.alertTriggerMode,
-            alertLeadMinutes = trip.alertLeadMinutes,
-            alertDistanceMeters = trip.alertDistanceMeters,
-        )
-        return HomeRecentTrip(
-            tripId = trip.id,
-            destinationName = place.name,
-            subtitle = "$lead · $timestamp",
-            statusLabel = status,
-            statusTone = tone,
-        )
-    }
-
-    private fun formatAlertPreference(
-        triggerMode: AlertTriggerMode,
-        alertLeadMinutes: Int,
-        alertDistanceMeters: Int,
-    ): String = when (triggerMode) {
-        AlertTriggerMode.TIME ->
-            if (alertLeadMinutes == 0) "Nearby alert" else "${alertLeadMinutes} min early"
-        AlertTriggerMode.DISTANCE -> "${alertDistanceMeters.toDistanceLabel()} away"
-        AlertTriggerMode.BOTH -> buildString {
-            append(if (alertLeadMinutes == 0) "Nearby" else "${alertLeadMinutes} min")
-            append(" or ")
-            append(alertDistanceMeters.toDistanceLabel())
-        }
-    }
-
-    private fun Int.toDistanceLabel(): String =
-        if (this >= 1000) {
-            val kilometers = this / 1000.0
-            if (kilometers % 1.0 == 0.0) "${kilometers.toInt()} km" else "${kilometers} km"
-        } else {
-            "$this m"
-        }
+private fun HomeDashboardTone.toUiTone(): HomeStatusTone = when (this) {
+    HomeDashboardTone.Safe -> HomeStatusTone.Safe
+    HomeDashboardTone.Monitoring -> HomeStatusTone.Monitoring
+    HomeDashboardTone.Approaching -> HomeStatusTone.Approaching
+    HomeDashboardTone.Neutral -> HomeStatusTone.Neutral
 }

@@ -5,13 +5,17 @@ import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
 import com.nearwake.core.database.entity.TripEntity
 import com.nearwake.core.database.entity.TripSessionEntity
+import com.nearwake.ports.persistence.PersistedHomeSnapshot
 import com.nearwake.ports.persistence.PersistedSavedPlace
 import com.nearwake.ports.persistence.PersistedTrip
+import com.nearwake.ports.persistence.PersistedTripSession
 import com.nearwake.ports.persistence.SaveTripCommand
 import com.nearwake.ports.persistence.SaveTripSessionCommand
 import com.nearwake.ports.persistence.TripLifecycleStore
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 @Singleton
 class TripLifecycleStoreImpl @Inject constructor(
@@ -19,29 +23,24 @@ class TripLifecycleStoreImpl @Inject constructor(
     private val tripDao: TripDao,
     private val tripSessionDao: TripSessionDao,
 ) : TripLifecycleStore {
-    override suspend fun getSavedPlace(placeId: String): PersistedSavedPlace? =
-        savedPlaceDao.getSavedPlaceById(placeId)?.let { place ->
-            PersistedSavedPlace(
-                id = place.id,
-                name = place.name,
-                address = place.address,
-                lat = place.lat,
-                lng = place.lng,
+    override fun observeHomeSnapshot(): Flow<PersistedHomeSnapshot> =
+        combine(
+            tripDao.observeTrips(),
+            tripSessionDao.observeTripSessions(),
+            savedPlaceDao.observeSavedPlaces(),
+        ) { trips, sessions, places ->
+            PersistedHomeSnapshot(
+                trips = trips.map { trip -> trip.toPersistedTrip() },
+                sessions = sessions.map { session -> session.toPersistedTripSession() },
+                savedPlaces = places.map { place -> place.toPersistedSavedPlace() },
             )
         }
 
+    override suspend fun getSavedPlace(placeId: String): PersistedSavedPlace? =
+        savedPlaceDao.getSavedPlaceById(placeId)?.toPersistedSavedPlace()
+
     override suspend fun getTrip(tripId: String): PersistedTrip? =
-        tripDao.getTripById(tripId)?.let { trip ->
-            PersistedTrip(
-                id = trip.id,
-                destinationId = trip.destinationId,
-                alertLeadMinutes = trip.alertLeadMinutes,
-                alertTriggerMode = trip.alertTriggerMode,
-                alertDistanceMeters = trip.alertDistanceMeters,
-                alertIntensity = trip.alertIntensity,
-                alertMode = trip.alertMode,
-            )
-        }
+        tripDao.getTripById(tripId)?.toPersistedTrip()
 
     override suspend fun markPlaceUsed(placeId: String, usedAt: kotlinx.datetime.Instant) {
         savedPlaceDao.getSavedPlaceById(placeId)?.let { place ->
@@ -82,3 +81,34 @@ class TripLifecycleStoreImpl @Inject constructor(
         )
     }
 }
+
+private fun com.nearwake.core.database.entity.SavedPlaceEntity.toPersistedSavedPlace(): PersistedSavedPlace =
+    PersistedSavedPlace(
+        id = id,
+        name = name,
+        address = address,
+        lat = lat,
+        lng = lng,
+    )
+
+private fun TripEntity.toPersistedTrip(): PersistedTrip =
+    PersistedTrip(
+        id = id,
+        destinationId = destinationId,
+        alertLeadMinutes = alertLeadMinutes,
+        alertTriggerMode = alertTriggerMode,
+        alertDistanceMeters = alertDistanceMeters,
+        alertIntensity = alertIntensity,
+        alertMode = alertMode,
+        createdAt = createdAt,
+        completedAt = completedAt,
+    )
+
+private fun TripSessionEntity.toPersistedTripSession(): PersistedTripSession =
+    PersistedTripSession(
+        tripId = tripId,
+        state = state,
+        alertStage = alertStage,
+        lastEtaMinutes = lastEtaMinutes,
+        confidence = confidence,
+    )

@@ -7,6 +7,7 @@ import com.nearwake.domain.trip.model.AlertTriggerMode
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripState
+import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 
 data class PersistedSavedPlace(
@@ -25,6 +26,22 @@ data class PersistedTrip(
     val alertDistanceMeters: Int,
     val alertIntensity: AlertIntensity,
     val alertMode: AlertMode,
+    val createdAt: Instant,
+    val completedAt: Instant?,
+)
+
+data class PersistedTripSession(
+    val tripId: String,
+    val state: TripState,
+    val alertStage: AlertStage,
+    val lastEtaMinutes: Int?,
+    val confidence: Confidence,
+)
+
+data class PersistedHomeSnapshot(
+    val trips: List<PersistedTrip>,
+    val sessions: List<PersistedTripSession>,
+    val savedPlaces: List<PersistedSavedPlace>,
 )
 
 data class SaveTripCommand(
@@ -53,6 +70,8 @@ data class SaveTripSessionCommand(
 )
 
 interface TripLifecycleStore {
+    fun observeHomeSnapshot(): Flow<PersistedHomeSnapshot>
+
     suspend fun getSavedPlace(placeId: String): PersistedSavedPlace?
 
     suspend fun getTrip(tripId: String): PersistedTrip?
