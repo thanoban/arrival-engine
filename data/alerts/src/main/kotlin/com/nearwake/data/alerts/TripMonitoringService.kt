@@ -11,7 +11,6 @@ import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofenceStatusCodes
-import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.data.analytics.DiagnosticsLogger
 import com.nearwake.data.location.GeofenceDataSource
@@ -53,13 +52,13 @@ class TripMonitoringService : Service() {
     @Inject lateinit var tripSessionStore: TripSessionStore
     @Inject lateinit var tripMonitoringRuntime: TripMonitoringRuntime
     @Inject lateinit var tripDao: TripDao
-    @Inject lateinit var savedPlaceDao: SavedPlaceDao
     @Inject lateinit var routingRepository: RoutingRepository
     @Inject lateinit var geofenceDataSource: GeofenceDataSource
     @Inject lateinit var activityRecognitionDataSource: ActivityRecognitionDataSource
     @Inject lateinit var locationStrategyOrchestrator: LocationStrategyOrchestrator
     @Inject lateinit var alertOrchestrator: AlertOrchestrator
     @Inject lateinit var feedbackCoordinator: TripMonitoringFeedbackCoordinator
+    @Inject lateinit var contextLoader: MonitoredTripContextLoader
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val stateMutex = Mutex()
@@ -108,7 +107,10 @@ class TripMonitoringService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private suspend fun startMonitoring(tripId: String) {
-        val context = loadTripContext(tripId)
+        val context = contextLoader.load(
+            tripId = tripId,
+            batterySaverMode = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
+        )
         if (context == null) {
             diagnosticsLogger.log(
                 eventType = "monitoring_service_missing_trip_context",
@@ -462,36 +464,6 @@ class TripMonitoringService : Service() {
                 TripSideEffect.ClearOfflineBias -> Unit
             }
         }
-    }
-
-    private suspend fun loadTripContext(tripId: String): MonitoredTripContext? {
-        return runCatching {
-            val trip = tripDao.getTripById(tripId) ?: return null
-            val destination = savedPlaceDao.getSavedPlaceById(trip.destinationId) ?: return null
-            val cachedRoute = routingRepository.getCachedRoute(tripId)
-            tripMonitoringRuntime.buildContext(
-                tripId = trip.id,
-                destinationName = destination.name,
-                alertLeadMinutes = trip.alertLeadMinutes,
-                alertTriggerMode = trip.alertTriggerMode,
-                alertDistanceMeters = trip.alertDistanceMeters,
-                alertIntensity = trip.alertIntensity,
-                alertMode = trip.alertMode,
-                destination = LatLng(lat = destination.lat, lng = destination.lng),
-                hasCachedRoute = cachedRoute != null,
-                routeSnapshot = cachedRoute,
-                initialEtaMinutes = cachedRoute?.totalDurationMinutes,
-                batterySaverMode = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
-            )
-        }.onFailure { error ->
-            diagnosticsLogger.log(
-                eventType = "monitoring_service_trip_context_failed",
-                tripId = tripId,
-                payload = buildJsonObject {
-                    put("message", error.message.orEmpty())
-                },
-            )
-        }.getOrNull()
     }
 
     private fun launchCleanup(tripId: String?) {
