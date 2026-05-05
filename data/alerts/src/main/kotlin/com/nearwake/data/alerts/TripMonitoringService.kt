@@ -21,19 +21,14 @@ import com.nearwake.data.motion.ActivityRecognitionDataSource
 import com.nearwake.data.motion.receivers.ActivityTransitionEventBus
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.routing.repository.RoutingRepository
-import com.nearwake.domain.trip.engine.BoardingAlignment
-import com.nearwake.domain.trip.engine.BoardingValidator
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.engine.TripEvent
 import com.nearwake.domain.trip.engine.TripSideEffect
-import com.nearwake.domain.trip.engine.TransferMonitor
-import com.nearwake.domain.trip.engine.TransferProgressStatus
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
-import com.nearwake.domain.trip.model.TripState
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -64,16 +59,13 @@ class TripMonitoringService : Service() {
     @Inject lateinit var activityRecognitionDataSource: ActivityRecognitionDataSource
     @Inject lateinit var locationStrategyOrchestrator: LocationStrategyOrchestrator
     @Inject lateinit var alertOrchestrator: AlertOrchestrator
+    @Inject lateinit var feedbackCoordinator: TripMonitoringFeedbackCoordinator
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val stateMutex = Mutex()
-    private val boardingValidator = BoardingValidator()
-    private val transferMonitor = TransferMonitor()
     private var activeSession: TripSession? = null
     private var activeContext: MonitoredTripContext? = null
     private var locationJob: Job? = null
-    private var boardingValidationComplete: Boolean = false
-    private var lastTransferCueKey: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -106,6 +98,7 @@ class TripMonitoringService : Service() {
 
     override fun onDestroy() {
         locationJob?.cancel()
+        feedbackCoordinator.reset()
         launchCleanup(activeSession?.tripId)
         stopForeground(STOP_FOREGROUND_REMOVE)
         serviceScope.cancel()
@@ -127,8 +120,7 @@ class TripMonitoringService : Service() {
         }
 
         activeContext = context
-        boardingValidationComplete = false
-        lastTransferCueKey = null
+        feedbackCoordinator.reset()
         val restoredSession = tripSessionStore.loadOrCreate(tripId)
             .withInitialEta(context.initialEtaMinutes)
         val preparedSession = registerPrerequisites(restoredSession, context)
@@ -348,26 +340,15 @@ class TripMonitoringService : Service() {
         if (update.engineResult == null) {
             val priorSession = previousSession ?: activeSession
             persistSession(update.session)
-            refreshMonitoringNotification(
-                mode = update.session.monitoringMode,
-                stage = update.session.alertStage,
+            feedbackCoordinator.refreshMonitoringNotification(
+                session = update.session,
+                context = context,
             )
-            maybeNotifyStageAdvance(
+            feedbackCoordinator.onSessionUpdated(
                 previousSession = priorSession,
                 currentSession = update.session,
                 context = context,
-            )
-            if (sampleLocation != null && priorSession != null) {
-                maybeNotifyBoardingMismatch(
-                    previousSession = priorSession,
-                    currentSession = update.session,
-                    currentLocation = sampleLocation,
-                    context = context,
-                )
-            }
-            maybeNotifyTransferCue(
-                session = update.session,
-                context = context,
+                sampleLocation = sampleLocation,
             )
             diagnosticsLogger.log(
                 eventType = "trip_location_sampled",
@@ -402,17 +383,13 @@ class TripMonitoringService : Service() {
     ) {
         val previousSession = activeSession
         persistSession(result.session)
-        refreshMonitoringNotification(
-            mode = result.session.monitoringMode,
-            stage = result.session.alertStage,
-        )
-        maybeNotifyStageAdvance(
-            previousSession = previousSession,
-            currentSession = result.session,
+        feedbackCoordinator.refreshMonitoringNotification(
+            session = result.session,
             context = context,
         )
-        maybeNotifyTransferCue(
-            session = result.session,
+        feedbackCoordinator.onSessionUpdated(
+            previousSession = previousSession,
+            currentSession = result.session,
             context = context,
         )
         diagnosticsLogger.log(
@@ -449,7 +426,7 @@ class TripMonitoringService : Service() {
                 }
 
                 TripSideEffect.FireArrivalAlert -> {
-                    val distanceMeters = resolveAlertDistanceMeters(
+                    val distanceMeters = feedbackCoordinator.resolveAlertDistanceMeters(
                         session = result.session,
                         context = context,
                     )
@@ -532,30 +509,6 @@ class TripMonitoringService : Service() {
         }
     }
 
-    private suspend fun resolveAlertDistanceMeters(
-        session: TripSession,
-        context: MonitoredTripContext,
-    ): Double? {
-        val lastKnownLocation = lastKnownLocationOrNull(session)
-        if (lastKnownLocation == null) {
-            diagnosticsLogger.log(
-                eventType = "alert_distance_unavailable",
-                tripId = session.tripId,
-                payload = buildJsonObject {
-                    put("reason", "missing_last_known_location")
-                    put("stage", session.alertStage.name)
-                },
-            )
-            return null
-        }
-
-        return tripMonitoringRuntime.distanceToDestination(
-            lat = lastKnownLocation.lat,
-            lng = lastKnownLocation.lng,
-            destination = context.destination,
-        )
-    }
-
     private fun readBatteryPercent(): Int {
         val bm = getSystemService(BATTERY_SERVICE) as? BatteryManager
         return bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
@@ -577,166 +530,6 @@ class TripMonitoringService : Service() {
     private suspend fun persistSession(session: TripSession) {
         tripSessionStore.save(session)
         activeSession = session
-    }
-
-    private fun refreshMonitoringNotification(
-        mode: MonitoringMode,
-        stage: AlertStage,
-    ) {
-        val session = activeSession
-        val context = activeContext
-        notificationHelper.notify(
-            NOTIFICATION_ID_MONITORING,
-            notificationHelper.buildMonitoringNotification(
-                mode = mode,
-                stage = stage,
-                destinationName = context?.destinationName,
-                etaMinutes = session?.lastEtaMinutes,
-                confidence = session?.confidence,
-                alertMode = context?.alertMode,
-            ),
-        )
-    }
-
-    private fun maybeNotifyStageAdvance(
-        previousSession: TripSession?,
-        currentSession: TripSession,
-        context: MonitoredTripContext,
-    ) {
-        val previousStage = previousSession?.alertStage ?: AlertStage.MONITORING
-        val currentStage = currentSession.alertStage
-        if (currentStage.ordinal <= previousStage.ordinal) {
-            return
-        }
-        if (currentStage == AlertStage.ARRIVAL || currentStage == AlertStage.RECOVERY) {
-            return
-        }
-        val notificationId = if (currentStage == AlertStage.IMMINENT) {
-            NOTIFICATION_ID_IMMINENT
-        } else {
-            NOTIFICATION_ID_APPROACH
-        }
-        notificationHelper.notify(
-            notificationId,
-            notificationHelper.buildStageNotification(
-                tripId = context.tripId,
-                destinationName = context.destinationName,
-                stage = currentStage,
-                mode = context.alertMode,
-            ),
-        )
-    }
-
-    private suspend fun maybeNotifyTransferCue(
-        session: TripSession,
-        context: MonitoredTripContext,
-    ) {
-        val routeSnapshot = context.routeSnapshot ?: return
-        val etaMinutes = session.lastEtaMinutes ?: return
-        val nextTransfer = transferMonitor.evaluate(
-            routeSnapshot = routeSnapshot,
-            etaMinutes = etaMinutes,
-            destinationName = context.destinationName,
-        ).nextTransfer ?: return
-
-        if (nextTransfer.status != TransferProgressStatus.SOON) {
-            return
-        }
-
-        val cueKey = "${nextTransfer.stopName}:${nextTransfer.lineName.orEmpty()}"
-        if (lastTransferCueKey == cueKey) {
-            return
-        }
-        lastTransferCueKey = cueKey
-
-        notificationHelper.notify(
-            NOTIFICATION_ID_TRANSFER,
-            notificationHelper.buildTransferNotification(
-                tripId = context.tripId,
-                stopName = nextTransfer.stopName,
-                lineName = nextTransfer.lineName.orEmpty(),
-                remainingMinutes = nextTransfer.remainingMinutes,
-            ),
-        )
-        diagnosticsLogger.log(
-            eventType = "transfer_alert_fired",
-            tripId = context.tripId,
-            payload = buildJsonObject {
-                put("stop_name", nextTransfer.stopName)
-                put("line_name", nextTransfer.lineName.orEmpty())
-                put("remaining_minutes", nextTransfer.remainingMinutes)
-            },
-        )
-    }
-
-    private suspend fun maybeNotifyBoardingMismatch(
-        previousSession: TripSession,
-        currentSession: TripSession,
-        currentLocation: LatLng,
-        context: MonitoredTripContext,
-    ) {
-        if (boardingValidationComplete) {
-            return
-        }
-        if (currentSession.alertStage != AlertStage.MONITORING &&
-            currentSession.alertStage != AlertStage.APPROACH
-        ) {
-            boardingValidationComplete = true
-            return
-        }
-
-        val previousLocation = lastKnownLocationOrNull(previousSession) ?: return
-
-        val routeSnapshot = context.routeSnapshot ?: return
-        val result = boardingValidator.evaluate(
-            routeSnapshot = routeSnapshot,
-            previousLocation = previousLocation,
-            currentLocation = currentLocation,
-        )
-
-        when (result.alignment) {
-            BoardingAlignment.UNDETERMINED -> Unit
-            BoardingAlignment.ALIGNED -> {
-                boardingValidationComplete = true
-                diagnosticsLogger.log(
-                    eventType = "boarding_direction_confirmed",
-                    tripId = currentSession.tripId,
-                    payload = buildJsonObject {
-                        put("heading_delta_degrees", result.headingDeltaDegrees ?: -1.0)
-                    },
-                )
-            }
-
-            BoardingAlignment.WRONG_DIRECTION -> {
-                boardingValidationComplete = true
-                notificationHelper.notify(
-                    NOTIFICATION_ID_BOARDING_WARNING,
-                    notificationHelper.buildBoardingWarningNotification(
-                        tripId = context.tripId,
-                        destinationName = context.destinationName,
-                    ),
-                )
-                diagnosticsLogger.log(
-                    eventType = "boarding_direction_warning",
-                    tripId = currentSession.tripId,
-                    payload = buildJsonObject {
-                        put("expected_heading_degrees", result.expectedHeadingDegrees ?: -1.0)
-                        put("actual_heading_degrees", result.actualHeadingDegrees ?: -1.0)
-                        put("heading_delta_degrees", result.headingDeltaDegrees ?: -1.0)
-                    },
-                )
-            }
-        }
-    }
-
-    private fun lastKnownLocationOrNull(session: TripSession): LatLng? {
-        val lat = session.lastKnownLat
-        val lng = session.lastKnownLng
-        return if (lat != null && lng != null) {
-            LatLng(lat = lat, lng = lng)
-        } else {
-            null
-        }
     }
 
     private fun TripSession.withInitialEta(initialEtaMinutes: Int?): TripSession =
