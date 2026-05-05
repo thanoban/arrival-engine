@@ -6,16 +6,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nearwake.application.trip.CancelTripUseCase
+import com.nearwake.application.trip.LiveTripTransferStatus
+import com.nearwake.application.trip.ObserveLiveTripUseCase
 import com.nearwake.application.trip.UpdateTripAlertModeUseCase
-import com.nearwake.core.database.dao.SavedPlaceDao
-import com.nearwake.core.database.dao.TripDao
-import com.nearwake.core.database.dao.TripSessionDao
-import com.nearwake.domain.trip.engine.TransferCheckpointType
-import com.nearwake.domain.trip.engine.TransferMonitor
-import com.nearwake.domain.trip.engine.TransferProgressStatus as DomainTransferProgressStatus
 import com.nearwake.domain.routing.model.RouteSignalQuality
-import com.nearwake.domain.routing.model.RouteSnapshot
-import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
@@ -26,7 +20,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class LiveTripUiState(
@@ -49,10 +42,7 @@ data class LiveTripUiState(
 @HiltViewModel
 class LiveTripViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val tripDao: TripDao,
-    savedPlaceDao: SavedPlaceDao,
-    private val tripSessionDao: TripSessionDao,
-    private val routingRepository: RoutingRepository,
+    observeLiveTrip: ObserveLiveTripUseCase,
     @ApplicationContext private val appContext: Context,
     private val updateTripAlertMode: UpdateTripAlertModeUseCase,
     private val cancelTrip: CancelTripUseCase,
@@ -63,48 +53,40 @@ class LiveTripViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            combine(
-                tripDao.observeTripById(tripId),
-                savedPlaceDao.observeSavedPlaces(),
-                tripSessionDao.observeTripSession(tripId),
-            ) { trip, places, session ->
-                val routeSnapshot = routingRepository.getCachedRoute(tripId)
-                val place = trip?.destinationId?.let { destinationId -> places.firstOrNull { it.id == destinationId } }
-                val minutes = session?.lastEtaMinutes ?: 22
-                LiveTripUiState(
-                    tripId = tripId,
-                    destinationName = place?.name ?: "Live trip",
-                    etaLabel = "~${minutes} min",
-                    routeSummary = routeSnapshot?.let { snapshot ->
-                        val stopLabel = if (snapshot.stops.size == 1) "1 stop" else "${snapshot.stops.size} stops"
-                        val transferLabel = if (snapshot.transfers.size == 1) "1 transfer" else "${snapshot.transfers.size} transfers"
-                        "$stopLabel · $transferLabel"
-                    } ?: "Destination-only monitoring",
-                    elapsedTimeLabel = trip?.createdAt?.toString()?.replace('T', ' ')?.take(16).orEmpty(),
-                    monitoringMode = session?.monitoringMode ?: MonitoringMode.GEOFENCE_ONLY,
-                    confidence = session?.confidence ?: Confidence.HIGH,
-                    batteryImpact = when (session?.monitoringMode ?: MonitoringMode.GEOFENCE_ONLY) {
+            observeLiveTrip(tripId).collect { liveTrip ->
+                mutableState.value = LiveTripUiState(
+                    tripId = liveTrip.tripId,
+                    destinationName = liveTrip.destinationName,
+                    etaLabel = liveTrip.etaLabel,
+                    routeSummary = liveTrip.routeSummary,
+                    elapsedTimeLabel = liveTrip.elapsedTimeLabel,
+                    monitoringMode = liveTrip.monitoringMode,
+                    confidence = liveTrip.confidence,
+                    batteryImpact = when (liveTrip.monitoringMode) {
                         MonitoringMode.GEOFENCE_ONLY -> "Very Low"
                         MonitoringMode.BALANCED -> "Low"
                         MonitoringMode.PRECISE_BURST -> "Temporary spike"
                     },
                     batterySaverActive = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
-                    alertMode = trip?.alertMode ?: AlertMode.ACTIVE,
-                    alertStage = session?.alertStage ?: AlertStage.MONITORING,
-                    transferSteps = routeSnapshot?.let { snapshot ->
-                        buildTransferProgress(
-                            routeSnapshot = snapshot,
-                            etaMinutes = minutes,
-                            destinationName = place?.name ?: "Destination",
+                    alertSummary = liveTrip.alertSummary,
+                    alertMode = liveTrip.alertMode,
+                    alertStage = liveTrip.alertStage,
+                    transferSteps = liveTrip.transferSteps.map { step ->
+                        TransferProgressUiState(
+                            title = step.title,
+                            subtitle = step.subtitle,
+                            timingLabel = step.timingLabel,
+                            status = when (step.status) {
+                                LiveTripTransferStatus.Completed -> TransferProgressStatus.Completed
+                                LiveTripTransferStatus.Soon -> TransferProgressStatus.Soon
+                                LiveTripTransferStatus.Upcoming -> TransferProgressStatus.Upcoming
+                                LiveTripTransferStatus.Final -> TransferProgressStatus.Final
+                            },
+                            signalQuality = step.signalQuality,
                         )
-                    }.orEmpty(),
-                    alertSummary = trip?.let { configuredTrip ->
-                        val lead = if (configuredTrip.alertLeadMinutes == 0) "Nearby" else "${configuredTrip.alertLeadMinutes} min early"
-                        "$lead · ${configuredTrip.alertIntensity.name.lowercase().replaceFirstChar(Char::uppercase)} · ${configuredTrip.alertMode.name.lowercase().replaceFirstChar(Char::uppercase)} mode"
-                    }.orEmpty(),
+                    },
+                    errorMessage = null,
                 )
-            }.collect { uiState ->
-                mutableState.value = uiState
             }
         }
     }
@@ -146,47 +128,4 @@ enum class TransferProgressStatus {
     Soon,
     Upcoming,
     Final,
-}
-
-internal fun buildTransferProgress(
-    routeSnapshot: RouteSnapshot,
-    etaMinutes: Int,
-    destinationName: String,
-): List<TransferProgressUiState> {
-    val transferState = TransferMonitor().evaluate(
-        routeSnapshot = routeSnapshot,
-        etaMinutes = etaMinutes,
-        destinationName = destinationName,
-    )
-
-    return transferState.checkpoints.map { checkpoint ->
-        when (checkpoint.type) {
-            TransferCheckpointType.TRANSFER -> TransferProgressUiState(
-                title = if (checkpoint.status == DomainTransferProgressStatus.COMPLETED) {
-                    "Changed to ${checkpoint.lineName.orEmpty()}"
-                } else {
-                    "Change to ${checkpoint.lineName.orEmpty()}"
-                },
-                subtitle = checkpoint.stopName,
-                timingLabel = when {
-                    checkpoint.status == DomainTransferProgressStatus.COMPLETED -> "Passed"
-                    checkpoint.remainingMinutes <= 1 -> "Now"
-                    else -> "in ${checkpoint.remainingMinutes} min"
-                },
-                status = when (checkpoint.status) {
-                    DomainTransferProgressStatus.COMPLETED -> TransferProgressStatus.Completed
-                    DomainTransferProgressStatus.SOON -> TransferProgressStatus.Soon
-                    DomainTransferProgressStatus.UPCOMING -> TransferProgressStatus.Upcoming
-                },
-                signalQuality = checkpoint.signalQuality,
-            )
-
-            TransferCheckpointType.DESTINATION -> TransferProgressUiState(
-                title = "Arrive at ${checkpoint.stopName}",
-                subtitle = "Final stop",
-                timingLabel = if (checkpoint.remainingMinutes <= 1) "Now" else "in ${checkpoint.remainingMinutes} min",
-                status = TransferProgressStatus.Final,
-            )
-        }
-    }
 }
