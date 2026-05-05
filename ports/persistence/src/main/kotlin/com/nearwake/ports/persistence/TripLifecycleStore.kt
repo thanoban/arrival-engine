@@ -79,6 +79,8 @@ interface TripLifecycleStore {
 
     suspend fun updateTripAlertMode(tripId: String, alertMode: AlertMode)
 
+    suspend fun completeTrip(tripId: String, completedAt: Instant)
+
     suspend fun clearTripSession(tripId: String)
 
     suspend fun markPlaceUsed(placeId: String, usedAt: Instant)

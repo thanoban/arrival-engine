@@ -13,5 +13,6 @@ dependencies {
     implementation("javax.inject:javax.inject:1")
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(project(":ports:monitoring"))
     testRuntimeOnly(libs.junit.jupiter.engine)
 }

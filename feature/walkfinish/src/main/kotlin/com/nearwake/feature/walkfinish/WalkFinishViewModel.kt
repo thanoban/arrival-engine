@@ -3,7 +3,7 @@ package com.nearwake.feature.walkfinish
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nearwake.application.monitoring.StopTripMonitoringUseCase
+import com.nearwake.application.trip.CompleteTripUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 data class WalkFinishUiState(
     val tripId: String = "",
@@ -42,7 +41,7 @@ class WalkFinishViewModel @Inject constructor(
     private val tripDao: TripDao,
     savedPlaceDao: SavedPlaceDao,
     private val tripSessionDao: TripSessionDao,
-    private val stopTripMonitoring: StopTripMonitoringUseCase,
+    private val completeTrip: CompleteTripUseCase,
 ) : ViewModel() {
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(WalkFinishUiState(tripId = tripId))
@@ -164,11 +163,5 @@ class WalkFinishViewModel @Inject constructor(
         private const val ARRIVAL_RADIUS_METERS = 30.0
     }
 
-    private suspend fun completeTrip() {
-        tripDao.getTripById(tripId)?.let { trip ->
-            tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
-        }
-        tripSessionDao.deleteTripSession(tripId)
-        stopTripMonitoring()
-    }
+    private suspend fun completeTrip() = completeTrip(tripId)
 }

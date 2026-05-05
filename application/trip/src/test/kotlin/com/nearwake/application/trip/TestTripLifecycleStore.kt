@@ -26,6 +26,8 @@ internal class TestTripLifecycleStore(
 
     override suspend fun updateTripAlertMode(tripId: String, alertMode: AlertMode) = Unit
 
+    override suspend fun completeTrip(tripId: String, completedAt: Instant) = Unit
+
     override suspend fun clearTripSession(tripId: String) = Unit
 
     override suspend fun markPlaceUsed(placeId: String, usedAt: Instant) = Unit

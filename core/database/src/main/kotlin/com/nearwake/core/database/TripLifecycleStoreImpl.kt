@@ -48,6 +48,12 @@ class TripLifecycleStoreImpl @Inject constructor(
         }
     }
 
+    override suspend fun completeTrip(tripId: String, completedAt: kotlinx.datetime.Instant) {
+        tripDao.getTripById(tripId)?.let { trip ->
+            tripDao.upsertTrip(trip.copy(completedAt = completedAt))
+        }
+    }
+
     override suspend fun clearTripSession(tripId: String) {
         tripSessionDao.deleteTripSession(tripId)
     }

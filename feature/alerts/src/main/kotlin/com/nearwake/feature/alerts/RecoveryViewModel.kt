@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nearwake.application.monitoring.StartTripMonitoringUseCase
-import com.nearwake.application.monitoring.StopTripMonitoringUseCase
+import com.nearwake.application.trip.CompleteTripUseCase
 import com.nearwake.core.database.dao.SavedPlaceDao
 import com.nearwake.core.database.dao.TripDao
 import com.nearwake.core.database.dao.TripSessionDao
@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 data class RecoveryUiState(
     val tripId: String = "",
@@ -45,7 +44,7 @@ class RecoveryViewModel @Inject constructor(
     private val tripSessionDao: TripSessionDao,
     private val routingRepository: RoutingRepository,
     private val startTripMonitoring: StartTripMonitoringUseCase,
-    private val stopTripMonitoring: StopTripMonitoringUseCase,
+    private val completeTrip: CompleteTripUseCase,
 ) : ViewModel() {
     private val recoveryPlanner = RecoveryPlanner()
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
@@ -119,11 +118,7 @@ class RecoveryViewModel @Inject constructor(
 
     fun endTrip(onEnded: () -> Unit) {
         viewModelScope.launch {
-            tripDao.getTripById(tripId)?.let { trip ->
-                tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
-            }
-            tripSessionDao.deleteTripSession(tripId)
-            stopTripMonitoring()
+            completeTrip(tripId)
             onEnded()
         }
     }
