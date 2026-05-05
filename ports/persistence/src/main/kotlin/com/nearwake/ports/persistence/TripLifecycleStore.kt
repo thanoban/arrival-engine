@@ -33,6 +33,7 @@ data class PersistedTrip(
 data class PersistedTripSession(
     val tripId: String,
     val state: TripState,
+    val monitoringMode: MonitoringMode,
     val alertStage: AlertStage,
     val lastEtaMinutes: Int?,
     val confidence: Confidence,

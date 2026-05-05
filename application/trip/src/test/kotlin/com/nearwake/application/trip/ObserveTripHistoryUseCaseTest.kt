@@ -11,22 +11,21 @@ import com.nearwake.ports.persistence.PersistedHomeSnapshot
 import com.nearwake.ports.persistence.PersistedSavedPlace
 import com.nearwake.ports.persistence.PersistedTrip
 import com.nearwake.ports.persistence.PersistedTripSession
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
-class ObserveHomeDashboardUseCaseTest {
+class ObserveTripHistoryUseCaseTest {
     @Test
-    fun `builds monitoring dashboard from persisted snapshot`() = runBlocking {
-        val useCase = ObserveHomeDashboardUseCase(
+    fun `marks active and completed trips from persisted snapshot`() = runBlocking {
+        val useCase = ObserveTripHistoryUseCase(
             tripLifecycleStore = TestTripLifecycleStore(
                 PersistedHomeSnapshot(
                     trips = listOf(
                         PersistedTrip(
-                            id = "trip-1",
+                            id = "active-trip",
                             destinationId = "place-1",
                             alertLeadMinutes = 5,
                             alertTriggerMode = AlertTriggerMode.TIME,
@@ -36,37 +35,40 @@ class ObserveHomeDashboardUseCaseTest {
                             createdAt = Instant.parse("2026-05-04T05:30:00Z"),
                             completedAt = null,
                         ),
+                        PersistedTrip(
+                            id = "done-trip",
+                            destinationId = "place-2",
+                            alertLeadMinutes = 0,
+                            alertTriggerMode = AlertTriggerMode.DISTANCE,
+                            alertDistanceMeters = 300,
+                            alertIntensity = AlertIntensity.GENTLE,
+                            alertMode = AlertMode.ACTIVE,
+                            createdAt = Instant.parse("2026-05-03T05:30:00Z"),
+                            completedAt = Instant.parse("2026-05-03T06:00:00Z"),
+                        ),
                     ),
                     sessions = listOf(
                         PersistedTripSession(
-                            tripId = "trip-1",
+                            tripId = "active-trip",
                             state = TripState.MonitoringApproach,
                             monitoringMode = MonitoringMode.BALANCED,
                             alertStage = AlertStage.APPROACH,
-                            lastEtaMinutes = 8,
+                            lastEtaMinutes = 6,
                             confidence = Confidence.DEGRADED,
                         ),
                     ),
                     savedPlaces = listOf(
-                        PersistedSavedPlace(
-                            id = "place-1",
-                            name = "Colombo Fort",
-                            address = "Fort Station",
-                            lat = 6.9344,
-                            lng = 79.8428,
-                        ),
+                        PersistedSavedPlace("place-1", "Colombo Fort", "Fort Station", 6.93, 79.84),
+                        PersistedSavedPlace("place-2", "Maradana", "Railway Station", 6.92, 79.86),
                     ),
                 ),
             ),
         )
 
-        val dashboard = useCase().first()
+        val history = useCase().first()
 
-        assertEquals("Monitoring now", dashboard.statusLabel)
-        assertEquals(HomeDashboardTone.Monitoring, dashboard.statusTone)
-        assertEquals("NearWake is already guarding your current ride.", dashboard.headline)
-        assertNotNull(dashboard.activeTrip)
-        assertEquals("Colombo Fort", dashboard.activeTrip?.destinationName)
-        assertEquals("Approach window · ~8 min · Medium confidence", dashboard.activeTrip?.subtitle)
+        assertEquals(2, history.trips.size)
+        assertEquals("Monitoring now", history.trips.first().statusLabel)
+        assertEquals("Completed", history.trips.last().statusLabel)
     }
 }

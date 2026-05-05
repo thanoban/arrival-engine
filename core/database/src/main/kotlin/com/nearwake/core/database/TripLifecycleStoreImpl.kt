@@ -118,6 +118,7 @@ private fun TripSessionEntity.toPersistedTripSession(): PersistedTripSession =
     PersistedTripSession(
         tripId = tripId,
         state = state,
+        monitoringMode = monitoringMode,
         alertStage = alertStage,
         lastEtaMinutes = lastEtaMinutes,
         confidence = confidence,

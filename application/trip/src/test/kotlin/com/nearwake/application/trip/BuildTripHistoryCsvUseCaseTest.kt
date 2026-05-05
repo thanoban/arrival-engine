@@ -12,16 +12,14 @@ import com.nearwake.ports.persistence.PersistedSavedPlace
 import com.nearwake.ports.persistence.PersistedTrip
 import com.nearwake.ports.persistence.PersistedTripSession
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-class ObserveHomeDashboardUseCaseTest {
+class BuildTripHistoryCsvUseCaseTest {
     @Test
-    fun `builds monitoring dashboard from persisted snapshot`() = runBlocking {
-        val useCase = ObserveHomeDashboardUseCase(
+    fun `exports persisted history as csv`() = runBlocking {
+        val useCase = BuildTripHistoryCsvUseCase(
             tripLifecycleStore = TestTripLifecycleStore(
                 PersistedHomeSnapshot(
                     trips = listOf(
@@ -29,22 +27,22 @@ class ObserveHomeDashboardUseCaseTest {
                             id = "trip-1",
                             destinationId = "place-1",
                             alertLeadMinutes = 5,
-                            alertTriggerMode = AlertTriggerMode.TIME,
-                            alertDistanceMeters = 500,
-                            alertIntensity = AlertIntensity.STANDARD,
-                            alertMode = AlertMode.ACTIVE,
+                            alertTriggerMode = AlertTriggerMode.BOTH,
+                            alertDistanceMeters = 750,
+                            alertIntensity = AlertIntensity.LOUD,
+                            alertMode = AlertMode.SLEEP,
                             createdAt = Instant.parse("2026-05-04T05:30:00Z"),
-                            completedAt = null,
+                            completedAt = Instant.parse("2026-05-04T06:00:00Z"),
                         ),
                     ),
                     sessions = listOf(
                         PersistedTripSession(
                             tripId = "trip-1",
-                            state = TripState.MonitoringApproach,
+                            state = TripState.Completed,
                             monitoringMode = MonitoringMode.BALANCED,
-                            alertStage = AlertStage.APPROACH,
-                            lastEtaMinutes = 8,
-                            confidence = Confidence.DEGRADED,
+                            alertStage = AlertStage.ARRIVAL,
+                            lastEtaMinutes = 2,
+                            confidence = Confidence.HIGH,
                         ),
                     ),
                     savedPlaces = listOf(
@@ -60,13 +58,9 @@ class ObserveHomeDashboardUseCaseTest {
             ),
         )
 
-        val dashboard = useCase().first()
+        val csv = useCase()
 
-        assertEquals("Monitoring now", dashboard.statusLabel)
-        assertEquals(HomeDashboardTone.Monitoring, dashboard.statusTone)
-        assertEquals("NearWake is already guarding your current ride.", dashboard.headline)
-        assertNotNull(dashboard.activeTrip)
-        assertEquals("Colombo Fort", dashboard.activeTrip?.destinationName)
-        assertEquals("Approach window · ~8 min · Medium confidence", dashboard.activeTrip?.subtitle)
+        assertTrue(csv.contains("date,destination,address,alert_trigger_mode"))
+        assertTrue(csv.contains("Colombo Fort,Fort Station,BOTH,5,750,LOUD,Completed,BALANCED,HIGH,2,30"))
     }
 }
