@@ -5,21 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nearwake.application.monitoring.StartTripMonitoringUseCase
 import com.nearwake.application.trip.CompleteTripUseCase
-import com.nearwake.core.database.dao.SavedPlaceDao
-import com.nearwake.core.database.dao.TripDao
-import com.nearwake.core.database.dao.TripSessionDao
-import com.nearwake.domain.location.model.LatLng
-import com.nearwake.domain.routing.repository.RoutingRepository
-import com.nearwake.domain.trip.model.Confidence
-import com.nearwake.domain.trip.model.isTerminal
-import com.nearwake.domain.trip.engine.RecoveryGuidanceMode
-import com.nearwake.domain.trip.engine.RecoveryPlanner
+import com.nearwake.application.trip.ObserveRecoveryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class RecoveryUiState(
@@ -39,73 +30,29 @@ data class RecoveryUiState(
 @HiltViewModel
 class RecoveryViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val tripDao: TripDao,
-    savedPlaceDao: SavedPlaceDao,
-    private val tripSessionDao: TripSessionDao,
-    private val routingRepository: RoutingRepository,
+    observeRecovery: ObserveRecoveryUseCase,
     private val startTripMonitoring: StartTripMonitoringUseCase,
     private val completeTrip: CompleteTripUseCase,
 ) : ViewModel() {
-    private val recoveryPlanner = RecoveryPlanner()
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(RecoveryUiState(tripId = tripId))
     val state: StateFlow<RecoveryUiState> = mutableState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(
-                tripDao.observeTripById(tripId),
-                savedPlaceDao.observeSavedPlaces(),
-                tripSessionDao.observeTripSession(tripId),
-            ) { trip, places, session ->
-                val place = trip?.destinationId?.let { destinationId -> places.firstOrNull { it.id == destinationId } }
-                val routeSnapshot = routingRepository.getCachedRoute(tripId)
-                val currentLocation = session?.lastKnownLat?.let { lat ->
-                    session.lastKnownLng?.let { lng ->
-                        LatLng(lat = lat, lng = lng)
-                    }
-                }
-                val recoveryPlan = place?.let { destination ->
-                    recoveryPlanner.plan(
-                        currentLocation = currentLocation,
-                        destinationLocation = LatLng(destination.lat, destination.lng),
-                        routeSnapshot = routeSnapshot,
-                    )
-                }
-                RecoveryUiState(
-                    tripId = tripId,
-                    destinationName = place?.name ?: "Recovery",
-                    missedByLabel = session?.updatedAt?.toString()?.replace('T', ' ')?.take(16) ?: "moments ago",
-                    routeSummary = routeSnapshot?.let { snapshot ->
-                        val stopLabel = if (snapshot.stops.size == 1) "1 stop" else "${snapshot.stops.size} stops"
-                        val transferLabel = if (snapshot.transfers.size == 1) "1 transfer" else "${snapshot.transfers.size} transfers"
-                        "$stopLabel · $transferLabel"
-                    } ?: "Destination-only monitoring",
-                    lastEtaLabel = session?.lastEtaMinutes?.let { "~$it min at last check" } ?: "Last ETA unavailable",
-                    confidenceLabel = when (session?.confidence ?: Confidence.HIGH) {
-                        Confidence.HIGH -> "High confidence"
-                        Confidence.DEGRADED -> "Medium confidence"
-                        Confidence.OFFLINE -> "Low confidence"
-                    },
-                    recoveryGuidanceLabel = when (recoveryPlan?.guidanceMode) {
-                        RecoveryGuidanceMode.WALK_BACK -> "You are still close enough to recover on foot."
-                        RecoveryGuidanceMode.RETURN_STOP -> "Get off at the next safe moment and head for the nearest return stop."
-                        RecoveryGuidanceMode.RESUME_MONITORING, null ->
-                            "Resume monitoring and check the next safe stop."
-                    },
-                    returnStopLabel = recoveryPlan?.returnStopName?.let { stopName ->
-                        val distanceLabel = recoveryPlan.returnStopDistanceMeters?.let { distance ->
-                            "about ${distance}m away"
-                        } ?: "nearby"
-                        "Nearest return stop: $stopName ($distanceLabel)"
-                    },
-                    walkBackLabel = recoveryPlan?.walkBackDistanceMeters?.let { distance ->
-                        "You are about ${distance}m from ${place?.name ?: "the destination"}. If it is safe, stop now and walk back."
-                    },
-                    canResumeMonitoring = session != null && !session.state.isTerminal,
+            observeRecovery(tripId).collect { recovery ->
+                mutableState.value = RecoveryUiState(
+                    tripId = recovery.tripId,
+                    destinationName = recovery.destinationName,
+                    missedByLabel = recovery.missedByLabel,
+                    routeSummary = recovery.routeSummary,
+                    lastEtaLabel = recovery.lastEtaLabel,
+                    confidenceLabel = recovery.confidenceLabel,
+                    recoveryGuidanceLabel = recovery.recoveryGuidanceLabel,
+                    returnStopLabel = recovery.returnStopLabel,
+                    walkBackLabel = recovery.walkBackLabel,
+                    canResumeMonitoring = recovery.canResumeMonitoring,
                 )
-            }.collect { uiState ->
-                mutableState.value = uiState
             }
         }
     }

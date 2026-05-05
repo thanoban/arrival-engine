@@ -11,17 +11,17 @@ import com.nearwake.ports.persistence.PersistedHomeSnapshot
 import com.nearwake.ports.persistence.PersistedSavedPlace
 import com.nearwake.ports.persistence.PersistedTrip
 import com.nearwake.ports.persistence.PersistedTripSession
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-class ObserveHomeDashboardUseCaseTest {
+class ObserveWalkFinishUseCaseTest {
     @Test
-    fun `builds monitoring dashboard from persisted snapshot`() = runBlocking {
-        val useCase = ObserveHomeDashboardUseCase(
+    fun `builds final walk guidance from persisted destination and location`() = runBlocking {
+        val useCase = ObserveWalkFinishUseCase(
             tripLifecycleStore = TestTripLifecycleStore(
                 PersistedHomeSnapshot(
                     trips = listOf(
@@ -33,43 +33,34 @@ class ObserveHomeDashboardUseCaseTest {
                             alertDistanceMeters = 500,
                             alertIntensity = AlertIntensity.STANDARD,
                             alertMode = AlertMode.ACTIVE,
-                            createdAt = Instant.parse("2026-05-04T05:30:00Z"),
+                            createdAt = Instant.parse("2026-05-05T01:00:00Z"),
                             completedAt = null,
                         ),
                     ),
                     sessions = listOf(
                         PersistedTripSession(
                             tripId = "trip-1",
-                            state = TripState.MonitoringApproach,
-                            monitoringMode = MonitoringMode.BALANCED,
-                            alertStage = AlertStage.APPROACH,
-                            lastKnownLat = null,
-                            lastKnownLng = null,
-                            lastEtaMinutes = 8,
-                            confidence = Confidence.DEGRADED,
-                            updatedAt = Instant.parse("2026-05-04T05:34:00Z"),
+                            state = TripState.Alerting,
+                            monitoringMode = MonitoringMode.PRECISE_BURST,
+                            alertStage = AlertStage.ARRIVAL,
+                            lastKnownLat = 6.9340,
+                            lastKnownLng = 79.8420,
+                            lastEtaMinutes = 1,
+                            confidence = Confidence.HIGH,
+                            updatedAt = Instant.parse("2026-05-05T01:10:00Z"),
                         ),
                     ),
                     savedPlaces = listOf(
-                        PersistedSavedPlace(
-                            id = "place-1",
-                            name = "Colombo Fort",
-                            address = "Fort Station",
-                            lat = 6.9344,
-                            lng = 79.8428,
-                        ),
+                        PersistedSavedPlace("place-1", "Colombo Fort", "Fort Station", 6.9344, 79.8428),
                     ),
                 ),
             ),
         )
 
-        val dashboard = useCase().first()
+        val walkFinish = useCase("trip-1").first()
 
-        assertEquals("Monitoring now", dashboard.statusLabel)
-        assertEquals(HomeDashboardTone.Monitoring, dashboard.statusTone)
-        assertEquals("NearWake is already guarding your current ride.", dashboard.headline)
-        assertNotNull(dashboard.activeTrip)
-        assertEquals("Colombo Fort", dashboard.activeTrip?.destinationName)
-        assertEquals("Approach window · ~8 min · Medium confidence", dashboard.activeTrip?.subtitle)
+        assertEquals("Colombo Fort", walkFinish.destinationName)
+        assertTrue(walkFinish.distanceLabel.contains("remaining"))
+        assertTrue(walkFinish.headingLabel.startsWith("Head "))
     }
 }

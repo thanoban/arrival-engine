@@ -4,15 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nearwake.application.monitoring.StopTripMonitoringUseCase
-import com.nearwake.core.database.dao.SavedPlaceDao
-import com.nearwake.core.database.dao.TripDao
-import com.nearwake.core.database.dao.TripSessionDao
+import com.nearwake.application.trip.ObserveAlertUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class AlertUiState(
@@ -25,9 +22,7 @@ data class AlertUiState(
 @HiltViewModel
 class AlertViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val tripDao: TripDao,
-    savedPlaceDao: SavedPlaceDao,
-    private val tripSessionDao: TripSessionDao,
+    observeAlert: ObserveAlertUseCase,
     private val stopTripMonitoring: StopTripMonitoringUseCase,
 ) : ViewModel() {
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
@@ -36,19 +31,12 @@ class AlertViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            combine(
-                tripDao.observeTripById(tripId),
-                savedPlaceDao.observeSavedPlaces(),
-                tripSessionDao.observeTripSession(tripId),
-            ) { trip, places, session ->
-                val place = trip?.destinationId?.let { destinationId -> places.firstOrNull { it.id == destinationId } }
-                AlertUiState(
-                    tripId = tripId,
-                    destinationName = place?.name ?: "Arrival alert",
-                    etaLabel = session?.lastEtaMinutes?.let { "~$it min away" } ?: "You are close",
+            observeAlert(tripId).collect { alert ->
+                mutableState.value = AlertUiState(
+                    tripId = alert.tripId,
+                    destinationName = alert.destinationName,
+                    etaLabel = alert.etaLabel,
                 )
-            }.collect { uiState ->
-                mutableState.value = uiState
             }
         }
     }

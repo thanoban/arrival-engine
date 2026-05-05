@@ -56,7 +56,7 @@ class ObserveTripSummaryUseCase @Inject constructor(
     }
 }
 
-private fun Confidence.toConfidenceLabel(): String = when (this) {
+internal fun Confidence.toConfidenceLabel(): String = when (this) {
     Confidence.HIGH -> "High confidence"
     Confidence.DEGRADED -> "Medium confidence"
     Confidence.OFFLINE -> "Low confidence"

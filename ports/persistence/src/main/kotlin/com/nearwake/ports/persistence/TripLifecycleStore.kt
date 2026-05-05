@@ -35,8 +35,11 @@ data class PersistedTripSession(
     val state: TripState,
     val monitoringMode: MonitoringMode,
     val alertStage: AlertStage,
+    val lastKnownLat: Double? = null,
+    val lastKnownLng: Double? = null,
     val lastEtaMinutes: Int?,
     val confidence: Confidence,
+    val updatedAt: Instant? = null,
 )
 
 data class PersistedHomeSnapshot(
