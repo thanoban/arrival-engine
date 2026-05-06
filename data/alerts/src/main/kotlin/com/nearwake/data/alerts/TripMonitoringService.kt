@@ -11,7 +11,7 @@ import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofenceStatusCodes
-import com.nearwake.core.database.dao.TripDao
+import com.nearwake.application.trip.MarkTripCompletedUseCase
 import com.nearwake.data.analytics.DiagnosticsLogger
 import com.nearwake.data.location.GeofenceDataSource
 import com.nearwake.data.location.LocationStrategyOrchestrator
@@ -51,7 +51,7 @@ class TripMonitoringService : Service() {
     @Inject lateinit var tripEngine: TripEngine
     @Inject lateinit var tripSessionStore: TripSessionStore
     @Inject lateinit var tripMonitoringRuntime: TripMonitoringRuntime
-    @Inject lateinit var tripDao: TripDao
+    @Inject lateinit var markTripCompleted: MarkTripCompletedUseCase
     @Inject lateinit var routingRepository: RoutingRepository
     @Inject lateinit var geofenceDataSource: GeofenceDataSource
     @Inject lateinit var activityRecognitionDataSource: ActivityRecognitionDataSource
@@ -451,9 +451,10 @@ class TripMonitoringService : Service() {
                 TripSideEffect.RestorePersistedMonitoring -> startTracking(result.session.monitoringMode)
 
                 TripSideEffect.LogTripCompletion -> {
-                    tripDao.getTripById(context.tripId)?.let { trip ->
-                        tripDao.upsertTrip(trip.copy(completedAt = Clock.System.now()))
-                    }
+                    markTripCompleted(
+                        tripId = context.tripId,
+                        completedAt = Clock.System.now(),
+                    )
                 }
 
                 TripSideEffect.PersistSession,
