@@ -3,15 +3,11 @@ package com.nearwake.feature.tripsetup
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nearwake.application.monitoring.StartTripMonitoringUseCase
+import com.nearwake.application.trip.LoadTripSetupPreviewUseCase
 import com.nearwake.application.trip.StartTripRequest
 import com.nearwake.application.trip.StartTripUseCase
 import com.nearwake.core.datastore.UserPreferencesDataStore
-import com.nearwake.core.database.dao.SavedPlaceDao
-import com.nearwake.domain.location.model.LatLng
-import com.nearwake.domain.location.repository.LocationRepository
 import com.nearwake.domain.routing.model.RouteSnapshot
-import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertTriggerMode
@@ -23,7 +19,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 data class TripSetupUiState(
     val destinationName: String = "Loading destination",
@@ -43,9 +38,7 @@ data class TripSetupUiState(
 @HiltViewModel
 class TripSetupViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val savedPlaceDao: SavedPlaceDao,
-    private val locationRepository: LocationRepository,
-    private val routingRepository: RoutingRepository,
+    private val loadTripSetupPreview: LoadTripSetupPreviewUseCase,
     private val userPreferencesDataStore: UserPreferencesDataStore,
     private val startTrip: StartTripUseCase,
 ) : ViewModel() {
@@ -67,20 +60,15 @@ class TripSetupViewModel @Inject constructor(
             )
         }
         viewModelScope.launch {
-            val place = savedPlaceDao.getSavedPlaceById(placeId)
+            val preview = loadTripSetupPreview(placeId)
+            previewRouteSnapshot = preview.previewRouteSnapshot
             mutableState.value = mutableState.value.copy(
-                destinationName = place?.name ?: "Destination unavailable",
-                destinationAddress = place?.address.orEmpty(),
-                canStart = place != null,
+                destinationName = preview.destinationName,
+                destinationAddress = preview.destinationAddress,
+                etaLabel = preview.etaLabel,
+                routeSummary = preview.routeSummary,
+                canStart = preview.canStart,
             )
-            if (place != null) {
-                loadRoutePreview(destination = LatLng(lat = place.lat, lng = place.lng))
-            } else {
-                mutableState.value = mutableState.value.copy(
-                    etaLabel = "Destination unavailable",
-                    routeSummary = "Pick another destination to start a trip.",
-                )
-            }
         }
     }
 
@@ -123,40 +111,6 @@ class TripSetupViewModel @Inject constructor(
                 ),
             )?.let(onStarted)
         }
-    }
-
-    private suspend fun loadRoutePreview(destination: LatLng) {
-        val origin = runCatching { locationRepository.getLastKnownLocation() }.getOrNull()
-        if (origin == null) {
-            mutableState.value = mutableState.value.copy(
-                etaLabel = "Destination-only",
-                routeSummary = "No last known location is available yet, so NearWake will arm destination-only monitoring.",
-            )
-            return
-        }
-
-        routingRepository.fetchRoute(origin = origin, destination = destination)
-            .onSuccess { routeSnapshot ->
-                previewRouteSnapshot = routeSnapshot
-                mutableState.value = mutableState.value.copy(
-                    etaLabel = "~${routeSnapshot.totalDurationMinutes} min",
-                    routeSummary = buildRouteSummary(routeSnapshot),
-                )
-            }
-            .onFailure {
-                mutableState.value = mutableState.value.copy(
-                    etaLabel = "Destination-only",
-                    routeSummary = "Transit routing is unavailable on this device right now, so NearWake will monitor only the destination.",
-                )
-            }
-    }
-
-    private fun buildRouteSummary(routeSnapshot: RouteSnapshot): String {
-        val stopCount = routeSnapshot.stops.size
-        val transferCount = routeSnapshot.transfers.size
-        val stopLabel = if (stopCount == 1) "1 stop" else "$stopCount stops"
-        val transferLabel = if (transferCount == 1) "1 transfer" else "$transferCount transfers"
-        return "$stopLabel · $transferLabel"
     }
 
     companion object {
