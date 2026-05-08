@@ -10,7 +10,6 @@ dependencies {
     implementation(project(":domain:commute"))
     implementation(project(":data:patterns"))
     implementation(project(":data:alerts"))
-    implementation(project(":core:database"))
     implementation(project(":core:datastore"))
     implementation(libs.coroutines.android)
     implementation(libs.kotlinx.datetime)
