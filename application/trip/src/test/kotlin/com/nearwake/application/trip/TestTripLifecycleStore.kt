@@ -1,9 +1,11 @@
 package com.nearwake.application.trip
 
+import com.nearwake.ports.persistence.PersistedDiagnosticsEvent
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.ports.persistence.PersistedHomeSnapshot
 import com.nearwake.ports.persistence.PersistedSavedPlace
 import com.nearwake.ports.persistence.PersistedTrip
+import com.nearwake.ports.persistence.SaveSavedPlaceCommand
 import com.nearwake.ports.persistence.SaveTripCommand
 import com.nearwake.ports.persistence.SaveTripSessionCommand
 import com.nearwake.ports.persistence.TripLifecycleStore
@@ -13,10 +15,18 @@ import kotlinx.datetime.Instant
 
 internal class TestTripLifecycleStore(
     snapshot: PersistedHomeSnapshot,
+    diagnosticsEvents: List<PersistedDiagnosticsEvent> = emptyList(),
 ) : TripLifecycleStore {
     private val state = MutableStateFlow(snapshot)
+    private val diagnosticsState = MutableStateFlow(diagnosticsEvents)
 
     override fun observeHomeSnapshot(): Flow<PersistedHomeSnapshot> = state
+
+    override fun observeSavedPlaces(): Flow<List<PersistedSavedPlace>> =
+        MutableStateFlow(state.value.savedPlaces)
+
+    override fun observeRecentDiagnosticsEvents(limit: Int): Flow<List<PersistedDiagnosticsEvent>> =
+        diagnosticsState
 
     override suspend fun getSavedPlace(placeId: String): PersistedSavedPlace? =
         state.value.savedPlaces.firstOrNull { place -> place.id == placeId }
@@ -30,7 +40,13 @@ internal class TestTripLifecycleStore(
 
     override suspend fun clearTripSession(tripId: String) = Unit
 
+    override suspend fun clearDiagnosticsEvents() {
+        diagnosticsState.value = emptyList()
+    }
+
     override suspend fun markPlaceUsed(placeId: String, usedAt: Instant) = Unit
+
+    override suspend fun saveSavedPlace(command: SaveSavedPlaceCommand) = Unit
 
     override suspend fun saveTrip(command: SaveTripCommand) = Unit
 

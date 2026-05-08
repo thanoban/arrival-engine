@@ -11,9 +11,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.nearwake.core.database.dao.DiagnosticsEventDao
-import com.nearwake.core.database.dao.TripSessionDao
-import com.nearwake.core.database.entity.DiagnosticsEventEntity
+import com.nearwake.application.trip.ClearDiagnosticsEventsUseCase
+import com.nearwake.application.trip.DiagnosticsEventPresentation
+import com.nearwake.application.trip.ObserveDiagnosticsUseCase
 import com.nearwake.core.datastore.UserPreferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,8 +94,8 @@ data class DiagnosticsUiState(
 class DiagnosticsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     userPreferencesDataStore: UserPreferencesDataStore,
-    tripSessionDao: TripSessionDao,
-    private val diagnosticsEventDao: DiagnosticsEventDao,
+    observeDiagnostics: ObserveDiagnosticsUseCase,
+    private val clearDiagnosticsEvents: ClearDiagnosticsEventsUseCase,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(DiagnosticsUiState())
     val state: StateFlow<DiagnosticsUiState> = mutableState.asStateFlow()
@@ -104,17 +104,15 @@ class DiagnosticsViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 userPreferencesDataStore.preferences,
-                tripSessionDao.observeTripSessions(),
-                diagnosticsEventDao.observeRecentEvents(limit = 20),
-            ) { preferences, sessions, recentEvents ->
-                val session = sessions.firstOrNull()
+                observeDiagnostics(limit = 20),
+            ) { preferences, diagnostics ->
                 DiagnosticsUiState(
                     buildInfo = context.toBuildInfoUiModel(),
                     permissions = context.toPermissionSummaryUiModel(),
                     environment = context.toEnvironmentUiModel(),
-                    stateLabel = session?.state?.name ?: "No active trip",
-                    registeredGeofences = session?.geofenceIds.orEmpty(),
-                    recentEvents = recentEvents.map { it.toUiModel() },
+                    stateLabel = diagnostics.stateLabel,
+                    registeredGeofences = diagnostics.registeredGeofences,
+                    recentEvents = diagnostics.recentEvents.map { it.toUiModel() },
                     diagnosticsLoggingEnabled = preferences.diagnosticsEnabled,
                 )
             }.collect { uiState ->
@@ -141,7 +139,7 @@ class DiagnosticsViewModel @Inject constructor(
 
     fun clearDiagnostics() {
         viewModelScope.launch {
-            diagnosticsEventDao.clearAll()
+            clearDiagnosticsEvents()
         }
     }
 
@@ -150,7 +148,7 @@ class DiagnosticsViewModel @Inject constructor(
     }
 }
 
-private fun DiagnosticsEventEntity.toUiModel(): DiagnosticsEventUiModel {
+private fun DiagnosticsEventPresentation.toUiModel(): DiagnosticsEventUiModel {
     val payload = runCatching {
         Json.parseToJsonElement(payloadJson).jsonObject
     }.getOrNull()

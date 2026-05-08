@@ -7,8 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":application:trip"))
     implementation(project(":domain:location"))
-    implementation(project(":core:database"))
     implementation(libs.coroutines.android)
-    implementation(libs.kotlinx.datetime)
 }

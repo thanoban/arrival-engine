@@ -2,8 +2,9 @@ package com.nearwake.feature.places
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nearwake.core.database.dao.SavedPlaceDao
-import com.nearwake.core.database.entity.SavedPlaceEntity
+import com.nearwake.application.trip.MarkSavedPlaceUsedUseCase
+import com.nearwake.application.trip.ObservePlaceSearchUseCase
+import com.nearwake.application.trip.SaveResolvedPlaceUseCase
 import com.nearwake.domain.location.model.PlaceSearchResult
 import com.nearwake.domain.location.repository.PlaceSearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 data class PlaceSearchResultUiModel(
     val id: String,
@@ -39,7 +39,9 @@ data class PlaceSearchUiState(
 
 @HiltViewModel
 class PlaceSearchViewModel @Inject constructor(
-    private val savedPlaceDao: SavedPlaceDao,
+    observePlaceSearch: ObservePlaceSearchUseCase,
+    private val markSavedPlaceUsed: MarkSavedPlaceUsedUseCase,
+    private val saveResolvedPlace: SaveResolvedPlaceUseCase,
     private val placeSearchRepository: PlaceSearchRepository,
 ) : ViewModel() {
     private val query = MutableStateFlow("")
@@ -48,7 +50,7 @@ class PlaceSearchViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            savedPlaceDao.observeSavedPlaces().collect { savedPlaces ->
+            observePlaceSearch().collect { savedPlaces ->
                 mutableState.update { state ->
                     state.copy(savedPlaces = savedPlaces.map { place -> place.toUiModel() })
                 }
@@ -78,26 +80,14 @@ class PlaceSearchViewModel @Inject constructor(
                 }
                 .getOrNull()
                 ?: return@launch
-            savedPlaceDao.upsertSavedPlace(
-                SavedPlaceEntity(
-                    id = resolved.id,
-                    name = resolved.name,
-                    address = resolved.address,
-                    lat = resolved.latLng.lat,
-                    lng = resolved.latLng.lng,
-                    placeId = resolved.id,
-                    lastUsedAt = Clock.System.now(),
-                ),
-            )
+            saveResolvedPlace(resolved)
             onSaved(resolved.id)
         }
     }
 
     fun selectSavedPlace(placeId: String, onSaved: (String) -> Unit) {
         viewModelScope.launch {
-            savedPlaceDao.getSavedPlaceById(placeId)?.let { place ->
-                savedPlaceDao.upsertSavedPlace(place.copy(lastUsedAt = Clock.System.now()))
-            }
+            markSavedPlaceUsed(placeId)
             onSaved(placeId)
         }
     }
@@ -134,12 +124,12 @@ class PlaceSearchViewModel @Inject constructor(
     }
 }
 
-private fun SavedPlaceEntity.toUiModel(): SavedPlaceUiModel =
+private fun com.nearwake.application.trip.SavedPlacePresentation.toUiModel(): SavedPlaceUiModel =
     SavedPlaceUiModel(
         id = id,
         name = name,
         address = address,
-        lastUsedLabel = lastUsedAt?.let { "Used ${it.toString().take(10)}" } ?: "Saved for later",
+        lastUsedLabel = lastUsedLabel,
     )
 
 private fun PlaceSearchResult.toUiModel(): PlaceSearchResultUiModel =

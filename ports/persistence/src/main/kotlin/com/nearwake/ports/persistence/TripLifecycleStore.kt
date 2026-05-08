@@ -16,6 +16,8 @@ data class PersistedSavedPlace(
     val address: String,
     val lat: Double,
     val lng: Double,
+    val placeId: String? = null,
+    val lastUsedAt: Instant? = null,
 )
 
 data class PersistedTrip(
@@ -35,11 +37,19 @@ data class PersistedTripSession(
     val state: TripState,
     val monitoringMode: MonitoringMode,
     val alertStage: AlertStage,
+    val geofenceIds: List<String> = emptyList(),
     val lastKnownLat: Double? = null,
     val lastKnownLng: Double? = null,
     val lastEtaMinutes: Int?,
     val confidence: Confidence,
     val updatedAt: Instant? = null,
+)
+
+data class PersistedDiagnosticsEvent(
+    val eventType: String,
+    val tripId: String?,
+    val payloadJson: String,
+    val recordedAt: Instant,
 )
 
 data class PersistedHomeSnapshot(
@@ -73,8 +83,22 @@ data class SaveTripSessionCommand(
     val updatedAt: Instant,
 )
 
+data class SaveSavedPlaceCommand(
+    val id: String,
+    val name: String,
+    val address: String,
+    val lat: Double,
+    val lng: Double,
+    val placeId: String? = null,
+    val lastUsedAt: Instant? = null,
+)
+
 interface TripLifecycleStore {
     fun observeHomeSnapshot(): Flow<PersistedHomeSnapshot>
+
+    fun observeSavedPlaces(): Flow<List<PersistedSavedPlace>>
+
+    fun observeRecentDiagnosticsEvents(limit: Int = 200): Flow<List<PersistedDiagnosticsEvent>>
 
     suspend fun getSavedPlace(placeId: String): PersistedSavedPlace?
 
@@ -86,7 +110,11 @@ interface TripLifecycleStore {
 
     suspend fun clearTripSession(tripId: String)
 
+    suspend fun clearDiagnosticsEvents()
+
     suspend fun markPlaceUsed(placeId: String, usedAt: Instant)
+
+    suspend fun saveSavedPlace(command: SaveSavedPlaceCommand)
 
     suspend fun saveTrip(command: SaveTripCommand)
 

@@ -19,7 +19,7 @@ android {
 
 dependencies {
     implementation(project(":domain:trip"))
-    implementation(project(":core:database"))
+    implementation(project(":application:trip"))
     implementation(project(":core:datastore"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.coroutines.android)
