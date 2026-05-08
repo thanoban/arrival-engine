@@ -21,6 +21,7 @@ For the current store-facing copy draft, read [PLAY_STORE_LISTING_DRAFT.md](PLAY
 For the final manual store-submission sequence, read [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md).
 For product problem, current scope, features, and technology choices in a comparison-friendly format, read [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md).
 For the dedicated frontend redesign plan, read [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md).
+For the delayed wake-up idea for very long journeys, read [LONG_JOURNEY_MONITORING_STRATEGY.md](LONG_JOURNEY_MONITORING_STRATEGY.md).
 For the target production module boundaries and current migration direction, read [TARGET_PRODUCTION_ARCHITECTURE.md](TARGET_PRODUCTION_ARCHITECTURE.md).
 
 ## Current Status
@@ -58,6 +59,7 @@ For the target production module boundaries and current migration direction, rea
 - [PLAY_STORE_SUBMISSION_RUNBOOK.md](PLAY_STORE_SUBMISSION_RUNBOOK.md): final manual sequence for field-test closeout, privacy hosting, signing, and Play submission
 - [PRODUCT_COMPARE_REFERENCE.md](PRODUCT_COMPARE_REFERENCE.md): problem statement, scope, features, weaknesses, and technology choices for competitor comparison
 - [UI_MODERNIZATION_PLAN.md](UI_MODERNIZATION_PLAN.md): dedicated plan for the upcoming modern UI/frontend pass
+- [LONG_JOURNEY_MONITORING_STRATEGY.md](LONG_JOURNEY_MONITORING_STRATEGY.md): staged long-trip monitoring idea, Android constraints, and product shape for delayed wake-up monitoring
 - [TARGET_PRODUCTION_ARCHITECTURE.md](TARGET_PRODUCTION_ARCHITECTURE.md): target production module boundaries and the current migration status
 - [PROJECT_STUDY_GUIDE.md](PROJECT_STUDY_GUIDE.md): beginner-friendly architecture and Kotlin/Android explanation
 - [NEARWAKE_MASTER_REFERENCE.md](NEARWAKE_MASTER_REFERENCE.md): single-file consolidated project reference
