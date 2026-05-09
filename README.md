@@ -9,6 +9,7 @@ For the active development-start tracker and next implementation slices, read [D
 For the exact external configuration checklist, read [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md).
 For the pre-release field-test, disclosure, and shipment checklist, read [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md).
 For the real-device execution guide and per-trip logging format, read [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md).
+For the detailed Android phone setup and repeated install/run workflow, read [REAL_PHONE_TESTING_GUIDE.md](REAL_PHONE_TESTING_GUIDE.md).
 For a ready-to-fill trip log sheet, read [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv).
 For the privacy and permission-disclosure draft notes, read [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md).
 For the current privacy policy draft, read [PRIVACY_POLICY_DRAFT.md](PRIVACY_POLICY_DRAFT.md).
@@ -47,6 +48,7 @@ For the target production module boundaries and current migration direction, rea
 - [REQUIRED_UPDATES_AND_APIS.md](REQUIRED_UPDATES_AND_APIS.md): exact API keys, local updates, and later release-time configuration items
 - [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md): pre-release validation, permission disclosure prep, and honest shipment gate
 - [FIELD_TEST_RUNBOOK.md](FIELD_TEST_RUNBOOK.md): real-device test procedure and per-trip logging template
+- [REAL_PHONE_TESTING_GUIDE.md](REAL_PHONE_TESTING_GUIDE.md): detailed Android phone setup, USB debugging, install, rerun, and troubleshooting flow
 - [FIELD_TEST_LOG_TEMPLATE.csv](FIELD_TEST_LOG_TEMPLATE.csv): ready-to-fill CSV for recording real-device trip results
 - [PRIVACY_AND_DISCLOSURE_NOTES.md](PRIVACY_AND_DISCLOSURE_NOTES.md): draft privacy and permission-disclosure copy aligned to the current app behavior
 - [PRIVACY_POLICY_DRAFT.md](PRIVACY_POLICY_DRAFT.md): publishable privacy policy draft aligned to the current app behavior
