@@ -12,6 +12,11 @@ fun configuredMapsApiKey(): String =
         ?.takeUnless { value -> value.isBlank() || value == "REPLACE_WITH_YOUR_KEY" }
         .orEmpty()
 
+fun configuredSentryDsn(): String =
+    ((findProperty("SENTRY_DSN") as? String) ?: localProperties.getProperty("SENTRY_DSN"))
+        ?.trim()
+        .orEmpty()
+
 plugins {
     alias(libs.plugins.nearwake.android.application)
     alias(libs.plugins.nearwake.android.application.compose)
@@ -28,6 +33,7 @@ android {
         versionName = "0.1.0"
 
         manifestPlaceholders["MAPS_API_KEY"] = configuredMapsApiKey()
+        buildConfigField("String", "SENTRY_DSN", "\"${configuredSentryDsn()}\"")
     }
 
     buildTypes {
