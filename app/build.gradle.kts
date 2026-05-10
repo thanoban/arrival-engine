@@ -17,6 +17,11 @@ fun configuredSentryDsn(): String =
         ?.trim()
         .orEmpty()
 
+fun configuredPrivacyPolicyUrl(): String =
+    ((findProperty("PRIVACY_POLICY_URL") as? String) ?: localProperties.getProperty("PRIVACY_POLICY_URL"))
+        ?.trim()
+        .orEmpty()
+
 plugins {
     alias(libs.plugins.nearwake.android.application)
     alias(libs.plugins.nearwake.android.application.compose)
@@ -33,6 +38,7 @@ android {
         versionName = "0.1.0"
 
         manifestPlaceholders["MAPS_API_KEY"] = configuredMapsApiKey()
+        manifestPlaceholders["PRIVACY_POLICY_URL"] = configuredPrivacyPolicyUrl()
         buildConfigField("String", "SENTRY_DSN", "\"${configuredSentryDsn()}\"")
     }
 

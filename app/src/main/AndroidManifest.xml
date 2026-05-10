@@ -25,6 +25,9 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
+        <meta-data
+            android:name="com.nearwake.PRIVACY_POLICY_URL"
+            android:value="${PRIVACY_POLICY_URL}" />
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

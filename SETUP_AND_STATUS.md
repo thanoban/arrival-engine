@@ -139,6 +139,16 @@ With it:
 - live trip and history flows can show richer route context
 - place search can use Google Places instead of the local fallback list
 
+### Needed for launch-readiness / field testing
+
+- `SENTRY_DSN`
+- `PRIVACY_POLICY_URL`
+
+These are not required to make the app start locally, but they are now part of the production-oriented setup path:
+
+- `SENTRY_DSN` enables crash and non-fatal reporting
+- `PRIVACY_POLICY_URL` is exposed through Android manifest metadata for release/disclosure workflows
+
 ## 5. Exact File To Update
 
 Create or update `local.properties` at the project root:
@@ -146,6 +156,8 @@ Create or update `local.properties` at the project root:
 ```properties
 sdk.dir=C:\\Users\\<your-user>\\AppData\\Local\\Android\\Sdk
 MAPS_API_KEY=YOUR_GOOGLE_API_KEY
+SENTRY_DSN=
+PRIVACY_POLICY_URL=
 ```
 
 You can start from:
@@ -153,6 +165,8 @@ You can start from:
 ```properties
 sdk.dir=/path/to/android/sdk
 MAPS_API_KEY=REPLACE_WITH_YOUR_KEY
+SENTRY_DSN=
+PRIVACY_POLICY_URL=
 ```
 
 which already exists in `local.properties.template`.
@@ -191,9 +205,9 @@ You do not need to provide these to keep development moving:
 - OpenAI API key
 - auth secrets
 - Node `.env`
-- Sentry DSN
 
 The app is currently offline-first and does not depend on a custom backend to build or run.
+You only need `SENTRY_DSN` once you want real observability during field testing or release work.
 
 ## 8. Current Behavior With And Without Keys
 
@@ -233,8 +247,10 @@ If you want development to continue smoothly, the most useful thing you can prov
 1. a valid `sdk.dir`
 2. a `MAPS_API_KEY`
 3. that key with `Directions API` and `Places API` enabled
+4. a `SENTRY_DSN` before field testing
+5. a hosted `PRIVACY_POLICY_URL` before release submission work
 
-That is enough for the current routing-backed and provider-backed place search behavior.
+That is enough for the current routing-backed place-search path plus the next release-readiness steps.
 
 ## 11. Short Answer
 

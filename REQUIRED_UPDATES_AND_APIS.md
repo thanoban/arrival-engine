@@ -15,7 +15,9 @@ If a new team member is setting up the project for the first time, this is the e
 4. enable `Directions API`
 5. enable `Places API`
 6. paste that key into `local.properties` as `MAPS_API_KEY`
-7. run `.\gradlew.bat :app:assembleDebug`
+7. add `SENTRY_DSN` when you are ready for field-test observability
+8. add `PRIVACY_POLICY_URL` when you are preparing release metadata
+9. run `.\gradlew.bat :app:assembleDebug`
 
 That is the current local-development integration method for this repo.
 
@@ -30,6 +32,8 @@ Update or create:
 ```properties
 sdk.dir=C:\\Users\\<your-user>\\AppData\\Local\\Android\\Sdk
 MAPS_API_KEY=YOUR_GOOGLE_API_KEY
+SENTRY_DSN=
+PRIVACY_POLICY_URL=
 ```
 
 The Gradle build reads `MAPS_API_KEY` from `local.properties` for local development. You can also pass it as a Gradle property when needed, but `local.properties` is the normal team setup path here.
@@ -42,6 +46,12 @@ What each value means:
 - `MAPS_API_KEY`
   - Google API key used by the current routing integration
   - enables transit route preview, ETA refresh support, and provider-backed destination search
+- `SENTRY_DSN`
+  - Sentry DSN used by the app startup crash-reporting path
+  - optional for local feature work, recommended before field testing or wider QA
+- `PRIVACY_POLICY_URL`
+  - hosted public privacy-policy URL surfaced through Android manifest metadata
+  - required before release/disclosure submission work
 
 Important:
 
@@ -148,6 +158,8 @@ Example:
 ```properties
 sdk.dir=C:\\Users\\thano\\AppData\\Local\\Android\\Sdk
 MAPS_API_KEY=PASTE_THE_CREATED_GOOGLE_KEY_HERE
+SENTRY_DSN=
+PRIVACY_POLICY_URL=
 ```
 
 Do not:
@@ -283,13 +295,13 @@ You do not need to update or provide these yet:
 - Firebase project config
 - OpenAI API key
 - auth provider secrets
-- Sentry DSN
 
 Why:
 
 - the app is currently offline-first
 - there is no required backend for the present build/use flow
 - the current routing logic talks directly to Google Directions using `MAPS_API_KEY`
+- the app now supports Sentry, but `SENTRY_DSN` is only needed once you want field-test / release observability
 
 ## 9. Things To Update Later Before Full Release
 
@@ -303,9 +315,9 @@ These are not current build blockers, but they will matter before calling the pr
 ### Release/ops side
 
 - final app signing setup
-- privacy policy URL
+- hosted privacy policy URL
 - Play Store listing assets and permission disclosures
-- Sentry DSN if crash monitoring is desired
+- Sentry DSN for crash and non-fatal monitoring
 - production API restrictions on the Google key
 
 For the full release-prep checklist, field-test matrix, and permission disclosure map, use [RELEASE_READINESS_CHECKLIST.md](RELEASE_READINESS_CHECKLIST.md).
@@ -357,6 +369,8 @@ Use this exact checklist for onboarding a new developer to the Google API setup:
 - [ ] `Places API` enabled
 - [ ] one API key created
 - [ ] API key added to `local.properties` as `MAPS_API_KEY`
+- [ ] `SENTRY_DSN` added before field testing
+- [ ] `PRIVACY_POLICY_URL` added before release prep
 - [ ] Android app restrictions added for `com.nearwake.app.debug`
 - [ ] Android app restrictions added for `com.nearwake.app.qa`
 - [ ] correct debug/QA SHA-1 entered
@@ -370,6 +384,8 @@ Use this exact checklist for onboarding a new developer to the Google API setup:
 - [ ] `Directions API` enabled
 - [ ] `Places API` enabled
 - [ ] `MAPS_API_KEY` added to `local.properties`
+- [ ] `SENTRY_DSN` added for observability
+- [ ] `PRIVACY_POLICY_URL` added for release metadata
 - [ ] optional future APIs enabled later: `Maps SDK for Android`
 
 ## 14. Where This Fits With The Other Docs

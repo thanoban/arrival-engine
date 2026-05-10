@@ -1,2 +1,4 @@
 sdk.dir=/path/to/android/sdk
 MAPS_API_KEY=REPLACE_WITH_YOUR_KEY
+SENTRY_DSN=
+PRIVACY_POLICY_URL=
