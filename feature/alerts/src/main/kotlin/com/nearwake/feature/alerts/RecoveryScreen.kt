@@ -1,27 +1,33 @@
 package com.nearwake.feature.alerts
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.ElevatedCard
-import com.nearwake.core.ui.HeroCard
+import com.nearwake.core.ui.NearWakeButtonSize
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
 import com.nearwake.core.ui.NearWakeSecondaryButton
-import com.nearwake.core.ui.NearWakeSectionHeader
 import com.nearwake.core.ui.NearWakeStateChip
-import com.nearwake.core.ui.SurfaceCard
 
 @Composable
 fun RecoveryScreen(
@@ -37,55 +43,34 @@ fun RecoveryScreen(
             title = "Trip recovery",
             subtitle = null,
         ) {
-            HeroCard(accent = NearWakeColors.ApproachBase) {
-                NearWakeStateChip(
-                    label = "Monitoring interrupted",
-                    state = NearWakeChipState.Approaching,
-                )
-                Text(
-                    text = state.destinationName,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = "Last update: ${state.missedByLabel}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = state.confidenceLabel,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
             ElevatedCard {
-                NearWakeSectionHeader(text = "Last known trip state")
-                Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                    Text(
-                        text = state.routeSummary,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Warning,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = NearWakeColors.ApproachBase,
                     )
-                    Text(
-                        text = state.lastEtaLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            SurfaceCard {
-                NearWakeSectionHeader(text = "Best recovery move")
-                Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                    Text(
-                        text = state.recoveryGuidanceLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    state.returnStopLabel?.let { returnStopLabel ->
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                        NearWakeStateChip(
+                            label = "Monitoring interrupted",
+                            state = NearWakeChipState.Approaching,
+                        )
                         Text(
-                            text = returnStopLabel,
+                            text = "You may have passed your stop",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Text(
+                            text = "${state.destinationName} · ${state.missedByLabel}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = state.returnStopLabel ?: state.recoveryGuidanceLabel,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -93,31 +78,33 @@ fun RecoveryScreen(
                 }
             }
 
-            state.walkBackLabel?.let { walkBackLabel ->
-                SurfaceCard {
-                    NearWakeSectionHeader(text = "Walk-back note")
-                    Text(
-                        text = walkBackLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
+            if (state.canResumeMonitoring) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.md),
+                ) {
+                    NearWakeSecondaryButton(
+                        modifier = Modifier.weight(1f),
+                        text = "Re-arm",
+                        onClick = { viewModel.resumeMonitoring(onResumeMonitoring) },
+                    )
+                    NearWakePrimaryButton(
+                        modifier = Modifier.weight(1f),
+                        text = "End trip",
+                        accent = NearWakeColors.AlertBase,
+                        onClick = { viewModel.endTrip(onEndTrip) },
+                        size = NearWakeButtonSize.Medium,
                     )
                 }
-            }
-
-            if (state.canResumeMonitoring) {
-                NearWakeSecondaryButton(
+            } else {
+                NearWakePrimaryButton(
                     modifier = Modifier.fillMaxWidth(),
-                    text = "Resume monitoring",
-                    onClick = { viewModel.resumeMonitoring(onResumeMonitoring) },
+                    text = "End trip",
+                    accent = NearWakeColors.AlertBase,
+                    onClick = { viewModel.endTrip(onEndTrip) },
+                    size = NearWakeButtonSize.Medium,
                 )
             }
-
-            NearWakePrimaryButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = "End trip",
-                accent = NearWakeColors.AlertBase,
-                onClick = { viewModel.endTrip(onEndTrip) },
-            )
         }
     }
 }

@@ -4,13 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,33 +77,32 @@ fun AlertScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(spacing.md),
             ) {
+                Text(
+                    text = state.destinationName,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = NearWakeColors.TextPrimary,
+                )
                 Box(contentAlignment = Alignment.Center) {
                     PulseRing(
                         color = NearWakeColors.TextPrimary.copy(alpha = 0.25f),
                         diameter = spacing.massive * 4,
                     )
-                    Spacer(modifier = Modifier.size(spacing.massive * 3))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        NearWakeNumericText(
+                            text = state.etaLabel.filter { it.isDigit() }.ifBlank { "0" },
+                            color = NearWakeColors.TextPrimary,
+                            style = MaterialTheme.typography.displayMedium,
+                        )
+                        Text(
+                            text = "min",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = NearWakeColors.TextPrimary.copy(alpha = 0.85f),
+                        )
+                    }
                 }
-                Text(
-                    text = "ARRIVING",
-                    style = MaterialTheme.typography.displayLarge,
-                    color = NearWakeColors.TextPrimary,
-                )
-                Text(
-                    text = state.destinationName,
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = NearWakeColors.TextPrimary,
-                )
-                NearWakeNumericText(
-                    text = state.etaLabel.filter { it.isDigit() }.ifBlank { "0" },
-                    color = NearWakeColors.TextPrimary,
-                    style = MaterialTheme.typography.displayMedium,
-                )
-                Text(
-                    text = if (state.etaLabel.any { it.isDigit() }) "minutes remaining" else "arriving now",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = NearWakeColors.TextPrimary.copy(alpha = 0.85f),
-                )
             }
 
             // Action buttons
@@ -109,17 +112,26 @@ fun AlertScreen(
             ) {
                 Button(
                     onClick = { viewModel.enterWalkFinish(onDismiss) },
-                    modifier = Modifier.size(160.dp),
+                    modifier = Modifier.size(128.dp),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = NearWakeColors.TextPrimary,
                         contentColor = NearWakeColors.AlertIntense,
                     ),
                 ) {
-                    Text(
-                        text = "Walk",
-                        style = MaterialTheme.typography.titleLarge,
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(spacing.xs),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                            contentDescription = null,
+                        )
+                        Text(
+                            text = "Walk",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
                 }
                 TextButton(
                     onClick = { onRecovery(state.tripId) },
