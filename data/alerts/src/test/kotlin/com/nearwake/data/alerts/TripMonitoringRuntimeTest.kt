@@ -1,6 +1,7 @@
 package com.nearwake.data.alerts
 
 import com.google.common.truth.Truth.assertThat
+import com.nearwake.core.remoteconfig.ThresholdConfig
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.model.AlertIntensity
@@ -14,7 +15,10 @@ import kotlinx.datetime.Clock
 import org.junit.jupiter.api.Test
 
 class TripMonitoringRuntimeTest {
-    private val runtime = TripMonitoringRuntime(TripEngine())
+    private val runtime = TripMonitoringRuntime(
+        tripEngine = TripEngine(),
+        thresholdConfig = ThresholdConfig(),
+    )
 
     @Test
     fun `buildGeofences creates approach and destination zones`() {

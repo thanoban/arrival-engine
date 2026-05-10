@@ -29,6 +29,7 @@ include(":core:database")
 include(":core:datastore")
 include(":core:designsystem")
 include(":core:network")
+include(":core:remoteconfig")
 include(":core:testing")
 include(":core:ui")
 

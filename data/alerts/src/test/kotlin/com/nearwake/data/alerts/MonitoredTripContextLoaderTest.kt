@@ -11,6 +11,7 @@ import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertTriggerMode
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import io.mockk.coJustRun
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,6 +27,7 @@ class MonitoredTripContextLoaderTest {
     private val routingRepository = mockk<RoutingRepository>()
     private val tripMonitoringRuntime = mockk<TripMonitoringRuntime>()
     private val diagnosticsLogger = mockk<DiagnosticsLogger>()
+    private val analytics = mockk<NearWakeAnalytics>(relaxed = true)
 
     private val loader = MonitoredTripContextLoader(
         tripDao = tripDao,
@@ -33,6 +35,7 @@ class MonitoredTripContextLoaderTest {
         routingRepository = routingRepository,
         tripMonitoringRuntime = tripMonitoringRuntime,
         diagnosticsLogger = diagnosticsLogger,
+        analytics = analytics,
     )
 
     @Test

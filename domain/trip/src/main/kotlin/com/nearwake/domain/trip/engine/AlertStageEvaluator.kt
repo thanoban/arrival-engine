@@ -1,5 +1,6 @@
 package com.nearwake.domain.trip.engine
 
+import com.nearwake.core.remoteconfig.ThresholdConfig
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
@@ -7,7 +8,9 @@ import com.nearwake.domain.trip.model.TripRule
 import com.nearwake.domain.trip.model.TripState
 import kotlin.math.ceil
 
-class AlertStageEvaluator {
+class AlertStageEvaluator(
+    private val thresholdConfig: ThresholdConfig = ThresholdConfig(),
+) {
     fun evaluate(
         currentStage: AlertStage,
         tripState: TripState,
@@ -81,8 +84,8 @@ class AlertStageEvaluator {
         distanceMeters: Double?,
     ): Boolean {
         val biasMultiplier = stageBiasMultiplier(confidence = confidence, alertMode = alertMode)
-        val imminentEtaMinutes = ceil(IMMINENT_ETA_MINUTES * biasMultiplier).toInt()
-        val imminentDistanceMeters = IMMINENT_DISTANCE_METERS * biasMultiplier
+        val imminentEtaMinutes = ceil(thresholdConfig.imminentEtaMinutes * biasMultiplier).toInt()
+        val imminentDistanceMeters = thresholdConfig.imminentDistanceMeters * biasMultiplier
         val triggeredByEta = rule.usesTimeTrigger() &&
             etaMinutes != null &&
             etaMinutes <= imminentEtaMinutes
@@ -96,13 +99,18 @@ class AlertStageEvaluator {
         confidence: Confidence,
         alertMode: AlertMode,
     ): Double = when (confidence) {
-        Confidence.HIGH -> if (alertMode == AlertMode.SLEEP) 1.05 else 1.0
-        Confidence.DEGRADED -> if (alertMode == AlertMode.SLEEP) 1.2 else 1.15
-        Confidence.OFFLINE -> 1.25
-    }
+        Confidence.HIGH -> if (alertMode == AlertMode.SLEEP) {
+            thresholdConfig.biasMultiplierHighSleep
+        } else {
+            thresholdConfig.biasMultiplierHighActive
+        }
 
-    companion object {
-        private const val IMMINENT_ETA_MINUTES = 2.0
-        private const val IMMINENT_DISTANCE_METERS = 150.0
+        Confidence.DEGRADED -> if (alertMode == AlertMode.SLEEP) {
+            thresholdConfig.biasMultiplierDegradedSleep
+        } else {
+            thresholdConfig.biasMultiplierDegradedActive
+        }
+
+        Confidence.OFFLINE -> thresholdConfig.biasMultiplierOffline
     }
 }

@@ -1,5 +1,6 @@
 package com.nearwake.data.alerts
 
+import com.nearwake.core.remoteconfig.ThresholdConfig
 import com.nearwake.domain.location.model.GeofenceSpec
 import com.nearwake.domain.location.model.GeofenceType
 import com.nearwake.domain.location.model.LatLng
@@ -50,8 +51,9 @@ data class TripMonitoringUpdate(
 @Singleton
 class TripMonitoringRuntime @Inject constructor(
     private val tripEngine: TripEngine,
+    private val thresholdConfig: ThresholdConfig,
 ) {
-    private val alertStageEvaluator = AlertStageEvaluator()
+    private val alertStageEvaluator = AlertStageEvaluator(thresholdConfig)
 
     fun buildContext(
         tripId: String,
@@ -82,7 +84,11 @@ class TripMonitoringRuntime @Inject constructor(
                     AlertTriggerMode.TIME,
                     AlertTriggerMode.BOTH -> maxOf(
                         alertDistanceMeters.toFloat(),
-                        if (batterySaverMode) BATTERY_SAVER_APPROACH_RADIUS else TripRule.DEFAULT_APPROACH_RADIUS_METERS,
+                        if (batterySaverMode) {
+                            thresholdConfig.approachGeofenceBatterySaverM
+                        } else {
+                            thresholdConfig.approachGeofenceRadiusM
+                        },
                     )
                 },
             ),
@@ -246,6 +252,5 @@ class TripMonitoringRuntime @Inject constructor(
         private const val EARTH_RADIUS_METERS = 6_371_000.0
         private const val APPROACH_SUFFIX = ":approach"
         private const val DESTINATION_SUFFIX = ":destination"
-        private const val BATTERY_SAVER_APPROACH_RADIUS = 2_250f
     }
 }

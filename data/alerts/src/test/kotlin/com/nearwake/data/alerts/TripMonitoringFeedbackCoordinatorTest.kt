@@ -14,6 +14,7 @@ import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripRule
 import com.nearwake.domain.trip.model.TripSession
 import com.nearwake.domain.trip.model.TripState
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,12 +29,14 @@ import org.junit.jupiter.api.Test
 class TripMonitoringFeedbackCoordinatorTest {
     private val notificationHelper = mockk<NotificationHelper>()
     private val diagnosticsLogger = mockk<DiagnosticsLogger>()
-    private val tripMonitoringRuntime = mockk<TripMonitoringRuntime>()
+    private val tripMonitoringRuntime = mockk<TripMonitoringRuntime>(relaxed = true)
+    private val analytics = mockk<NearWakeAnalytics>(relaxed = true)
 
     private val coordinator = TripMonitoringFeedbackCoordinator(
         notificationHelper = notificationHelper,
         diagnosticsLogger = diagnosticsLogger,
         tripMonitoringRuntime = tripMonitoringRuntime,
+        analytics = analytics,
     )
 
     @Test

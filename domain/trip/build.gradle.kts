@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":core:remoteconfig"))
     implementation(project(":domain:location"))
     implementation(project(":domain:routing"))
     implementation(libs.coroutines.core)
