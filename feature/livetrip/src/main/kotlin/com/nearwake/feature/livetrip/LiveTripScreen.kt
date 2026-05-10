@@ -2,17 +2,37 @@ package com.nearwake.feature.livetrip
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatterySaver
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DirectionsTransit
+import androidx.compose.material.icons.filled.SignalWifiOff
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.compositeOver
@@ -20,8 +40,10 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.unit.dp
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.NearWakeMotion
@@ -39,6 +61,7 @@ import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LiveTripScreen(
     onCancel: () -> Unit,
@@ -47,6 +70,7 @@ fun LiveTripScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
+    var detailsVisible by remember { mutableStateOf(false) }
     val trust = rememberTrustPresentation(
         alertStage = state.alertStage,
         monitoringMode = state.monitoringMode,
@@ -100,15 +124,25 @@ fun LiveTripScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center,
             ) {
-                BoxWithConstraints(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(spacing.md),
                 ) {
+                    Text(
+                        text = state.destinationName,
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                        color = NearWakeColors.TextPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
                     PulseRing(
                         color = accent,
-                        diameter = maxWidth,
+                        diameter = 256.dp,
                     )
-                    Column(
+                    Row(
                         modifier = Modifier.semantics {
                             liveRegion = LiveRegionMode.Polite
                             contentDescription = buildString {
@@ -116,12 +150,10 @@ fun LiveTripScreen(
                                 append(state.etaLabel)
                                 append(" to ")
                                 append(state.destinationName)
-                                append(". ")
-                                append(trust.heroMessage)
                             }
                         },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
                     ) {
                         NearWakeNumericText(
                             text = state.etaLabel.filter { it.isDigit() }.ifBlank { "--" },
@@ -130,29 +162,18 @@ fun LiveTripScreen(
                         )
                         Text(
                             text = "min",
-                            style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                            style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
                             color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
-                        )
-                        Text(
-                            text = state.destinationName,
-                            style = androidx.compose.material3.MaterialTheme.typography.headlineLarge,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
-                        )
-                        Text(
-                            text = trust.heroMessage,
-                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
+                }
             }
 
-            MonitoringStatusCard(
-                etaLabel = state.etaLabel,
-                monitoringMode = state.monitoringMode,
+            LiveTripStatusStrip(
+                alertStage = state.alertStage,
                 confidence = state.confidence,
-                alertSummary = state.alertSummary,
-                routeSummary = state.routeSummary,
+                batterySaverActive = state.batterySaverActive,
             )
 
             TransferProgressCard(
@@ -173,9 +194,7 @@ fun LiveTripScreen(
                 }
             }
 
-            BatteryStatusCard(batteryImpact = state.batteryImpact)
-
-            androidx.compose.foundation.layout.Row(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(spacing.md),
             ) {
@@ -201,6 +220,16 @@ fun LiveTripScreen(
                 }
             }
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                NearWakeTextButton(
+                    text = "Details",
+                    onClick = { detailsVisible = true },
+                )
+            }
+
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(spacing.sm),
@@ -224,7 +253,180 @@ fun LiveTripScreen(
             )
         }
     }
+
+    if (detailsVisible) {
+        ModalBottomSheet(
+            onDismissRequest = { detailsVisible = false },
+            containerColor = NearWakeColors.BgSurface,
+        ) {
+            LiveTripDetailsSheet(
+                monitoringMode = state.monitoringMode,
+                confidence = state.confidence,
+                routeSummary = state.routeSummary,
+                alertSummary = state.alertSummary,
+                batteryImpact = state.batteryImpact,
+                elapsedTimeLabel = state.elapsedTimeLabel,
+            )
+        }
+    }
     } // ProvideNearWakeStateAccent
+}
+
+@Composable
+private fun LiveTripStatusStrip(
+    alertStage: AlertStage,
+    confidence: Confidence,
+    batterySaverActive: Boolean,
+) {
+    val spacing = LocalSpacing.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(32.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = when (alertStage) {
+                AlertStage.MONITORING -> Icons.Filled.DirectionsTransit
+                AlertStage.APPROACH -> Icons.Filled.DirectionsTransit
+                AlertStage.IMMINENT -> Icons.Filled.Warning
+                AlertStage.ARRIVAL -> Icons.Filled.CheckCircle
+                AlertStage.RECOVERY -> Icons.Filled.Warning
+            },
+            contentDescription = null,
+            tint = when (alertStage) {
+                AlertStage.MONITORING -> NearWakeColors.MonitoringBase
+                AlertStage.APPROACH -> NearWakeColors.ApproachBase
+                AlertStage.IMMINENT, AlertStage.RECOVERY -> NearWakeColors.AlertBase
+                AlertStage.ARRIVAL -> NearWakeColors.SafeBase
+            },
+        )
+        if (confidence == Confidence.DEGRADED) {
+            StatusStripLabel(
+                icon = Icons.Filled.Warning,
+                label = "Signal degraded",
+                tint = NearWakeColors.ApproachBase,
+            )
+        }
+        if (confidence == Confidence.OFFLINE) {
+            StatusStripLabel(
+                icon = Icons.Filled.SignalWifiOff,
+                label = "Underground",
+                tint = NearWakeColors.AlertBase,
+            )
+        }
+        if (batterySaverActive) {
+            StatusStripLabel(
+                icon = Icons.Filled.BatterySaver,
+                label = "Low battery",
+                tint = NearWakeColors.ApproachBase,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusStripLabel(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    tint: androidx.compose.ui.graphics.Color,
+) {
+    val spacing = LocalSpacing.current
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = tint,
+        )
+        Text(
+            text = label,
+            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+            color = NearWakeColors.TextSecondary,
+        )
+    }
+}
+
+@Composable
+private fun LiveTripDetailsSheet(
+    monitoringMode: MonitoringMode,
+    confidence: Confidence,
+    routeSummary: String,
+    alertSummary: String,
+    batteryImpact: String,
+    elapsedTimeLabel: String,
+) {
+    val spacing = LocalSpacing.current
+    val colors = listOf(
+        "Monitoring mode" to when (monitoringMode) {
+            MonitoringMode.GEOFENCE_ONLY -> "Low power"
+            MonitoringMode.BALANCED -> "Balanced"
+            MonitoringMode.PRECISE_BURST -> "Precise"
+        },
+        "Signal quality" to when (confidence) {
+            Confidence.HIGH -> "High"
+            Confidence.DEGRADED -> "Degraded"
+            Confidence.OFFLINE -> "Offline"
+        },
+        "Power impact" to batteryImpact,
+        "Elapsed" to elapsedTimeLabel.ifBlank { "Just started" },
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = spacing.xl, vertical = spacing.md),
+        verticalArrangement = Arrangement.spacedBy(spacing.md),
+    ) {
+        Text(
+            text = "Trip details",
+            style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+            color = NearWakeColors.TextPrimary,
+        )
+        colors.forEach { (label, value) ->
+            Surface(
+                color = NearWakeColors.BgElevated,
+                border = BorderStroke(1.dp, NearWakeColors.BorderSubtle),
+                shape = CircleShape,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = spacing.md, vertical = spacing.sm),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = label,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        color = NearWakeColors.TextSecondary,
+                    )
+                    Text(
+                        text = value,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        color = NearWakeColors.TextPrimary,
+                    )
+                }
+            }
+        }
+        Text(
+            text = routeSummary,
+            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+            color = NearWakeColors.TextPrimary,
+        )
+        if (alertSummary.isNotBlank()) {
+            Text(
+                text = alertSummary,
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = NearWakeColors.TextSecondary,
+            )
+        }
+        Spacer(modifier = Modifier.height(spacing.xl))
+    }
 }
 
 private data class TrustPresentation(
