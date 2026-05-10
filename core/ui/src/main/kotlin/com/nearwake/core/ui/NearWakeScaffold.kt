@@ -47,7 +47,7 @@ fun NearWakeScaffold(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
             Row(
                 modifier = Modifier

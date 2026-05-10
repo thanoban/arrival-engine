@@ -1,9 +1,7 @@
 package com.nearwake.feature.places
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -15,13 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalRadius
-import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
-import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
 import com.nearwake.core.ui.NearWakeSectionHeader
 import com.nearwake.core.ui.NearWakeTextButton
+import com.nearwake.core.ui.PlaceResultKind
+import com.nearwake.core.ui.PlaceResultRow
 import com.nearwake.core.ui.SurfaceCard
 
 @Composable
@@ -31,7 +29,6 @@ fun PlaceSearchScreen(
     viewModel: PlaceSearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val spacing = LocalSpacing.current
     val radius = LocalRadius.current
 
     ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
@@ -71,7 +68,7 @@ fun PlaceSearchScreen(
             if (state.query.length >= 2) {
                 NearWakeSectionHeader(text = "Search results")
                 state.errorMessage?.let { message ->
-                    SurfaceCard {
+                    SurfaceCard(compact = true) {
                         Text(
                             text = message,
                             style = MaterialTheme.typography.titleMedium,
@@ -80,7 +77,7 @@ fun PlaceSearchScreen(
                     }
                 }
                 if (state.isSearching) {
-                    SurfaceCard {
+                    SurfaceCard(compact = true) {
                         Text(
                             text = "Searching places...",
                             style = MaterialTheme.typography.titleMedium,
@@ -88,7 +85,7 @@ fun PlaceSearchScreen(
                         )
                     }
                 } else if (state.results.isEmpty() && state.errorMessage == null) {
-                    SurfaceCard {
+                    SurfaceCard(compact = true) {
                         Text(
                             text = "No places matched that search yet.",
                             style = MaterialTheme.typography.titleMedium,
@@ -101,30 +98,20 @@ fun PlaceSearchScreen(
                         )
                     }
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
-                        state.results.forEach { result ->
-                            SurfaceCard {
-                                Text(
-                                    text = result.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = result.address,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                NearWakePrimaryButton(
-                                    modifier = Modifier.padding(top = spacing.sm).fillMaxWidth(),
-                                    text = "Use this place",
-                                    onClick = { viewModel.selectResult(result, onSelectPlace) },
-                                )
-                            }
+                    Column {
+                        state.results.forEachIndexed { index, result ->
+                            PlaceResultRow(
+                                name = result.name,
+                                address = result.address,
+                                kind = PlaceResultKind.Result,
+                                showDivider = index != state.results.lastIndex,
+                                onClick = { viewModel.selectResult(result, onSelectPlace) },
+                            )
                         }
                     }
                 }
             } else if (state.savedPlaces.isEmpty()) {
-                SurfaceCard {
+                SurfaceCard(compact = true) {
                     Text(
                         text = "Start typing to search places",
                         style = MaterialTheme.typography.titleMedium,

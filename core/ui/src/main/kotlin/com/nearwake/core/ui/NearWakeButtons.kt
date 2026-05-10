@@ -15,6 +15,12 @@ import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalRadius
 import com.nearwake.core.designsystem.LocalStateAccent
 
+enum class NearWakeButtonSize {
+    Small,
+    Medium,
+    Large,
+}
+
 @Composable
 fun NearWakePrimaryButton(
     text: String,
@@ -22,6 +28,7 @@ fun NearWakePrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     accent: Color = LocalStateAccent.current,
+    size: NearWakeButtonSize = NearWakeButtonSize.Medium,
 ) {
     val radius = LocalRadius.current
     val colors = LocalNearWakeColors.current
@@ -30,7 +37,7 @@ fun NearWakePrimaryButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp),
+            .heightIn(min = size.minHeight),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(radius.md),
         colors = ButtonDefaults.buttonColors(
             containerColor = accent,
@@ -42,6 +49,13 @@ fun NearWakePrimaryButton(
         Text(text = text, style = MaterialTheme.typography.labelLarge)
     }
 }
+
+private val NearWakeButtonSize.minHeight
+    get() = when (this) {
+        NearWakeButtonSize.Small -> 40.dp
+        NearWakeButtonSize.Medium -> 48.dp
+        NearWakeButtonSize.Large -> 56.dp
+    }
 
 @Composable
 fun NearWakeSecondaryButton(

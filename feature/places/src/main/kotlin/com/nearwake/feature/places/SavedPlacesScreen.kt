@@ -1,18 +1,16 @@
 package com.nearwake.feature.places
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeScaffold
 import com.nearwake.core.ui.NearWakeSecondaryButton
-import com.nearwake.core.ui.NearWakeStateChip
+import com.nearwake.core.ui.PlaceResultKind
+import com.nearwake.core.ui.PlaceResultRow
 import com.nearwake.core.ui.SurfaceCard
 
 @Composable
@@ -53,18 +51,15 @@ internal fun SavedPlacesSection(
         return
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Saved places", style = MaterialTheme.typography.titleLarge)
-        places.forEach { place ->
-            SurfaceCard {
-                NearWakeStateChip(
-                    label = place.lastUsedLabel,
-                    state = NearWakeChipState.Monitoring,
-                )
-                Text(place.name, style = MaterialTheme.typography.titleMedium)
-                Text(place.address, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                NearWakeSecondaryButton(text = "Use saved place", onClick = { onSelectPlace(place.id) })
-            }
+    Column {
+        places.forEachIndexed { index, place ->
+            PlaceResultRow(
+                name = place.name,
+                address = place.address,
+                kind = PlaceResultKind.Saved,
+                showDivider = index != places.lastIndex,
+                onClick = { onSelectPlace(place.id) },
+            )
         }
     }
 }

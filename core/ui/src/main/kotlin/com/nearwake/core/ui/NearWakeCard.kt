@@ -27,15 +27,17 @@ fun NearWakeCard(
 @Composable
 fun SurfaceCard(
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalNearWakeColors.current
+    val spacing = LocalSpacing.current
     NearWakeCardFrame(
         modifier = modifier,
         containerColor = colors.bgSurface,
         borderColor = colors.borderSubtle,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(LocalRadius.current.md),
-        padding = LocalSpacing.current.lg,
+        padding = if (compact) spacing.cardCompact else spacing.cardDefault,
         content = content,
     )
 }
@@ -51,7 +53,7 @@ fun ElevatedCard(
         containerColor = colors.bgElevated,
         borderColor = colors.borderDefault,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(LocalRadius.current.lg),
-        padding = LocalSpacing.current.xl,
+        padding = LocalSpacing.current.cardLarge,
         content = content,
     )
 }
@@ -67,7 +69,7 @@ fun HeroCard(
         containerColor = accent.copy(alpha = 0.08f),
         borderColor = accent.copy(alpha = 0.3f),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(LocalRadius.current.lg),
-        padding = LocalSpacing.current.xl,
+        padding = LocalSpacing.current.cardLarge,
         content = content,
     )
 }

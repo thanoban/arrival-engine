@@ -16,6 +16,9 @@ data class NearWakeSpacing(
     val huge: Dp = 40.dp,
     val hero: Dp = 48.dp,
     val massive: Dp = 64.dp,
+    val cardCompact: Dp = 8.dp,
+    val cardDefault: Dp = 12.dp,
+    val cardLarge: Dp = 16.dp,
 )
 
 data class NearWakeRadius(
