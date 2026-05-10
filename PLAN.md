@@ -238,9 +238,97 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - [ ] Release AAB — `./gradlew bundleRelease` clean, verify size < 20 MB
 - [ ] Play Store listing — follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` + `PLAY_STORE_LISTING_DRAFT.md`
 
+### Wave H — UI/UX Polish 🔴 Planned
+
+**Goal:** One dominant signal per screen. Visual elements over text. Professional information hierarchy.
+
+**Design principles:**
+- One primary signal per screen (ETA on LiveTrip, search field on PlaceSearch, destination on Home)
+- Replace text labels with icons + color — a location pin communicates faster than the word "Destination"
+- Progressive disclosure — hide signal quality, battery %, monitoring mode behind a "Details ›" tap
+- Compact by default: search rows = 56dp, re-arm card = 72dp, active trip card = 80dp (not uniform 140dp)
+- Actions in context — tap a result row to select it; no inline "Use this place" button per row
+
+**Add Material Symbols icons** (`material-icons-extended` dependency in `app/build.gradle.kts`):
+
+| Icon | Used for |
+|------|---------|
+| `place` / `location_on` | Saved places, destination |
+| `directions_transit` | Route / trip |
+| `schedule` / `alarm` | ETA, departure time |
+| `signal_wifi_off` | Underground / offline mode |
+| `battery_saver` | Battery status |
+| `transfer_within_a_station` | Transfer leg |
+| `check_circle` | Arrived / complete |
+| `warning` | Approach / alert |
+| `directions_walk` | Walk finish |
+| `history` | Recent trips |
+| `replay` | Re-arm |
+| `bolt` | Active mode |
+| `bedtime` | Sleep mode |
+| `notifications_active` | Alert mode |
+| `tune` | Trip options |
+
+**Design token changes** (`core/designsystem/NearWakeSpacing.kt`, `core/ui/NearWakeButtons.kt`):
+- Add `cardCompact = 8.dp`, `cardDefault = 12.dp`, `cardLarge = 16.dp` to `NearWakeSpacing`
+- Add `NearWakeButtonSize` enum (Small=40dp, Medium=48dp, Large=56dp); Medium becomes new default
+- Reduce default section spacing from 16dp → 12dp between cards
+- Typography restriction: `headlineLarge` only on LiveTrip/Alert hero; `displayMedium` only on ETA number
+
+**Screen changes:**
+
+| Screen | Problem | Fix |
+|--------|---------|-----|
+| `PlaceSearchScreen` | ~150dp per result (SurfaceCard + 3 text lines + 56dp button) | 56dp rows, tap-to-select, `place`/`history` icon, `HorizontalDivider` between rows — no card, no button |
+| `HomeScreen` | `DestinationHeroCard` + `RearmCard` ~180dp each; recent trips SurfaceCard ~100dp | Active trip: 80dp ElevatedCard with ETA chip; Re-arm: 72dp SurfaceCard with replay icon; Recent trips: 52dp rows with divider |
+| `LiveTripScreen` | 4 chips + MonitoringStatusCard + 220dp-wide transfer cards = overload | 3-icon status strip (32dp), collapse secondary info to "Details ›", reduce transfer cards 220→160dp/64dp |
+| `TripSetupScreen` | 8 chip sections; Arm button only reached by scrolling to bottom | Sticky Arm button in `Scaffold` bottomBar (52dp); segmented trigger mode row; "Advanced ›" expands distance/mode/intensity |
+| `AlertScreen` | PulseRing 256dp; "ARRIVING" displayLarge; Walk button 160dp | Ring 192dp; remove "ARRIVING" label; Walk button 128dp; destination above ring in `titleLarge` |
+| `RecoveryScreen` | 4 SurfaceCards of explanation text | Single ElevatedCard + two side-by-side 48dp buttons (Re-arm / End trip) |
+| `SettingsScreen` | Card-per-section with FlowRow chips; endless scroll | Grouped list rows (52dp each) with section headers; tap row → modal bottom sheet for options |
+
+**Implementation order:**
+1. Design tokens + components (`NearWakeSpacing`, `NearWakeButtons`, `SurfaceCard`, `PlaceResultRow`)
+2. `PlaceSearchScreen` — highest user impact
+3. `HomeScreen`
+4. `TripSetupScreen` — sticky Arm button
+5. `LiveTripScreen` — information hierarchy
+6. `AlertScreen` + `RecoveryScreen`
+7. `SettingsScreen`
+
+**Files to change:**
+- `app/build.gradle.kts` — add `material-icons-extended`
+- `core/designsystem/NearWakeSpacing.kt` — add compact/default/large card padding constants
+- `core/ui/NearWakeButtons.kt` — add `NearWakeButtonSize` enum
+- `core/ui/SurfaceCard.kt` — add compact padding variant
+- `core/ui/PlaceResultRow.kt` — new 56dp row composable (icon + name + address)
+- `feature/places/PlaceSearchScreen.kt` — replace SurfaceCard+button with `PlaceResultRow`
+- `app/HomeScreen.kt` — compact cards, row-style recent trips
+- `feature/tripsetup/TripSetupScreen.kt` — sticky Arm button, segmented trigger row, collapsed advanced
+- `feature/livetrip/LiveTripScreen.kt` — icon status strip, Details collapse, reduced hero text
+- `feature/livetrip/TransferProgressCard.kt` — 160dp width, 64dp height, icon+name+dot
+- `feature/alerts/AlertScreen.kt` — 192dp ring, remove "ARRIVING", 128dp Walk button
+- `feature/alerts/RecoveryScreen.kt` — single card, side-by-side buttons
+- `feature/settings/SettingsScreen.kt` — list rows + bottom sheet selectors
+
 ---
 
 ## Road to v1.0 — Ordered Execution
+
+### Phase 0 — UI/UX Redesign 🔴 Not Started
+
+See **Wave H** above for the full screen-by-screen breakdown. This phase must ship before field testing (Phase 6) so testers evaluate the final UX, not a prototype layout.
+
+**Quick sequence:**
+1. Tokens + components — `NearWakeSpacing` cardCompact/cardDefault/cardLarge, `NearWakeButtonSize` enum, `SurfaceCard` compact variant, new `PlaceResultRow` composable
+2. `PlaceSearchScreen` — 56dp rows, tap-to-select, location pin icon
+3. `HomeScreen` — compact 80dp active trip card, 72dp re-arm card, 52dp recent trip rows
+4. `TripSetupScreen` — sticky Arm button in `Scaffold` bottomBar, segmented trigger mode, "Advanced ›" collapse
+5. `LiveTripScreen` — 3-icon status strip, "Details ›" collapse, 160dp transfer cards
+6. `AlertScreen` + `RecoveryScreen` — reduced ring, removed label text, side-by-side buttons
+7. `SettingsScreen` — list rows + modal bottom sheet selectors
+
+---
 
 ### Phase 1 — Observability ✅ Complete
 
