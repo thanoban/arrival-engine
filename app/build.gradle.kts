@@ -26,6 +26,7 @@ plugins {
     alias(libs.plugins.nearwake.android.application)
     alias(libs.plugins.nearwake.android.application.compose)
     alias(libs.plugins.nearwake.android.hilt)
+    alias(libs.plugins.baselineprofile)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -54,6 +55,11 @@ android {
             isDebuggable = false
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("debug")
+        }
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
         }
         release {
             isMinifyEnabled = true
@@ -106,11 +112,13 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.splash)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.compose.material.icons)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.workmanager.ktx)
     implementation(libs.hilt.work)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.profileinstaller)
 
     // Logging
     implementation(libs.timber)
@@ -122,6 +130,7 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
+    add("baselineProfile", project(":core:benchmark"))
 
     ksp(libs.hilt.work.compiler)
 }

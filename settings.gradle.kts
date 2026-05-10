@@ -32,6 +32,7 @@ include(":core:network")
 include(":core:remoteconfig")
 include(":core:testing")
 include(":core:ui")
+include(":core:benchmark")
 
 // Domain
 include(":domain:trip")
