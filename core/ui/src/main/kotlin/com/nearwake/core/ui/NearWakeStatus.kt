@@ -24,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,7 +53,9 @@ fun NearWakeStateChip(
     val radius = LocalRadius.current
     val colors = state.colors()
     Surface(
-        modifier = modifier.defaultMinSize(minHeight = 28.dp),
+        modifier = modifier
+            .defaultMinSize(minHeight = 28.dp)
+            .semantics { role = Role.Button },
         shape = RoundedCornerShape(radius.sm),
         color = colors.soft,
         contentColor = colors.base,
@@ -78,7 +83,9 @@ fun NearWakeSelectableChip(
     FilterChip(
         selected = selected,
         onClick = onClick,
-        modifier = modifier.defaultMinSize(minHeight = 40.dp),
+        modifier = modifier
+            .defaultMinSize(minHeight = 48.dp)
+            .semantics { role = Role.Button },
         shape = RoundedCornerShape(radius.md),
         border = FilterChipDefaults.filterChipBorder(
             enabled = true,

@@ -16,6 +16,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
@@ -105,6 +109,17 @@ fun LiveTripScreen(
                         diameter = maxWidth,
                     )
                     Column(
+                        modifier = Modifier.semantics {
+                            liveRegion = LiveRegionMode.Polite
+                            contentDescription = buildString {
+                                append("ETA ")
+                                append(state.etaLabel)
+                                append(" to ")
+                                append(state.destinationName)
+                                append(". ")
+                                append(trust.heroMessage)
+                            }
+                        },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(spacing.sm),
                     ) {

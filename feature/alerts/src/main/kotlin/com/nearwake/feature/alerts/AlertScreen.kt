@@ -18,6 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +56,20 @@ fun AlertScreen(
 
             // Hero content
             Column(
+                modifier = Modifier.semantics {
+                    liveRegion = LiveRegionMode.Assertive
+                    contentDescription = buildString {
+                        append(state.destinationName)
+                        append(". ")
+                        append(
+                            if (state.etaLabel.any { it.isDigit() }) {
+                                "${state.etaLabel} remaining."
+                            } else {
+                                "Arriving now."
+                            },
+                        )
+                    }
+                },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(spacing.md),
             ) {
