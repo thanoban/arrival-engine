@@ -2,13 +2,26 @@ package com.nearwake.app
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DirectionsTransit
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,6 +45,7 @@ import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.ElevatedCard
 import com.nearwake.core.ui.HeroCard
 import com.nearwake.core.ui.NearWakeChipState
+import com.nearwake.core.ui.NearWakeButtonSize
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
 import com.nearwake.core.ui.NearWakeSectionHeader
@@ -70,6 +86,7 @@ fun HomeScreen(
 
             DestinationHeroCard(
                 activeTrip = state.activeTrip,
+                activeTripStatus = state.statusLabel,
                 onSetDestination = onSetDestination,
                 onOpenTrip = onOpenTrip,
                 delayMs = 60,
@@ -83,7 +100,6 @@ fun HomeScreen(
             state.rearmTrip?.let { rearmTrip ->
                 RearmCard(
                     destinationName = rearmTrip.destinationName,
-                    subtitle = rearmTrip.subtitle,
                     onRearm = { viewModel.rearmLastTrip(onOpenTrip) },
                     delayMs = 120,
                 )
@@ -124,6 +140,7 @@ private fun DepartureReminderCard(
             modifier = Modifier.padding(top = spacing.md).fillMaxWidth(),
             text = "View leave-by times",
             onClick = onDepartureReminders,
+            size = NearWakeButtonSize.Medium,
         )
     }
 }
@@ -187,6 +204,7 @@ private fun GreetingBlock(
 @Composable
 private fun DestinationHeroCard(
     activeTrip: HomeActiveTrip?,
+    activeTripStatus: String,
     onSetDestination: () -> Unit,
     onOpenTrip: (String) -> Unit,
     delayMs: Int,
@@ -202,28 +220,19 @@ private fun DestinationHeroCard(
         animationSpec = tween(durationMillis = NearWakeMotion.Base),
         label = "hero-alpha",
     )
-    HeroCard(
-        modifier = Modifier
-            .alpha(alpha)
-            .heightIn(min = spacing.massive + spacing.xl),
-    ) {
-        if (activeTrip != null) {
-            Text(
-                text = activeTrip.destinationName,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = activeTrip.subtitle,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            NearWakePrimaryButton(
-                modifier = Modifier.padding(top = spacing.md),
-                text = "Resume live trip",
-                onClick = { onOpenTrip(activeTrip.tripId) },
-            )
-        } else {
+    if (activeTrip != null) {
+        ActiveTripCard(
+            activeTrip = activeTrip,
+            statusLabel = activeTripStatus,
+            modifier = Modifier.alpha(alpha),
+            onOpenTrip = onOpenTrip,
+        )
+    } else {
+        HeroCard(
+            modifier = Modifier
+                .alpha(alpha)
+                .heightIn(min = spacing.massive + spacing.xl),
+        ) {
             Text(
                 text = "Set your next stop",
                 style = MaterialTheme.typography.titleLarge,
@@ -244,9 +253,57 @@ private fun DestinationHeroCard(
 }
 
 @Composable
+private fun ActiveTripCard(
+    activeTrip: HomeActiveTrip,
+    statusLabel: String,
+    onOpenTrip: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = LocalSpacing.current
+    val colors = LocalNearWakeColors.current
+    ElevatedCard(
+        modifier = modifier
+            .heightIn(min = 80.dp)
+            .clickable { onOpenTrip(activeTrip.tripId) },
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.DirectionsTransit,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = colors.monitoringBase,
+            )
+            Spacer(modifier = Modifier.width(spacing.md))
+            Text(
+                text = activeTrip.destinationName,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.textPrimary,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            NearWakeStateChip(
+                label = statusLabel,
+                state = NearWakeChipState.Monitoring,
+            )
+            Spacer(modifier = Modifier.width(spacing.sm))
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = colors.textTertiary,
+            )
+        }
+    }
+}
+
+@Composable
 private fun RearmCard(
     destinationName: String,
-    subtitle: String,
     onRearm: () -> Unit,
     delayMs: Int,
 ) {
@@ -261,23 +318,40 @@ private fun RearmCard(
         animationSpec = tween(durationMillis = NearWakeMotion.Base),
         label = "rearm-alpha",
     )
-    ElevatedCard(modifier = Modifier.alpha(alpha)) {
-        NearWakeSectionHeader(text = "One-tap re-arm")
-        Text(
-            text = destinationName,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        NearWakePrimaryButton(
-            modifier = Modifier.padding(top = spacing.md).fillMaxWidth(),
-            text = "Re-arm → $destinationName",
-            onClick = onRearm,
-        )
+    val colors = LocalNearWakeColors.current
+    SurfaceCard(
+        modifier = Modifier
+            .alpha(alpha)
+            .heightIn(min = 72.dp)
+            .clickable(onClick = onRearm),
+        compact = true,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Replay,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = colors.approachBase,
+            )
+            Spacer(modifier = Modifier.width(spacing.md))
+            Text(
+                text = destinationName,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.textPrimary,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "Re-arm",
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.safeBase,
+            )
+        }
     }
 }
 
@@ -310,14 +384,26 @@ private fun RecentTripsSection(
             )
         }
     } else {
-        trips.forEachIndexed { index, trip ->
-            RecentTripRow(trip = trip, staggerIndex = index)
+        Column {
+            trips.forEachIndexed { index, trip ->
+                RecentTripRow(
+                    trip = trip,
+                    staggerIndex = index,
+                    showDivider = index != trips.lastIndex,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun RecentTripRow(trip: HomeRecentTrip, staggerIndex: Int) {
+private fun RecentTripRow(
+    trip: HomeRecentTrip,
+    staggerIndex: Int,
+    showDivider: Boolean,
+) {
+    val spacing = LocalSpacing.current
+    val colors = LocalNearWakeColors.current
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay((staggerIndex * 40).toLong())
@@ -328,22 +414,56 @@ private fun RecentTripRow(trip: HomeRecentTrip, staggerIndex: Int) {
         animationSpec = tween(durationMillis = NearWakeMotion.Base),
         label = "trip-alpha",
     )
-    SurfaceCard(modifier = Modifier.alpha(alpha)) {
-        NearWakeStateChip(
-            label = trip.statusLabel,
-            state = trip.statusTone.toChipState(),
-        )
-        Text(
-            text = trip.destinationName,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Text(
-            text = trip.subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    Column(modifier = Modifier.alpha(alpha)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (trip.statusTone == HomeStatusTone.Approaching) {
+                    Icons.Filled.Warning
+                } else {
+                    Icons.Filled.CheckCircle
+                },
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = trip.statusTone.iconColor(),
+            )
+            Spacer(modifier = Modifier.width(spacing.md))
+            Text(
+                text = trip.destinationName,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = trip.statusLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textTertiary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (showDivider) {
+            HorizontalDivider(
+                modifier = Modifier.padding(start = spacing.xxxl),
+                thickness = 1.dp,
+                color = colors.borderSubtle,
+            )
+        }
     }
+}
+
+@Composable
+private fun HomeStatusTone.iconColor() = when (this) {
+    HomeStatusTone.Safe -> LocalNearWakeColors.current.safeBase
+    HomeStatusTone.Monitoring -> LocalNearWakeColors.current.monitoringBase
+    HomeStatusTone.Approaching -> LocalNearWakeColors.current.approachBase
+    HomeStatusTone.Neutral -> LocalNearWakeColors.current.textTertiary
 }
 
 private fun HomeStatusTone.toChipState(): NearWakeChipState = when (this) {
