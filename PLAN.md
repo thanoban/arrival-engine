@@ -2,7 +2,8 @@
 
 **Package:** `com.nearwake.app`
 **Platform:** Android-first (Kotlin + Jetpack Compose)
-**Last updated:** 2026-05-09
+**Last updated:** 2026-05-10
+**App version:** versionCode 1 / versionName "0.1.0"
 
 ---
 
@@ -34,7 +35,7 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 
 ## Module Architecture
 
-**31 modules — Clean Architecture + ports + application layer**
+**32 modules — Clean Architecture + ports + application layer**
 
 ```
 :app
@@ -42,6 +43,7 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 ├── :application:trip           ← 21 use cases (see full list below)
 ├── :ports:monitoring           ← TripMonitoringGateway interface (start/stop)
 ├── :ports:persistence          ← TripLifecycleStore interface (13 methods)
+├── :ports:analytics            ← NearWakeAnalytics interface (7 methods)
 ├── :core:common
 ├── :core:database              ← Room v5, schema exported, migrations 1→5
 ├── :core:datastore             ← UserPreferences (ThemeMode, AlertTriggerMode, lead times)
@@ -60,7 +62,8 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 ├── :data:location              ← FusedLocationDataSource, LocationStrategyOrchestrator
 ├── :data:motion
 ├── :data:routing
-├── :data:analytics             ← DiagnosticsLogger (local Room log — active)
+├── :data:analytics             ← DiagnosticsLogger (local Room log, user opt-in)
+│                                  SentryNearWakeAnalytics (external, production observability)
 ├── :data:patterns              ← CommutePredictionRepository
 ├── :feature:onboarding
 ├── :feature:permissions
@@ -152,11 +155,12 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - Google Places real repository-backed search (not stub)
 - DepartureReminderScheduler wired in `DepartureViewModel` and `DepartureReminderBootReceiver`
 
-### Tests — 42 classes across all layers
-- **Domain:** AlertStageEvaluatorTest, AlertDecisionEngineTest, CommutePredictionEngineTest, ApproachEvaluatorTest, BoardingValidatorTest, OvershootDetectorTest, RecoveryPlannerTest, TransferMonitorTest, TripStateMachineTest
-- **Application:** All 21 use cases have corresponding tests
-- **Data:** TripMonitoringRuntime, DiagnosticsLogger, TripCleanupUseCase, DepartureReminderPlanner, and more
-- **Core / Feature:** DataStore, network, diagnostics, permissions, settings
+### Tests — 66 classes across all layers
+- **Domain (18):** AlertStageEvaluatorTest, AlertDecisionEngineTest, CommutePredictionEngineTest, ApproachEvaluatorTest, BoardingValidatorTest, OvershootDetectorTest, RecoveryPlannerTest, TransferMonitorTest, TripStateMachineTest, and more
+- **Application (30):** All 21 use cases have tests + FakeNearWakeAnalytics test double
+- **Data (12):** TripMonitoringRuntime, DiagnosticsLogger, TripCleanupUseCase, DepartureReminderPlanner, TripMonitoringFeedbackCoordinator, MonitoredTripContextLoader, and more
+- **Feature (4):** OemReliability, TransferProgressBuilder, PermissionsViewModel, DiagnosticsExport
+- **Core (2):** NearWakeHttpClient, UserPreferencesDataStore
 
 ### Documentation — 22 guides in project root
 `PLAN.md`, `README.md`, `NEARWAKE_MASTER_REFERENCE.md`, `TARGET_PRODUCTION_ARCHITECTURE.md`,
@@ -220,13 +224,15 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - [x] `TripCleanupUseCase` handles geofence removal, location stop, activity unregistration
 - [x] All 4 previously-flagged feature modules (places, tripsetup, diagnostics, companion) fully migrated
 
-### Wave G — Launch Readiness 🔴 Not started
-- [ ] **Sentry initialization** — `NearWakeApp.onCreate()`, SENTRY_DSN via BuildConfig ← BLOCKER
-- [ ] **Behavioral analytics** — `NearWakeAnalytics` interface + 6 events wired ← BLOCKER
-- [ ] **Privacy policy** — host `PRIVACY_POLICY_DRAFT.md`, add manifest `<meta-data>` ← BLOCKER
+### Wave G — Launch Readiness 🟡 In Progress
+- [x] **Sentry initialization** — `NearWakeApp.onCreate()` calls `SentryAndroid.init()`, DSN from `BuildConfig.SENTRY_DSN`, env-aware, tracesSampleRate 0.2
+- [x] **Behavioral analytics** — `:ports:analytics` (`NearWakeAnalytics` interface, 7 methods), `SentryNearWakeAnalytics` impl, Hilt-wired, all 6 events + `recordFailure()` at 7 error sites
+- [x] **Privacy policy manifest metadata** — `privacy-policy.html` created, `<meta-data PRIVACY_POLICY_URL>` in AndroidManifest, `configuredPrivacyPolicyUrl()` in build config
+- [ ] **Privacy policy hosted** — HTML ready locally, must be deployed to a public URL ← BLOCKER
+- [ ] **Accessibility audit** — zero `contentDescription`, `semantics`, `Role.Button` anywhere yet ← BLOCKER for Play Store
 - [ ] `core:remoteconfig` — `ThresholdConfig` + `RemoteConfigRepository`
 - [ ] `core:benchmark` — Baseline Profile for 30–40% cold start improvement
-- [ ] Accessibility audit — TalkBack pass, `contentDescription`, 48dp targets, contrast
+- [ ] StrictMode in debug builds — add to `NearWakeApp.onCreate()` behind `BuildConfig.DEBUG`
 - [ ] Field testing — follow `FIELD_TEST_RUNBOOK.md` (30+ real trips, 8 scenarios)
 - [ ] Release signing — follow `APP_SIGNING_SETUP_GUIDE.md`, rotate MAPS_API_KEY
 - [ ] Release AAB — `./gradlew bundleRelease` clean, verify size < 20 MB
@@ -236,45 +242,28 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 
 ## Road to v1.0 — Ordered Execution
 
-### Phase 1 — Observability (BLOCKERS — do first)
+### Phase 1 — Observability ✅ Complete
 
-**Sentry initialization**
-- **Why blocked:** Sentry v7.18.0 is in `app/build.gradle.kts` but `SentryInitProvider` is removed via `tools:node="remove"` in Manifest. Zero crash visibility in production.
-- `NearWakeApp.onCreate()` — call `SentryAndroid.init(this) { options -> options.dsn = BuildConfig.SENTRY_DSN; options.environment = if (BuildConfig.DEBUG) "debug" else "production"; options.tracesSampleRate = 0.2 }`
-- `app/build.gradle.kts` — add `buildConfigField("String", "SENTRY_DSN", "\"${localProperties.getProperty("SENTRY_DSN", "")}\"")` in `defaultConfig`
-- `local.properties` — add `SENTRY_DSN=<your DSN from sentry.io>`
-- Remove `tools:node="remove"` from `SentryInitProvider` in `AndroidManifest.xml` OR keep removal and call init manually (manual init is preferred — avoids timing issues)
-- Add non-fatal captures at: every `runCatching.onFailure` in service, repositories, boot receivers
-- Add trip context tags in `AlertOrchestrator.fireAlert()`: `Sentry.setTag("alert_stage", stage)`, `Sentry.setTag("confidence", confidence)`
-- Files: `app/src/main/kotlin/com/nearwake/app/NearWakeApp.kt`, `app/build.gradle.kts`
+**Sentry initialization** — done in `NearWakeApp.onCreate()`. DSN from `BuildConfig.SENTRY_DSN` (read from `local.properties`). Environment-aware. tracesSampleRate = 0.2.
 
-**Behavioral analytics**
-- **Why needed:** `data/analytics/DiagnosticsLogger` logs only to local Room DB — nothing leaves the device. No funnel data, no trip success rate, no alert rate measurable.
-- Add `NearWakeAnalytics` interface to `data/analytics/` — Sentry breadcrumb implementation reuses existing SDK
-- Wire 6 events:
+**Behavioral analytics** — done. `:ports:analytics` (`NearWakeAnalytics` interface) + `SentryNearWakeAnalytics` impl in `data:analytics`. All 6 events wired + `recordFailure()` at 7 error sites. `FakeNearWakeAnalytics` test double in `application:trip` tests.
 
-| Event | Properties | Callsite |
-|-------|-----------|---------|
-| `trip_armed` | `mode`, `has_transfers`, `transfer_count` | `StartTripUseCase`, `RearmTripUseCase` |
-| `alert_stage_advanced` | `from_stage`, `to_stage`, `confidence`, `distance_m`, `eta_min` | `AlertOrchestrator` |
-| `alert_fired` | `mode`, `confidence`, `distance_m` | `AlertOrchestrator.fireAlert()` |
-| `trip_completed` | `stage_reached`, `duration_min`, `alert_count` | `CompleteTripUseCase` |
-| `rearm_tapped` | — | `HomeViewModel` |
-| `transfer_missed` | `leg_index`, `confidence` | `TransferMonitor` |
+| Event | Callsite |
+|-------|---------|
+| `trip_armed` | `StartTripUseCase`, `RearmTripUseCase` |
+| `alert_stage_advanced` | `TripMonitoringFeedbackCoordinator` |
+| `alert_fired` | `TripMonitoringService` |
+| `trip_completed` | `CompleteTripUseCase` |
+| `rearm_tapped` | `HomeViewModel` |
+| `transfer_missed` | `TripMonitoringFeedbackCoordinator` |
 
 ---
 
-### Phase 2 — Privacy Policy (BLOCKER)
+### Phase 2 — Privacy Policy 🟡 Partial
 
-- `PRIVACY_POLICY_DRAFT.md` already exists in project root — review and finalise content
-- Host at stable public URL (GitHub Pages, Notion, or nearwake.app/privacy)
-- Add to `app/src/main/AndroidManifest.xml`:
-  ```xml
-  <meta-data
-      android:name="com.nearwake.PRIVACY_POLICY_URL"
-      android:value="https://yourhost/privacy" />
-  ```
-- Required for Play Store data safety form — location app cannot submit without it
+**Done:** `privacy-policy.html` created. `AndroidManifest.xml` has `<meta-data android:name="com.nearwake.PRIVACY_POLICY_URL" android:value="${PRIVACY_POLICY_URL}"/>`. Build config reads URL from `local.properties`.
+
+**Remaining:** Host `privacy-policy.html` at a stable public URL and set `PRIVACY_POLICY_URL=https://yourhost/privacy` in `local.properties`. Required for Play Store data safety form submission — location apps cannot submit without it.
 
 ---
 
@@ -423,9 +412,9 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | Test coverage | ✅ 42 test classes across all layers | — |
 | AlertTriggerMode | ✅ TIME/DISTANCE/BOTH, wired in UI, persisted, tested | — |
 | MAPS_API_KEY | ✅ Wired via local.properties | **Rotate key + add SHA-1 restriction before launch** |
-| Crash reporting | 🔴 Sentry present, provider removed, NOT initialized | **Phase 1 BLOCKER** |
-| Behavioral analytics | 🔴 No `NearWakeAnalytics` interface exists | **Phase 1 BLOCKER** |
-| Privacy policy | 🔴 Draft exists (`PRIVACY_POLICY_DRAFT.md`), not hosted | **Phase 2 BLOCKER** |
+| Crash reporting | ✅ Sentry initialized — DSN from BuildConfig, env-aware, 20% trace sampling | — |
+| Behavioral analytics | ✅ `NearWakeAnalytics` + `SentryNearWakeAnalytics` — 6 events + `recordFailure()` at 7 sites | — |
+| Privacy policy | 🟡 HTML ready + manifest wired — URL not hosted yet | Host + set `PRIVACY_POLICY_URL` |
 | Remote config | 🔴 No `:core:remoteconfig` module | Phase 3 |
 | Baseline Profile | 🔴 No `:core:benchmark`, no `baseline-prof.txt` | Phase 4 |
 | Accessibility | 🔴 No TalkBack pass done | Phase 5 |
