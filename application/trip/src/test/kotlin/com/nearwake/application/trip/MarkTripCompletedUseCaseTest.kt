@@ -10,7 +10,10 @@ class MarkTripCompletedUseCaseTest {
     @Test
     fun `marks trip complete without clearing active session`() = runBlocking {
         val tripStore = FakeTripLifecycleStore()
-        val useCase = MarkTripCompletedUseCase(tripLifecycleStore = tripStore)
+        val useCase = MarkTripCompletedUseCase(
+            tripLifecycleStore = tripStore,
+            analytics = FakeNearWakeAnalytics(),
+        )
         val completedAt = Instant.parse("2026-05-06T03:00:00Z")
 
         useCase(tripId = "trip-1", completedAt = completedAt)

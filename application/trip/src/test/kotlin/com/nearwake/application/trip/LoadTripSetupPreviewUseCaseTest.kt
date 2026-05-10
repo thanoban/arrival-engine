@@ -30,6 +30,7 @@ class LoadTripSetupPreviewUseCaseTest {
             ),
             locationRepository = FakeLocationRepository(null),
             routingRepository = FakeRoutingRepository(Result.failure(IllegalStateException("unused"))),
+            analytics = FakeNearWakeAnalytics(),
         )
 
         val preview = useCase("missing-place")
@@ -45,6 +46,7 @@ class LoadTripSetupPreviewUseCaseTest {
             tripLifecycleStore = storeWithPlace(),
             locationRepository = FakeLocationRepository(null),
             routingRepository = FakeRoutingRepository(Result.failure(IllegalStateException("unused"))),
+            analytics = FakeNearWakeAnalytics(),
         )
 
         val preview = useCase("place-1")
@@ -71,6 +73,7 @@ class LoadTripSetupPreviewUseCaseTest {
             tripLifecycleStore = storeWithPlace(),
             locationRepository = FakeLocationRepository(LatLng(lat = 6.9000, lng = 79.8500)),
             routingRepository = FakeRoutingRepository(Result.success(routeSnapshot)),
+            analytics = FakeNearWakeAnalytics(),
         )
 
         val preview = useCase("place-1")

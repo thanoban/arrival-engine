@@ -39,6 +39,7 @@ include(":domain:routing")
 include(":domain:commute")
 
 // Ports
+include(":ports:analytics")
 include(":ports:monitoring")
 include(":ports:persistence")
 

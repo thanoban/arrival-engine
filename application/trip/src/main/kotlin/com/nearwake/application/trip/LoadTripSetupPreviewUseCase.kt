@@ -1,5 +1,6 @@
 package com.nearwake.application.trip
 
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.location.repository.LocationRepository
 import com.nearwake.domain.routing.model.RouteSnapshot
@@ -20,6 +21,7 @@ class LoadTripSetupPreviewUseCase @Inject constructor(
     private val tripLifecycleStore: TripLifecycleStore,
     private val locationRepository: LocationRepository,
     private val routingRepository: RoutingRepository,
+    private val analytics: NearWakeAnalytics,
 ) {
     suspend operator fun invoke(placeId: String): TripSetupPreview {
         val place = tripLifecycleStore.getSavedPlace(placeId)
@@ -34,7 +36,15 @@ class LoadTripSetupPreviewUseCase @Inject constructor(
         }
 
         val destination = LatLng(lat = place.lat, lng = place.lng)
-        val origin = runCatching { locationRepository.getLastKnownLocation() }.getOrNull()
+        val origin = runCatching { locationRepository.getLastKnownLocation() }
+            .onFailure { error ->
+                analytics.recordFailure(
+                    surface = "trip_setup_last_known_location",
+                    throwable = error,
+                    attributes = mapOf("place_id" to placeId),
+                )
+            }
+            .getOrNull()
         if (origin == null) {
             return TripSetupPreview(
                 destinationName = place.name,
@@ -57,7 +67,12 @@ class LoadTripSetupPreviewUseCase @Inject constructor(
                     previewRouteSnapshot = routeSnapshot,
                 )
             },
-            onFailure = {
+            onFailure = { error ->
+                analytics.recordFailure(
+                    surface = "trip_setup_route_preview",
+                    throwable = error,
+                    attributes = mapOf("place_id" to placeId),
+                )
                 TripSetupPreview(
                     destinationName = place.name,
                     destinationAddress = place.address,

@@ -5,11 +5,13 @@ import com.nearwake.data.analytics.DiagnosticsLogger
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.trip.engine.BoardingAlignment
 import com.nearwake.domain.trip.engine.BoardingValidator
+import com.nearwake.domain.trip.engine.TransferCheckpointType
 import com.nearwake.domain.trip.engine.TransferMonitor
 import com.nearwake.domain.trip.engine.TransferProgressStatus
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import javax.inject.Inject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -18,15 +20,18 @@ class TripMonitoringFeedbackCoordinator @Inject constructor(
     private val notificationHelper: NotificationHelper,
     private val diagnosticsLogger: DiagnosticsLogger,
     private val tripMonitoringRuntime: TripMonitoringRuntime,
+    private val analytics: NearWakeAnalytics,
 ) {
     private val boardingValidator = BoardingValidator()
     private val transferMonitor = TransferMonitor()
     private var boardingValidationComplete = false
     private var lastTransferCueKey: String? = null
+    private var lastMissedTransferIndex: Int? = null
 
     fun reset() {
         boardingValidationComplete = false
         lastTransferCueKey = null
+        lastMissedTransferIndex = null
     }
 
     fun refreshMonitoringNotification(
@@ -54,6 +59,7 @@ class TripMonitoringFeedbackCoordinator @Inject constructor(
     ) {
         maybeNotifyStageAdvance(previousSession, currentSession, context)
         maybeNotifyTransferCue(currentSession, context)
+        maybeTrackMissedTransfer(previousSession, currentSession, context)
         if (sampleLocation != null && previousSession != null) {
             maybeNotifyBoardingMismatch(
                 previousSession = previousSession,
@@ -114,6 +120,19 @@ class TripMonitoringFeedbackCoordinator @Inject constructor(
                 stage = currentStage,
                 mode = context.alertMode,
             ),
+        )
+        analytics.trackAlertStageAdvanced(
+            fromStage = previousStage.name,
+            toStage = currentStage.name,
+            confidence = currentSession.confidence.name,
+            distanceMeters = lastKnownLocationOrNull(currentSession)?.let { location ->
+                tripMonitoringRuntime.distanceToDestination(
+                    lat = location.lat,
+                    lng = location.lng,
+                    destination = context.destination,
+                )
+            },
+            etaMinutes = currentSession.lastEtaMinutes,
         )
     }
 
@@ -215,6 +234,46 @@ class TripMonitoringFeedbackCoordinator @Inject constructor(
                     },
                 )
             }
+        }
+    }
+
+    private fun maybeTrackMissedTransfer(
+        previousSession: TripSession?,
+        currentSession: TripSession,
+        context: MonitoredTripContext,
+    ) {
+        val routeSnapshot = context.routeSnapshot ?: return
+        val previousEta = previousSession?.lastEtaMinutes ?: return
+        val currentEta = currentSession.lastEtaMinutes ?: return
+        if (currentSession.state != com.nearwake.domain.trip.model.TripState.Recovery) {
+            return
+        }
+
+        val previousCheckpoints = transferMonitor.evaluate(
+            routeSnapshot = routeSnapshot,
+            etaMinutes = previousEta,
+            destinationName = context.destinationName,
+        ).checkpoints.filter { checkpoint -> checkpoint.type == TransferCheckpointType.TRANSFER }
+        val currentCheckpoints = transferMonitor.evaluate(
+            routeSnapshot = routeSnapshot,
+            etaMinutes = currentEta,
+            destinationName = context.destinationName,
+        ).checkpoints.filter { checkpoint -> checkpoint.type == TransferCheckpointType.TRANSFER }
+
+        currentCheckpoints.forEachIndexed { index, checkpoint ->
+            val previousCheckpoint = previousCheckpoints.getOrNull(index) ?: return@forEachIndexed
+            if (previousCheckpoint.status == TransferProgressStatus.COMPLETED ||
+                checkpoint.status != TransferProgressStatus.COMPLETED ||
+                lastMissedTransferIndex == index
+            ) {
+                return@forEachIndexed
+            }
+            lastMissedTransferIndex = index
+            analytics.trackTransferMissed(
+                legIndex = index,
+                confidence = currentSession.confidence.name,
+            )
+            return
         }
     }
 

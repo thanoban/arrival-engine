@@ -1,6 +1,7 @@
 package com.nearwake.application.trip
 
 import com.nearwake.application.monitoring.StartTripMonitoringUseCase
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import com.nearwake.domain.routing.model.RouteSnapshot
 import com.nearwake.domain.routing.repository.RoutingRepository
 import com.nearwake.domain.trip.model.AlertIntensity
@@ -30,6 +31,7 @@ class StartTripUseCase @Inject constructor(
     private val tripLifecycleStore: TripLifecycleStore,
     private val routingRepository: RoutingRepository,
     private val startTripMonitoring: StartTripMonitoringUseCase,
+    private val analytics: NearWakeAnalytics,
 ) {
     suspend operator fun invoke(request: StartTripRequest): String? {
         val place = tripLifecycleStore.getSavedPlace(request.placeId) ?: return null
@@ -65,6 +67,11 @@ class StartTripUseCase @Inject constructor(
             ),
         )
         startTripMonitoring(tripId)
+        analytics.trackTripArmed(
+            mode = request.alertMode.name,
+            hasTransfers = request.previewRouteSnapshot?.transfers?.isNotEmpty() == true,
+            transferCount = request.previewRouteSnapshot?.transfers?.size ?: 0,
+        )
         return tripId
     }
 }

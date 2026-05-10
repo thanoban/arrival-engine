@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nearwake.application.trip.HomeDashboardTone
 import com.nearwake.application.trip.ObserveHomeDashboardUseCase
 import com.nearwake.application.trip.RearmTripUseCase
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +54,7 @@ enum class HomeStatusTone {
 class HomeViewModel @Inject constructor(
     observeHomeDashboard: ObserveHomeDashboardUseCase,
     private val rearmTrip: RearmTripUseCase,
+    private val analytics: NearWakeAnalytics,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = mutableState.asStateFlow()
@@ -98,6 +100,7 @@ class HomeViewModel @Inject constructor(
     fun rearmLastTrip(onStarted: (String) -> Unit) {
         viewModelScope.launch {
             val sourceTripId = latestRearmTripId ?: return@launch
+            analytics.trackRearmTapped()
             rearmTrip(sourceTripId)?.let(onStarted)
         }
     }

@@ -10,6 +10,7 @@ android {
 
 dependencies {
     implementation(project(":application:trip"))
+    implementation(project(":ports:analytics"))
     implementation(project(":ports:monitoring"))
     implementation(project(":core:common"))
     implementation(project(":core:database"))

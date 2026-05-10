@@ -15,6 +15,7 @@ import com.nearwake.data.analytics.DiagnosticsLogger
 import com.nearwake.domain.trip.model.AlertIntensity
 import com.nearwake.domain.trip.model.AlertMode
 import com.nearwake.domain.trip.model.AlertType
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject
@@ -29,6 +30,7 @@ class AlertOrchestrator @Inject constructor(
     private val notificationHelper: NotificationHelper,
     private val alertEventDao: AlertEventDao,
     private val diagnosticsLogger: DiagnosticsLogger,
+    private val analytics: NearWakeAnalytics,
 ) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -90,6 +92,11 @@ class AlertOrchestrator @Inject constructor(
                 distanceMeters?.let { put("distance_meters", it) }
                 etaMinutes?.let { put("eta_minutes", it) }
             },
+        )
+        analytics.trackAlertFired(
+            mode = mode.name,
+            confidence = confidence,
+            distanceMeters = distanceMeters,
         )
     }
 

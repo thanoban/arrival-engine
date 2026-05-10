@@ -1,6 +1,7 @@
 package com.nearwake.application.trip
 
 import com.nearwake.application.monitoring.StartTripMonitoringUseCase
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.location.repository.LocationRepository
 import com.nearwake.domain.routing.repository.RoutingRepository
@@ -19,6 +20,7 @@ class RearmTripUseCase @Inject constructor(
     private val locationRepository: LocationRepository,
     private val routingRepository: RoutingRepository,
     private val startTripMonitoring: StartTripMonitoringUseCase,
+    private val analytics: NearWakeAnalytics,
 ) {
     suspend operator fun invoke(sourceTripId: String): String? {
         val sourceTrip = tripLifecycleStore.getTrip(sourceTripId) ?: return null
@@ -36,6 +38,12 @@ class RearmTripUseCase @Inject constructor(
             } else {
                 null
             }
+        }.onFailure { error ->
+            analytics.recordFailure(
+                surface = "rearm_trip_route_fetch",
+                throwable = error,
+                attributes = mapOf("source_trip_id" to sourceTripId),
+            )
         }.getOrNull()
 
         routeSnapshot?.let { snapshot ->
@@ -67,6 +75,11 @@ class RearmTripUseCase @Inject constructor(
             ),
         )
         startTripMonitoring(tripId)
+        analytics.trackTripArmed(
+            mode = sourceTrip.alertMode.name,
+            hasTransfers = routeSnapshot?.transfers?.isNotEmpty() == true,
+            transferCount = routeSnapshot?.transfers?.size ?: 0,
+        )
         return tripId
     }
 }

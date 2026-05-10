@@ -28,6 +28,7 @@ import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.AlertStage
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +49,7 @@ class TripMonitoringService : Service() {
     @Inject lateinit var notificationHelper: NotificationHelper
     @Inject lateinit var tripCleanupUseCase: TripCleanupUseCase
     @Inject lateinit var diagnosticsLogger: DiagnosticsLogger
+    @Inject lateinit var analytics: NearWakeAnalytics
     @Inject lateinit var tripEngine: TripEngine
     @Inject lateinit var tripSessionStore: TripSessionStore
     @Inject lateinit var tripMonitoringRuntime: TripMonitoringRuntime
@@ -228,6 +230,11 @@ class TripMonitoringService : Service() {
         geofenceDataSource.removeGeofences(context.geofenceIds)
         geofenceDataSource.registerGeofences(geofences)
             .onFailure { error ->
+                analytics.recordFailure(
+                    surface = "geofence_registration",
+                    throwable = error,
+                    attributes = mapOf("trip_id" to session.tripId),
+                )
                 diagnosticsLogger.log(
                     eventType = "geofence_registration_failed",
                     tripId = session.tripId,
@@ -241,6 +248,11 @@ class TripMonitoringService : Service() {
         runCatching {
             activityRecognitionDataSource.registerVehicleTransitions()
         }.onFailure { error ->
+            analytics.recordFailure(
+                surface = "activity_transition_registration",
+                throwable = error,
+                attributes = mapOf("trip_id" to session.tripId),
+            )
             diagnosticsLogger.log(
                 eventType = "activity_transition_registration_failed",
                 tripId = session.tripId,
@@ -471,6 +483,11 @@ class TripMonitoringService : Service() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             runCatching { tripCleanupUseCase() }
                 .onFailure { error ->
+                    analytics.recordFailure(
+                        surface = "monitoring_cleanup",
+                        throwable = error,
+                        attributes = mapOf("trip_id" to tripId),
+                    )
                     diagnosticsLogger.log(
                         eventType = "monitoring_cleanup_failed",
                         tripId = tripId,

@@ -60,6 +60,7 @@ android {
 dependencies {
     implementation(project(":application:monitoring"))
     implementation(project(":application:trip"))
+    implementation(project(":ports:analytics"))
 
     // Core
     implementation(project(":core:common"))

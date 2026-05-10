@@ -16,6 +16,7 @@ class CompleteTripUseCaseTest {
         val useCase = CompleteTripUseCase(
             tripLifecycleStore = tripStore,
             stopTripMonitoring = StopTripMonitoringUseCase(monitoringGateway),
+            analytics = FakeNearWakeAnalytics(),
         )
         val completedAt = Instant.parse("2026-05-05T03:00:00Z")
 

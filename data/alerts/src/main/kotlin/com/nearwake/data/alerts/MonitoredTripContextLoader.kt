@@ -5,6 +5,7 @@ import com.nearwake.core.database.dao.TripDao
 import com.nearwake.data.analytics.DiagnosticsLogger
 import com.nearwake.domain.location.model.LatLng
 import com.nearwake.domain.routing.repository.RoutingRepository
+import com.nearwake.ports.analytics.NearWakeAnalytics
 import javax.inject.Inject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -15,6 +16,7 @@ class MonitoredTripContextLoader @Inject constructor(
     private val routingRepository: RoutingRepository,
     private val tripMonitoringRuntime: TripMonitoringRuntime,
     private val diagnosticsLogger: DiagnosticsLogger,
+    private val analytics: NearWakeAnalytics,
 ) {
     suspend fun load(
         tripId: String,
@@ -39,6 +41,11 @@ class MonitoredTripContextLoader @Inject constructor(
                 batterySaverMode = batterySaverMode,
             )
         }.onFailure { error ->
+            analytics.recordFailure(
+                surface = "monitoring_context_load",
+                throwable = error,
+                attributes = mapOf("trip_id" to tripId),
+            )
             diagnosticsLogger.log(
                 eventType = "monitoring_service_trip_context_failed",
                 tripId = tripId,

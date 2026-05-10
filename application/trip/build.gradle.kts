@@ -7,6 +7,7 @@ dependencies {
     implementation(project(":domain:location"))
     implementation(project(":domain:routing"))
     implementation(project(":domain:trip"))
+    implementation(project(":ports:analytics"))
     implementation(project(":ports:persistence"))
     implementation(libs.coroutines.core)
     implementation(libs.kotlinx.datetime)
