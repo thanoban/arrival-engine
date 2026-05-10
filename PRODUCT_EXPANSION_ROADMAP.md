@@ -1135,45 +1135,741 @@ class CommuteReportWorker @AssistedInject constructor(
 
 ---
 
+### Feature I-6: Lock-Screen Widget
+
+**Goal:** Active trip ETA visible on the lock screen without the user needing to unlock their phone.
+
 ---
 
-## Wave K Development Plan — v2.0 (Outline Only)
+#### Step I-6-A: Dependency
 
-Wave K requires a backend. Full technical spec to be written separately after v1.0 PMF. Outline:
+Lock-screen widgets on Android 14+ use the same Glance infrastructure as home screen widgets. No extra dependency — already added in I-4-A.
 
-### K-1: Backend Stack Decision
-Options: Firebase (Realtime Database + Cloud Functions + FCM) vs lightweight Node.js + Supabase.
-Recommendation: **Firebase** for v2.0 — lower ops overhead, FCM built-in, easy scaling.
+---
+
+#### Step I-6-B: Widget declaration
+
+**File:** `app/src/main/res/xml/active_trip_widget_info.xml` *(extend from I-4-B)*
+
+Add the `widgetCategory` attribute so the widget appears in both the home screen picker and the lock screen picker:
+
+```xml
+<appwidget-provider
+    ...
+    android:widgetCategory="home_screen|keyguard"
+    android:initialKeyguardLayout="@layout/active_trip_widget_lock" />
+```
+
+**File:** `app/src/main/res/layout/active_trip_widget_lock.xml` *(new)*
+- A simpler RemoteViews layout (lock-screen only supports a subset of views)
+- Large ETA number + destination name — two TextViews, no clickable elements (lock-screen restriction)
+- Dark background with 60% opacity — legible over any wallpaper
+
+---
+
+#### Step I-6-C: Glance content for keyguard
+
+**File:** `app/src/main/kotlin/com/nearwake/app/widget/ActiveTripWidget.kt` *(extend from I-4-B)*
+
+```kotlin
+override suspend fun provideGlance(context: Context, id: GlanceId) {
+    val state = getAppWidgetState(context, ActiveTripWidgetState.serializer(), id)
+    val isLockScreen = GlanceAppWidgetManager(context)
+        .getAppWidgetSizes(this, id).any { it.isKeyguard }
+
+    provideContent {
+        when {
+            isLockScreen -> LockScreenEtaContent(state)
+            state.isActive -> ActiveEtaContent(state)
+            else -> IdleContent()
+        }
+    }
+}
+```
+
+`LockScreenEtaContent`:
+- `Text(state.etaMinutes.toString(), style = displayMedium, color = Color.White)`
+- `Text("min · ${state.destinationName}", style = titleSmall, color = Color.White.copy(alpha = 0.8f))`
+- No `clickable` modifier — lock-screen widgets cannot open activities directly on Android 12+
+
+---
+
+#### Step I-6-D: AndroidManifest
+
+```xml
+<receiver android:name=".widget.ActiveTripWidgetReceiver"
+    android:exported="true">
+  <intent-filter>
+    <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+  </intent-filter>
+  <!-- existing home_screen category already declared -->
+</receiver>
+```
+
+No additional permissions needed beyond what I-4 already declared.
+
+---
+
+#### Step I-6-E: Tests
+
+- Manual test only: install widget on lock screen on API 34+ device, verify ETA updates when trip is running
+- Verify no `SecurityException` on lock-screen widget registration on API < 28 (fallback: widget only appears in home screen picker)
+
+---
+
+---
+
+### Feature J-6: Route Comparison
+
+**Goal:** After a user has taken 5+ trips to the same destination via different routes, surface a comparison showing which route is faster and more reliable.
+
+---
+
+#### Step J-6-A: Extend CommutePredictionEngine
+
+**File:** `domain/commute/src/main/kotlin/com/nearwake/domain/commute/CommutePredictionEngine.kt` *(extend)*
+
+Current behavior: groups trips by destination → builds a `CommutePrediction` per destination.
+
+New behavior: within each destination group, further sub-group by `routeId` (first stop ID of the route snapshot). If a destination has 2+ route sub-groups each with ≥ 3 trips, produce a `RouteComparisonResult`.
+
+```kotlin
+data class RouteComparisonResult(
+    val destinationId: String,
+    val destinationName: String,
+    val routes: List<RouteOption>,
+)
+
+data class RouteOption(
+    val routeLabel: String,          // e.g. "via Maradana" — derived from first intermediate stop
+    val avgDurationMinutes: Float,
+    val tripCount: Int,
+    val onTimePercentage: Float,     // trips where arrival was ≤ 2 min of predicted
+    val isFastest: Boolean,
+)
+```
+
+**Threshold:** minimum 3 trips per route, minimum 2 distinct routes to show comparison.
+
+---
+
+#### Step J-6-B: Use case
+
+**File:** `application/trip/src/main/kotlin/com/nearwake/application/trip/ObserveRouteComparisonUseCase.kt` *(new)*
+
+```kotlin
+class ObserveRouteComparisonUseCase @Inject constructor(
+    private val store: TripLifecycleStore,
+    private val engine: CommutePredictionEngine,
+) {
+    operator fun invoke(destinationId: String): Flow<RouteComparisonResult?> =
+        store.observeTripHistoryForDestination(destinationId)
+            .map { trips -> engine.buildRouteComparison(trips) }
+}
+```
+
+Add `observeTripHistoryForDestination(destinationId: String): Flow<List<Trip>>` to `TripLifecycleStore` + implement in `RoomTripLifecycleStore` using an existing DAO query filtered by destination.
+
+---
+
+#### Step J-6-C: TripSetupScreen banner
+
+**File:** `feature/tripsetup/src/main/kotlin/com/nearwake/feature/tripsetup/TripSetupViewModel.kt`
+- Collect `ObserveRouteComparisonUseCase` for the selected destination
+- Expose `routeComparison: RouteComparisonResult?` in `TripSetupUiState`
+
+**File:** `feature/tripsetup/src/main/kotlin/com/nearwake/feature/tripsetup/TripSetupScreen.kt`
+- If `routeComparison` is not null and has 2+ options: show an inline `RouteComparisonBanner` composable below the route preview row
+- Banner: `"Route A averages 26 min · Route B averages 31 min — Route A is usually faster"`
+- Height: 48dp, no card — just an informational `Row` with a `bolt` icon and `bodyMedium` text
+
+---
+
+#### Step J-6-D: Analytics screen card
+
+**File:** `feature/analytics/src/main/kotlin/com/nearwake/feature/analytics/AnalyticsScreen.kt`
+- Add section `ROUTE COMPARISONS` below top destinations
+- For each destination with a comparison: expandable row showing the route table
+- Column headers: Route | Avg time | Trips | On-time %
+
+---
+
+#### Step J-6-E: Tests
+
+**File:** `domain/commute/src/test/kotlin/com/nearwake/domain/commute/CommutePredictionEngineTest.kt` *(extend)*
+- Test: 6 trips to Work via Route A, 4 trips via Route B → `RouteComparisonResult` produced correctly
+- Test: only 1 route available → `RouteComparisonResult` is null (no comparison)
+- Test: fewer than 3 trips per route → comparison suppressed
+
+---
+
+---
+
+## Wave K Development Plan — v2.0
+
+Wave K requires a Firebase backend. Build after v1.0 proves product-market fit (PMF). Target PMF signal: 500 daily active users with ≥ 3 trips each per week.
+
+---
+
+### K-0: Backend Infrastructure Setup
+
+**Firebase project setup:**
+1. Create Firebase project `nearwake-prod` in Firebase Console
+2. Enable: Authentication, Firestore, Realtime Database, Cloud Functions, Cloud Messaging (FCM), Hosting
+3. Download `google-services.json` → add to `app/` folder
+4. Add to `app/build.gradle.kts`:
+   ```kotlin
+   implementation(platform(libs.firebase.bom))
+   implementation(libs.firebase.auth)
+   implementation(libs.firebase.firestore)
+   implementation(libs.firebase.database)
+   implementation(libs.firebase.functions)
+   implementation(libs.firebase.messaging)
+   ```
+5. Add to `gradle/libs.versions.toml`:
+   ```toml
+   firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "33.x.x" }
+   ```
+
+**Firestore security rules** — written before any user data is stored:
+- A user can only read/write their own documents
+- Family members can read (not write) child trip status within their family group
+- Trip share tokens are readable by anyone, writable only by the token creator
+
+**Firebase emulator suite** — used in all local development and CI:
+```bash
+firebase emulators:start --only auth,firestore,database,functions
+```
+
+---
+
+### K-1: Anonymous Auth + Account Upgrade
+
+All Wave K features require a user identity. But requiring registration kills onboarding.
+
+**Strategy:** Sign in anonymously on first launch. Offer email/phone upgrade when accessing family features.
+
+**File:** `core/auth/src/main/kotlin/com/nearwake/core/auth/NearWakeAuthManager.kt` *(new module `:core:auth`)*
+
+```kotlin
+@Singleton
+class NearWakeAuthManager @Inject constructor(
+    private val firebaseAuth: FirebaseAuth,
+) {
+    val currentUser: FirebaseUser? get() = firebaseAuth.currentUser
+
+    suspend fun ensureSignedIn(): FirebaseUser {
+        return currentUser ?: firebaseAuth.signInAnonymously().await().user!!
+    }
+
+    suspend fun upgradeToEmail(email: String, password: String): FirebaseUser {
+        val credential = EmailAuthProvider.getCredential(email, password)
+        return firebaseAuth.currentUser!!.linkWithCredential(credential).await().user!!
+    }
+}
+```
+
+**Rule:** Anonymous users have full access to all features. The upgrade prompt only appears when setting up a family group (K-4). Never block core features behind account creation.
+
+---
 
 ### K-2: Wear OS App
-- New Android project `:feature:wear`
-- Wear OS Compose for ETA face and haptic alert
-- DataLayer API (`ChannelClient`) — phone service sends ETA updates to watch every 30 sec when trip is armed
-- Watch sends "dismissed" acknowledgement back to phone on Stage C dismiss
 
-**Key files:**
-- `WearMainActivity.kt`
-- `EtaWatchFaceComplication.kt`
-- `WearAlertReceiver.kt`
-- `PhoneWearBridgeService.kt` (on phone side — sends ETA over DataLayer)
+**Goal:** ETA visible on wrist. Stage B + Stage C haptic on wrist — more reliable than phone in pocket.
+
+---
+
+#### Step K-2-A: New Wear OS module
+
+**New module:** `:feature:wear` in `settings.gradle.kts`
+
+```kotlin
+// feature/wear/build.gradle.kts
+plugins {
+    id("com.android.application")   // Wear OS module is a separate APK
+    id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android")
+}
+android {
+    defaultConfig {
+        minSdk = 26   // Wear OS 3.0+
+        targetSdk = 35
+    }
+}
+dependencies {
+    implementation(libs.wear.compose.material)
+    implementation(libs.wear.compose.foundation)
+    implementation(libs.wearable.data.layer)
+    implementation(libs.play.services.wearable)
+}
+```
+
+---
+
+#### Step K-2-B: Phone → Watch data bridge
+
+**File:** `data/alerts/src/main/kotlin/com/nearwake/data/alerts/WearBridgeService.kt` *(new — on phone)*
+
+```kotlin
+@AndroidEntryPoint
+class WearBridgeService : WearableListenerService() {
+    @Inject lateinit var observeLiveTrip: ObserveLiveTripUseCase
+
+    override fun onCreate() {
+        super.onCreate()
+        serviceScope.launch {
+            observeLiveTrip().collect { tripState ->
+                sendEtaToWatch(tripState.etaMinutes, tripState.destinationName, tripState.stage)
+            }
+        }
+    }
+
+    private suspend fun sendEtaToWatch(etaMin: Int, destination: String, stage: AlertStage) {
+        val dataMap = DataMapItem.fromDataItem(putDataMapRequest("/trip/eta").apply {
+            dataMap.putInt("eta_minutes", etaMin)
+            dataMap.putString("destination", destination)
+            dataMap.putString("stage", stage.name)
+            dataMap.putLong("timestamp", System.currentTimeMillis())
+        }.asPutDataRequest()).dataMap
+        Wearable.getDataClient(this).putDataItem(dataMap.asPutDataRequest()).await()
+    }
+}
+```
+
+**File:** `AndroidManifest.xml` (phone)
+```xml
+<service android:name=".data.alerts.WearBridgeService"
+    android:exported="true">
+  <intent-filter>
+    <action android:name="com.google.android.gms.wearable.DATA_CHANGED"/>
+  </intent-filter>
+</service>
+```
+
+---
+
+#### Step K-2-C: Watch app screens
+
+**File:** `feature/wear/src/main/kotlin/com/nearwake/wear/WearMainActivity.kt` *(new)*
+- Wear OS Activity using `WearApp` Composable
+
+**File:** `feature/wear/src/main/kotlin/com/nearwake/wear/EtaScreen.kt` *(new)*
+
+Screen layout (round watch face optimized):
+```
+[PulseRing — 120dp, stage-colored]
+  Text: ETA number     [displayMedium, white]
+  Text: "min"          [labelSmall, white 70%]
+Text: destination      [labelSmall, white 80%, below ring]
+```
+
+**File:** `feature/wear/src/main/kotlin/com/nearwake/wear/WearDataListener.kt` *(new)*
+
+```kotlin
+class WearDataListener : WearableListenerService() {
+    override fun onDataChanged(events: DataEventBuffer) {
+        for (event in events) {
+            if (event.dataItem.uri.path == "/trip/eta") {
+                val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                WearEtaStore.update(
+                    etaMinutes = dataMap.getInt("eta_minutes"),
+                    destination = dataMap.getString("destination"),
+                    stage = AlertStage.valueOf(dataMap.getString("stage")),
+                )
+            }
+        }
+    }
+}
+```
+
+---
+
+#### Step K-2-D: Watch alert haptics
+
+**File:** `feature/wear/src/main/kotlin/com/nearwake/wear/WearAlertManager.kt` *(new)*
+
+```kotlin
+object WearAlertManager {
+    fun fireStageB(context: Context) {
+        val vibrator = context.getSystemService(Vibrator::class.java)
+        // 3 strong pulses — impossible to sleep through
+        vibrator.vibrate(VibrationEffect.createWaveform(
+            longArrayOf(0, 200, 100, 200, 100, 400), -1
+        ))
+    }
+
+    fun fireStageCContinuous(context: Context) {
+        // Continuous until dismissed via watch-tap
+        val vibrator = context.getSystemService(Vibrator::class.java)
+        vibrator.vibrate(VibrationEffect.createWaveform(
+            longArrayOf(0, 500, 200), 0  // repeat = 0 means loop
+        ))
+    }
+
+    fun cancel(context: Context) {
+        context.getSystemService(Vibrator::class.java).cancel()
+    }
+}
+```
+
+`WearDataListener` calls `WearAlertManager.fireStageB()` when stage changes to IMMINENT, and `fireStageCContinuous()` when stage is ALERT. Dismissed by tapping the watch dismiss button which sends `ACTION_WATCH_DISMISS` back to phone via DataLayer.
+
+---
+
+#### Step K-2-E: Watch complications
+
+**File:** `feature/wear/src/main/kotlin/com/nearwake/wear/EtaComplicationService.kt` *(new)*
+- Implements `SuspendingComplicationDataSourceService`
+- Provides a `SHORT_TEXT` complication: "12 min" (ETA) when trip is active, "NearWake" when idle
+- Tapping complication opens `WearMainActivity`
+
+---
 
 ### K-3: Trip Share Link
-- On trip arm: phone calls Firebase Cloud Function `createTripShare(tripId, userId)`
-- Function generates a short token, creates a Realtime DB entry
-- Phone sends location updates to `trips/{token}/location` every 30 sec
-- Web page `nearwake.app/track/{token}` reads from Realtime DB, renders Google Maps embed
-- Token expires 30 min after `trip.endedAt` is written
 
-### K-4: Family Account
-- Firebase Authentication (anonymous → upgrade to email or phone)
-- Family group document in Firestore: `families/{familyId}/members[]`
-- Child's `TripMonitoringService` sends trip events to Firestore during trip
-- Parent's app subscribes to child's active trip via `FirestoreChildTripObserver`
-- FCM: on trip completion → Cloud Function sends push to all parent devices
+**Goal:** Traveller shares a link. Recipient watches trip progress in a browser — no app install needed.
 
-### K-5: iOS App
-Decision point: Kotlin Multiplatform Mobile (KMM) to share domain + application layers, or full native Swift rewrite.
-Recommendation: **KMM** — share `domain:*` and `application:trip` as a KMM module. iOS gets native SwiftUI presentation layer. Avoids rewriting the confidence engine, alert evaluator, and 21 use cases.
+---
+
+#### Step K-3-A: Cloud Function — create share token
+
+**File:** `firebase/functions/src/createTripShare.ts` *(new — TypeScript Cloud Function)*
+
+```typescript
+export const createTripShare = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
+
+    const token = generateShortToken();  // 8 random alphanumeric chars
+    const expiresAt = Date.now() + (24 * 60 * 60 * 1000);  // 24h max
+
+    await admin.database().ref(`shares/${token}`).set({
+        tripId: data.tripId,
+        ownerId: context.auth.uid,
+        createdAt: admin.database.ServerValue.TIMESTAMP,
+        expiresAt,
+        lastLocation: null,
+        ended: false,
+    });
+
+    return { token, shareUrl: `https://nearwake.app/track/${token}` };
+});
+```
+
+---
+
+#### Step K-3-B: Phone — location push during trip
+
+**File:** `data/alerts/src/main/kotlin/com/nearwake/data/alerts/TripShareRepository.kt` *(new)*
+
+```kotlin
+@Singleton
+class TripShareRepository @Inject constructor(
+    private val database: FirebaseDatabase,
+    private val auth: NearWakeAuthManager,
+) {
+    private var activeToken: String? = null
+
+    suspend fun createShare(tripId: String): String {
+        auth.ensureSignedIn()
+        val result = FirebaseFunctions.getInstance()
+            .getHttpsCallable("createTripShare")
+            .call(mapOf("tripId" to tripId)).await()
+        activeToken = result.getData<Map<String, String>>()?.get("token")
+        return activeToken ?: throw IllegalStateException("No token returned")
+    }
+
+    fun pushLocationUpdate(lat: Double, lng: Double, etaMinutes: Int) {
+        val token = activeToken ?: return
+        database.reference.child("shares/$token/lastLocation").setValue(mapOf(
+            "lat" to lat,
+            "lng" to lng,
+            "eta" to etaMinutes,
+            "ts" to ServerValue.TIMESTAMP,
+        ))
+    }
+
+    fun markTripEnded() {
+        val token = activeToken ?: return
+        database.reference.child("shares/$token/ended").setValue(true)
+        activeToken = null
+    }
+}
+```
+
+`TripMonitoringService` calls `pushLocationUpdate()` every 30 seconds when a share is active. On trip completion, calls `markTripEnded()`.
+
+---
+
+#### Step K-3-C: Web page
+
+**File:** `firebase/hosting/public/track/index.html` *(new)*
+
+Single-page web app (no framework needed — vanilla JS):
+- Reads `token` from URL path: `nearwake.app/track/TOKEN`
+- Subscribes to `database.ref("shares/TOKEN/lastLocation")` via Firebase JS SDK
+- Renders Google Maps embed centered on last location
+- Shows ETA countdown from `lastLocation.eta`
+- When `ended === true`: shows "Arrived safely ✓" card and stops updating
+
+---
+
+#### Step K-3-D: TripSetupScreen sharing option
+
+**File:** `feature/tripsetup/src/main/kotlin/com/nearwake/feature/tripsetup/TripSetupScreen.kt`
+- At the bottom (above Arm button): toggle "Share trip with someone"
+- When enabled: on arm → call `TripShareRepository.createShare()`, post notification with share URL
+- Share URL can be copied or sent via share sheet
+
+---
+
+### K-4: Family Account — Parent/Child Tracking
+
+**Goal:** Parent gets a push notification when their child's trip completes. Parent can watch the trip live.
+
+---
+
+#### Step K-4-A: Family data model (Firestore)
+
+```
+families/{familyId}
+  ├── name: string
+  ├── ownerId: string          (parent's Firebase UID)
+  ├── members: [
+  │     { uid, displayName, role: "parent"|"child", canShareTrips: bool }
+  │   ]
+  └── inviteCodes: { code → expiresAt }
+
+userProfiles/{uid}
+  ├── displayName: string
+  ├── familyId: string?
+  └── fcmToken: string         (updated on every app launch)
+
+activeTripStatus/{uid}
+  ├── isActive: bool
+  ├── destinationName: string
+  ├── etaMinutes: int
+  ├── lastLat: double
+  ├── lastLng: double
+  ├── stage: string
+  └── updatedAt: timestamp
+```
+
+---
+
+#### Step K-4-B: Family setup screen
+
+**New module:** `:feature:family`
+
+**File:** `feature/family/src/main/kotlin/com/nearwake/feature/family/FamilySetupScreen.kt` *(new)*
+- "Create family group" → prompts email upgrade from anonymous auth
+- Generates a 6-character invite code (stored in Firestore with 24h expiry)
+- "Join with code" → child enters code → added to family group
+- Shows current family members list with remove option
+
+---
+
+#### Step K-4-C: Trip status push to Firestore (child side)
+
+**File:** `data/alerts/src/main/kotlin/com/nearwake/data/alerts/FamilyTripStatusPusher.kt` *(new)*
+
+```kotlin
+@Singleton
+class FamilyTripStatusPusher @Inject constructor(
+    private val firestore: FirebaseFirestore,
+    private val auth: NearWakeAuthManager,
+) {
+    fun pushStatus(etaMinutes: Int, destination: String, lat: Double, lng: Double, stage: AlertStage) {
+        val uid = auth.currentUser?.uid ?: return
+        firestore.collection("activeTripStatus").document(uid).set(mapOf(
+            "isActive" to true,
+            "destinationName" to destination,
+            "etaMinutes" to etaMinutes,
+            "lastLat" to lat,
+            "lastLng" to lng,
+            "stage" to stage.name,
+            "updatedAt" to FieldValue.serverTimestamp(),
+        ), SetOptions.merge())
+    }
+
+    fun clearStatus() {
+        val uid = auth.currentUser?.uid ?: return
+        firestore.collection("activeTripStatus").document(uid)
+            .update("isActive", false)
+    }
+}
+```
+
+`TripMonitoringService` calls `pushStatus()` every 30 sec when family sharing is enabled. Calls `clearStatus()` on trip completion.
+
+---
+
+#### Step K-4-D: Parent arrival push notification (Cloud Function)
+
+**File:** `firebase/functions/src/onTripCompleted.ts` *(new)*
+
+```typescript
+export const onTripCompleted = functions.firestore
+    .document('activeTripStatus/{uid}')
+    .onUpdate(async (change, context) => {
+        const before = change.before.data();
+        const after = change.after.data();
+
+        // Detect trip completion: was active, now not active
+        if (!before.isActive || after.isActive) return;
+
+        const uid = context.params.uid;
+        const familyQuery = await admin.firestore()
+            .collection('families')
+            .where('members', 'array-contains', { uid, role: 'child' })
+            .get();
+
+        for (const familyDoc of familyQuery.docs) {
+            const family = familyDoc.data();
+            const parents = family.members.filter(m => m.role === 'parent');
+            for (const parent of parents) {
+                const parentProfile = await admin.firestore()
+                    .collection('userProfiles').doc(parent.uid).get();
+                const fcmToken = parentProfile.data()?.fcmToken;
+                if (!fcmToken) continue;
+
+                await admin.messaging().send({
+                    token: fcmToken,
+                    notification: {
+                        title: `${before.destinationName}`,
+                        body: `${family.memberDisplayName(uid)} has arrived safely ✓`,
+                    },
+                    data: { type: 'CHILD_ARRIVED', uid },
+                });
+            }
+        }
+    });
+```
+
+---
+
+#### Step K-4-E: Parent live map screen
+
+**File:** `feature/family/src/main/kotlin/com/nearwake/feature/family/FamilyDashboardScreen.kt` *(new)*
+- Lists all family members with their current status (active trip / idle)
+- Tapping a member with an active trip → opens `ChildTripMapScreen`
+
+**File:** `feature/family/src/main/kotlin/com/nearwake/feature/family/ChildTripMapScreen.kt` *(new)*
+- Google Maps Compose, marker at `lastLat/lastLng` from Firestore
+- Real-time updates via `firestore.collection("activeTripStatus").document(uid).addSnapshotListener`
+- Shows destination name + ETA chip + stage indicator
+- Map updates every Firestore snapshot (no extra polling needed — Firestore push)
+
+---
+
+### K-5: Cloud Sync (Trip History Across Devices)
+
+**Goal:** User switches phones or uses a tablet — trip history follows them.
+
+---
+
+#### Step K-5-A: Sync architecture
+
+**Strategy:** Phone is authoritative (Room is the source of truth). Firestore is a sync mirror. On first launch on new device, pull from Firestore. On each trip completion, push to Firestore.
+
+**Firestore schema:**
+```
+userTrips/{uid}/trips/{tripId}
+  ├── destinationName: string
+  ├── destinationId: string
+  ├── startedAt: timestamp
+  ├── completedAt: timestamp?
+  ├── durationMinutes: int
+  ├── outcome: "COMPLETED" | "MISSED" | "CANCELLED"
+  └── routeLabel: string?
+```
+
+---
+
+#### Step K-5-B: TripSyncRepository
+
+**File:** `data/sync/src/main/kotlin/com/nearwake/data/sync/TripSyncRepository.kt` *(new module `:data:sync`)*
+
+```kotlin
+@Singleton
+class TripSyncRepository @Inject constructor(
+    private val firestore: FirebaseFirestore,
+    private val auth: NearWakeAuthManager,
+    private val store: TripLifecycleStore,
+) {
+    suspend fun pushTrip(trip: Trip) {
+        val uid = auth.currentUser?.uid ?: return
+        firestore.collection("userTrips/$uid/trips")
+            .document(trip.id)
+            .set(trip.toSyncMap())
+            .await()
+    }
+
+    suspend fun pullAllTrips(): List<Trip> {
+        val uid = auth.currentUser?.uid ?: return emptyList()
+        return firestore.collection("userTrips/$uid/trips")
+            .get().await()
+            .documents.mapNotNull { it.toTrip() }
+    }
+}
+```
+
+`CompleteTripUseCase` calls `TripSyncRepository.pushTrip()` after local save.
+
+---
+
+#### Step K-5-C: First-launch sync
+
+**File:** `application/trip/src/main/kotlin/com/nearwake/application/trip/SyncTripHistoryUseCase.kt` *(new)*
+- Called once on first launch after sign-in
+- Pulls all trips from Firestore
+- Merges with local Room history (skip duplicates by `tripId`)
+- Updates Room with any remote trips that are missing locally
+
+---
+
+### K-6: iOS App (KMM)
+
+**Goal:** Share the domain layer (confidence engine, use cases) with iOS while keeping native UI on both platforms.
+
+---
+
+#### Step K-6-A: KMM module restructure
+
+Convert `domain:*` and `application:trip` modules to KMM (Kotlin Multiplatform Mobile):
+
+```
+domain/trip/         → shared Kotlin (JVM + iOS targets)
+domain/routing/      → shared Kotlin
+domain/location/     → shared Kotlin
+domain/commute/      → shared Kotlin
+application/trip/    → shared Kotlin (interfaces + pure business logic only)
+ports/persistence/   → shared Kotlin (interface only)
+ports/monitoring/    → shared Kotlin (interface only)
+```
+
+**Platform-specific implementations stay in Android modules:**
+- `data:alerts` → Android only (ForegroundService, AlarmManager)
+- `core:database` → Android only (Room)
+- All feature modules → Android only (Compose)
+
+---
+
+#### Step K-6-B: iOS project
+
+Separate Xcode project in `/ios/` directory.
+- SwiftUI for all screens
+- KMM shared framework imported as `NearWakeShared.xcframework`
+- iOS-specific implementations: `CoreLocationDataSource`, `UNUserNotificationCenter` alerts, `BackgroundTaskScheduler`
+
+**Shared KMM entrypoints that iOS calls:**
+```kotlin
+// In application:trip (shared KMM)
+class StartTripUseCaseIosAdapter(store: TripLifecycleStore): StartTripUseCase(store)
+```
+
+iOS `LocationMonitoringService.swift` implements `TripMonitoringGateway` protocol (generated from KMM interface) and calls `AlertStageEvaluator` from KMM for ETA decisions.
+
+---
 
 ---
 
