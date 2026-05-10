@@ -161,6 +161,8 @@ Features no competitor currently has:
 8. **Transfer awareness** — pre-transfer alerts for multi-leg journeys
 9. **OEM-specific reliability guidance** — Samsung, Xiaomi, Oppo, etc. battery exemption steps shown in-product
 10. **No-ads commitment** — stated publicly, in the Play listing, enforced in product
+11. **Configurable engine thresholds** — all bias multipliers and geofence radii in `ThresholdConfig`; no hardcoded constants in the alert engine
+12. **Icon-driven, text-minimal UI** — compact information hierarchy; one dominant signal per screen; 56dp place search rows; status communicated through icons + color, not chip labels
 
 ---
 

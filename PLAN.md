@@ -4,6 +4,7 @@
 **Platform:** Android-first (Kotlin + Jetpack Compose)
 **Last updated:** 2026-05-10
 **App version:** versionCode 1 / versionName "0.1.0"
+**DB schema:** Room v7 (migrations 1→7 complete)
 
 ---
 
@@ -35,7 +36,7 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 
 ## Module Architecture
 
-**32 modules — Clean Architecture + ports + application layer**
+**37 modules — Clean Architecture + ports + application layer**
 
 ```
 :app
@@ -45,20 +46,26 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 ├── :ports:persistence          ← TripLifecycleStore interface (13 methods)
 ├── :ports:analytics            ← NearWakeAnalytics interface (7 methods)
 ├── :core:common
-├── :core:database              ← Room v5, schema exported, migrations 1→5
+├── :core:database              ← Room v7, schema exported, migrations 1→7
 ├── :core:datastore             ← UserPreferences (ThemeMode, AlertTriggerMode, lead times)
 ├── :core:designsystem          ← NearWakeColors (dark+light), NearWakeTheme, tokens
+│                                  NearWakeSpacing (cardCompact/cardDefault/cardLarge)
 ├── :core:network
+├── :core:remoteconfig          ← ThresholdConfig, StaticRemoteConfigRepository (v1.0 defaults)
 ├── :core:testing
-├── :core:ui                    ← NearWakeScaffold, SurfaceCard, StateChip, PulseRing, etc.
-├── :domain:trip                ← AlertStageEvaluator, TripEngine, TransferMonitor,
-│                                  BoardingValidator, AlertTriggerMode (TIME/DISTANCE/BOTH)
+├── :core:ui                    ← NearWakeScaffold, SurfaceCard, StateChip, PulseRing,
+│                                  PlaceResultRow, NearWakeButtonSize enum
+├── :core:benchmark             ← NearWakeBaselineProfileGenerator, NearWakeStartupBenchmark
+├── :domain:trip                ← AlertStageEvaluator (ThresholdConfig-injected), TripEngine,
+│                                  TransferMonitor, BoardingValidator,
+│                                  AlertTriggerMode (TIME/DISTANCE/BOTH)
 ├── :domain:location
 ├── :domain:routing             ← RouteSnapshot, Stop, RouteSignalQuality
 ├── :domain:commute             ← CommutePrediction, CommutePredictionEngine (±30 min)
 ├── :data:alerts                ← TripMonitoringService, AlertOrchestrator,
 │                                  NotificationHelper, DepartureReminderScheduler,
 │                                  TripCleanupUseCase, TripRecoveryWorker
+│                                  TripMonitoringRuntime (ThresholdConfig-injected)
 ├── :data:location              ← FusedLocationDataSource, LocationStrategyOrchestrator
 ├── :data:motion
 ├── :data:routing
@@ -68,11 +75,13 @@ NearWake is a **trust app**, not a safety platform. No SOS, no emergency contact
 ├── :feature:onboarding
 ├── :feature:permissions
 ├── :feature:places             ← PlaceSearchViewModel → ObservePlaceSearchUseCase
+│                                  compact PlaceResultRow UI (56dp rows, tap-to-select)
 ├── :feature:tripsetup          ← TripSetupViewModel → LoadTripSetupPreviewUseCase
-├── :feature:livetrip
-├── :feature:alerts
+│                                  sticky Arm button, segmented trigger mode, collapsed advanced
+├── :feature:livetrip           ← icon status strip, Details › bottom sheet, compact transfer cards
+├── :feature:alerts             ← AlertScreen (streamlined), RecoveryScreen (compact)
 ├── :feature:history
-├── :feature:settings
+├── :feature:settings           ← grouped list rows, modal bottom sheet selectors
 ├── :feature:diagnostics        ← DiagnosticsViewModel → ObserveDiagnosticsUseCase
 ├── :feature:walkfinish
 ├── :feature:companion          ← CompanionViewModel → ObserveCompanionUseCase
@@ -133,12 +142,21 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - Walk finish guidance — `ObserveWalkFinishUseCase`, distance + heading
 - CSV export — `BuildTripHistoryCsvUseCase`, share sheet in HistoryScreen
 
-### UI
+### UI — Wave H complete
 - All 15 screens modernized — dark-first design system, PulseRing, animated accent
 - Light / Dark / System theme — `ThemeMode` DataStore persistence, `LocalNearWakeColors` CompositionLocal, `NearWakeTheme(darkTheme)` fully wired, 3-chip selector in SettingsScreen
 - OEM reliability guidance — Samsung / Xiaomi / OPPO / Pixel vendor-specific steps
 - Diagnostics screen — "why fired" with confidence, stage, distance, ETA per event
 - All 15 NavGraph routes wired including Departure, Companion, WalkFinish
+- **Wave H redesign complete** — compact layouts, Material icons, icon-driven status strips:
+  - `PlaceResultRow` — 56dp rows, tap-to-select, no inline button
+  - `HomeScreen` — 80dp active trip card, 72dp re-arm card, 52dp recent trip rows
+  - `TripSetupScreen` — sticky Arm button in Scaffold bottomBar, segmented trigger mode, "Advanced ›" collapse
+  - `LiveTripScreen` — 3-icon status strip (32dp), "Details ›" bottom sheet, 160dp transfer cards
+  - `AlertScreen` — streamlined, Walk button reduced
+  - `RecoveryScreen` — single ElevatedCard, side-by-side action buttons
+  - `SettingsScreen` — grouped list rows with modal bottom sheet selectors
+- **Design tokens:** `NearWakeSpacing` + `cardCompact/cardDefault/cardLarge`, `NearWakeButtonSize` enum (Small/Medium/Large), compact `SurfaceCard` variant
 
 ### Architecture — fully verified
 - **All 15 ViewModels use `viewModelScope`** — no manual scope anywhere
@@ -148,30 +166,34 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - **Zero feature modules import `core:database` directly** — all 4 previously-flagged modules (places, tripsetup, diagnostics, companion) now inject use cases only
 - **`TripMonitoringService` delegates all persistence** — completion via `MarkTripCompletedUseCase`, cleanup via `TripCleanupUseCase` (geofences, location orchestrator, activity transitions)
 - **Zero direct DAO calls in any service or feature ViewModel**
-- Room v5, schema exported, migrations 1→5 complete, indices on all queried columns
+- Room v7, schema exported, migrations 1→7 complete, indices on all queried columns
+- **`ThresholdConfig` injected into `AlertStageEvaluator` and `TripMonitoringRuntime`** — all thresholds configurable, no hardcoded constants in engine
+- **StrictMode enabled in debug builds** — `NearWakeApp.onCreate()` behind `BuildConfig.DEBUG`
 - ProGuard: R8 full mode (minifyEnabled + shrinkResources), Room / Hilt / serialization / WorkManager / Places all kept
 - targetSdk 35 / minSdk 26 / compileSdk 35
 - MAPS_API_KEY wired via `local.properties` → `manifestPlaceholders`
 - Google Places real repository-backed search (not stub)
 - DepartureReminderScheduler wired in `DepartureViewModel` and `DepartureReminderBootReceiver`
 
-### Tests — 66 classes across all layers
-- **Domain (18):** AlertStageEvaluatorTest, AlertDecisionEngineTest, CommutePredictionEngineTest, ApproachEvaluatorTest, BoardingValidatorTest, OvershootDetectorTest, RecoveryPlannerTest, TransferMonitorTest, TripStateMachineTest, and more
+### Tests — 67+ classes across all layers
+- **Domain (18):** AlertStageEvaluatorTest (ThresholdConfig-aware), AlertDecisionEngineTest, CommutePredictionEngineTest, ApproachEvaluatorTest, BoardingValidatorTest, OvershootDetectorTest, RecoveryPlannerTest, TransferMonitorTest, TripStateMachineTest, and more
 - **Application (30):** All 21 use cases have tests + FakeNearWakeAnalytics test double
-- **Data (12):** TripMonitoringRuntime, DiagnosticsLogger, TripCleanupUseCase, DepartureReminderPlanner, TripMonitoringFeedbackCoordinator, MonitoredTripContextLoader, and more
+- **Data (12):** TripMonitoringRuntime (ThresholdConfig-aware), DiagnosticsLogger, TripCleanupUseCase, DepartureReminderPlanner, TripMonitoringFeedbackCoordinator, MonitoredTripContextLoader, and more
+- **Core (3):** NearWakeHttpClient, UserPreferencesDataStore, StaticRemoteConfigRepositoryTest
 - **Feature (4):** OemReliability, TransferProgressBuilder, PermissionsViewModel, DiagnosticsExport
-- **Core (2):** NearWakeHttpClient, UserPreferencesDataStore
+- **Benchmark (2):** NearWakeBaselineProfileGenerator, NearWakeStartupBenchmark
 
-### Documentation — 22 guides in project root
+### Documentation — 25 guides in project root
 `PLAN.md`, `README.md`, `NEARWAKE_MASTER_REFERENCE.md`, `TARGET_PRODUCTION_ARCHITECTURE.md`,
 `FIELD_TEST_RUNBOOK.md`, `REAL_PHONE_TESTING_GUIDE.md`, `APP_SIGNING_SETUP_GUIDE.md`,
 `PLAY_STORE_SUBMISSION_RUNBOOK.md`, `PLAY_STORE_LISTING_DRAFT.md`,
 `PLAY_CONSOLE_DISCLOSURE_DRAFT.md`, `PRIVACY_POLICY_DRAFT.md`,
 `PRIVACY_AND_DISCLOSURE_NOTES.md`, `RELEASE_READINESS_CHECKLIST.md`,
 `DEVELOPMENT_START.md`, `SETUP_AND_STATUS.md`, `PROJECT_STUDY_GUIDE.md`,
-`UI_MODERNIZATION_PLAN.md`, `PRODUCT_COMPARE_REFERENCE.md`,
-`LONG_JOURNEY_MONITORING_STRATEGY.md`, `SRI_LANKA_PRODUCTION_DATA_PLAN.md`,
-`REQUIRED_UPDATES_AND_APIS.md`, `LLM_PROJECT_CONTEXT_PROMPT.md`
+`UI_MODERNIZATION_PLAN.md`, `UI_UX_REDESIGN_PLAN.md`, `PRODUCT_COMPARE_REFERENCE.md`,
+`PRODUCT_EXPANSION_ROADMAP.md`, `LONG_JOURNEY_MONITORING_STRATEGY.md`,
+`SRI_LANKA_PRODUCTION_DATA_PLAN.md`, `REQUIRED_UPDATES_AND_APIS.md`,
+`LLM_PROJECT_CONTEXT_PROMPT.md`, `corrections.md`
 
 ---
 
@@ -228,105 +250,41 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - [x] **Sentry initialization** — `NearWakeApp.onCreate()` calls `SentryAndroid.init()`, DSN from `BuildConfig.SENTRY_DSN`, env-aware, tracesSampleRate 0.2
 - [x] **Behavioral analytics** — `:ports:analytics` (`NearWakeAnalytics` interface, 7 methods), `SentryNearWakeAnalytics` impl, Hilt-wired, all 6 events + `recordFailure()` at 7 error sites
 - [x] **Privacy policy manifest metadata** — `privacy-policy.html` created, `<meta-data PRIVACY_POLICY_URL>` in AndroidManifest, `configuredPrivacyPolicyUrl()` in build config
+- [x] **`core:remoteconfig`** — `ThresholdConfig` + `StaticRemoteConfigRepository`; injected into `AlertStageEvaluator` and `TripMonitoringRuntime`; `StaticRemoteConfigRepositoryTest` passes
+- [x] **`core:benchmark`** — `NearWakeBaselineProfileGenerator` + `NearWakeStartupBenchmark`; `baseline-prof.txt` in `app/src/main/`
+- [x] **StrictMode in debug builds** — `NearWakeApp.onCreate()` behind `BuildConfig.DEBUG`
+- [x] **Accessibility (partial)** — `AlertScreen` + `LiveTripScreen` + `NearWakeStatus` updated with `contentDescription` and `semantics`; full TalkBack pass still needed
 - [ ] **Privacy policy hosted** — HTML ready locally, must be deployed to a public URL ← BLOCKER
-- [ ] **Accessibility audit** — zero `contentDescription`, `semantics`, `Role.Button` anywhere yet ← BLOCKER for Play Store
-- [ ] `core:remoteconfig` — `ThresholdConfig` + `RemoteConfigRepository`
-- [ ] `core:benchmark` — Baseline Profile for 30–40% cold start improvement
-- [ ] StrictMode in debug builds — add to `NearWakeApp.onCreate()` behind `BuildConfig.DEBUG`
+- [ ] **Accessibility audit — full pass** — remaining screens need `contentDescription`, `Role.Button` semantics, contrast check ← BLOCKER for Play Store
 - [ ] Field testing — follow `FIELD_TEST_RUNBOOK.md` (30+ real trips, 8 scenarios)
 - [ ] Release signing — follow `APP_SIGNING_SETUP_GUIDE.md`, rotate MAPS_API_KEY
 - [ ] Release AAB — `./gradlew bundleRelease` clean, verify size < 20 MB
 - [ ] Play Store listing — follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` + `PLAY_STORE_LISTING_DRAFT.md`
 
-### Wave H — UI/UX Polish 🔴 Planned
+### Wave H — UI/UX Polish ✅ Complete
 
 **Goal:** One dominant signal per screen. Visual elements over text. Professional information hierarchy.
 
-**Design principles:**
-- One primary signal per screen (ETA on LiveTrip, search field on PlaceSearch, destination on Home)
-- Replace text labels with icons + color — a location pin communicates faster than the word "Destination"
-- Progressive disclosure — hide signal quality, battery %, monitoring mode behind a "Details ›" tap
-- Compact by default: search rows = 56dp, re-arm card = 72dp, active trip card = 80dp (not uniform 140dp)
-- Actions in context — tap a result row to select it; no inline "Use this place" button per row
-
-**Add Material Symbols icons** (`material-icons-extended` dependency in `app/build.gradle.kts`):
-
-| Icon | Used for |
-|------|---------|
-| `place` / `location_on` | Saved places, destination |
-| `directions_transit` | Route / trip |
-| `schedule` / `alarm` | ETA, departure time |
-| `signal_wifi_off` | Underground / offline mode |
-| `battery_saver` | Battery status |
-| `transfer_within_a_station` | Transfer leg |
-| `check_circle` | Arrived / complete |
-| `warning` | Approach / alert |
-| `directions_walk` | Walk finish |
-| `history` | Recent trips |
-| `replay` | Re-arm |
-| `bolt` | Active mode |
-| `bedtime` | Sleep mode |
-| `notifications_active` | Alert mode |
-| `tune` | Trip options |
-
-**Design token changes** (`core/designsystem/NearWakeSpacing.kt`, `core/ui/NearWakeButtons.kt`):
-- Add `cardCompact = 8.dp`, `cardDefault = 12.dp`, `cardLarge = 16.dp` to `NearWakeSpacing`
-- Add `NearWakeButtonSize` enum (Small=40dp, Medium=48dp, Large=56dp); Medium becomes new default
-- Reduce default section spacing from 16dp → 12dp between cards
-- Typography restriction: `headlineLarge` only on LiveTrip/Alert hero; `displayMedium` only on ETA number
-
-**Screen changes:**
-
-| Screen | Problem | Fix |
-|--------|---------|-----|
-| `PlaceSearchScreen` | ~150dp per result (SurfaceCard + 3 text lines + 56dp button) | 56dp rows, tap-to-select, `place`/`history` icon, `HorizontalDivider` between rows — no card, no button |
-| `HomeScreen` | `DestinationHeroCard` + `RearmCard` ~180dp each; recent trips SurfaceCard ~100dp | Active trip: 80dp ElevatedCard with ETA chip; Re-arm: 72dp SurfaceCard with replay icon; Recent trips: 52dp rows with divider |
-| `LiveTripScreen` | 4 chips + MonitoringStatusCard + 220dp-wide transfer cards = overload | 3-icon status strip (32dp), collapse secondary info to "Details ›", reduce transfer cards 220→160dp/64dp |
-| `TripSetupScreen` | 8 chip sections; Arm button only reached by scrolling to bottom | Sticky Arm button in `Scaffold` bottomBar (52dp); segmented trigger mode row; "Advanced ›" expands distance/mode/intensity |
-| `AlertScreen` | PulseRing 256dp; "ARRIVING" displayLarge; Walk button 160dp | Ring 192dp; remove "ARRIVING" label; Walk button 128dp; destination above ring in `titleLarge` |
-| `RecoveryScreen` | 4 SurfaceCards of explanation text | Single ElevatedCard + two side-by-side 48dp buttons (Re-arm / End trip) |
-| `SettingsScreen` | Card-per-section with FlowRow chips; endless scroll | Grouped list rows (52dp each) with section headers; tap row → modal bottom sheet for options |
-
-**Implementation order:**
-1. Design tokens + components (`NearWakeSpacing`, `NearWakeButtons`, `SurfaceCard`, `PlaceResultRow`)
-2. `PlaceSearchScreen` — highest user impact
-3. `HomeScreen`
-4. `TripSetupScreen` — sticky Arm button
-5. `LiveTripScreen` — information hierarchy
-6. `AlertScreen` + `RecoveryScreen`
-7. `SettingsScreen`
-
-**Files to change:**
-- `app/build.gradle.kts` — add `material-icons-extended`
-- `core/designsystem/NearWakeSpacing.kt` — add compact/default/large card padding constants
-- `core/ui/NearWakeButtons.kt` — add `NearWakeButtonSize` enum
-- `core/ui/SurfaceCard.kt` — add compact padding variant
-- `core/ui/PlaceResultRow.kt` — new 56dp row composable (icon + name + address)
-- `feature/places/PlaceSearchScreen.kt` — replace SurfaceCard+button with `PlaceResultRow`
-- `app/HomeScreen.kt` — compact cards, row-style recent trips
-- `feature/tripsetup/TripSetupScreen.kt` — sticky Arm button, segmented trigger row, collapsed advanced
-- `feature/livetrip/LiveTripScreen.kt` — icon status strip, Details collapse, reduced hero text
-- `feature/livetrip/TransferProgressCard.kt` — 160dp width, 64dp height, icon+name+dot
-- `feature/alerts/AlertScreen.kt` — 192dp ring, remove "ARRIVING", 128dp Walk button
-- `feature/alerts/RecoveryScreen.kt` — single card, side-by-side buttons
-- `feature/settings/SettingsScreen.kt` — list rows + bottom sheet selectors
+- [x] `core/ui/NearWakeButtons.kt` — `NearWakeButtonSize` enum (Small/Medium/Large); Medium=48dp new default
+- [x] `core/designsystem/NearWakeSpacing.kt` — `cardCompact=8dp`, `cardDefault=12dp`, `cardLarge=16dp`
+- [x] `core/ui/SurfaceCard.kt` — compact padding variant
+- [x] `core/ui/PlaceResultRow.kt` — new 56dp row composable (icon + name + address, tap-to-select)
+- [x] `feature/places/PlaceSearchScreen.kt` — compact 56dp rows, tap-to-select, no inline button
+- [x] `app/HomeScreen.kt` — 80dp active trip card, 72dp re-arm card, 52dp recent trip rows with outcome icons
+- [x] `feature/tripsetup/TripSetupScreen.kt` — sticky Arm button in Scaffold bottomBar, segmented trigger mode, "Advanced ›" collapse
+- [x] `feature/livetrip/LiveTripScreen.kt` — 3-icon status strip (32dp), "Details ›" bottom sheet, destination above ring
+- [x] `feature/livetrip/TransferProgressCard.kt` — 160dp width, 64dp height, icon+name+status dot
+- [x] `feature/alerts/AlertScreen.kt` — streamlined, Walk button reduced, accessibility semantics added
+- [x] `feature/alerts/RecoveryScreen.kt` — single ElevatedCard, side-by-side 48dp buttons
+- [x] `feature/settings/SettingsScreen.kt` — grouped list rows (52dp), modal bottom sheet selectors
 
 ---
 
 ## Road to v1.0 — Ordered Execution
 
-### Phase 0 — UI/UX Redesign 🔴 Not Started
+### Phase 0 — UI/UX Redesign ✅ Complete
 
-See **Wave H** above for the full screen-by-screen breakdown. This phase must ship before field testing (Phase 6) so testers evaluate the final UX, not a prototype layout.
-
-**Quick sequence:**
-1. Tokens + components — `NearWakeSpacing` cardCompact/cardDefault/cardLarge, `NearWakeButtonSize` enum, `SurfaceCard` compact variant, new `PlaceResultRow` composable
-2. `PlaceSearchScreen` — 56dp rows, tap-to-select, location pin icon
-3. `HomeScreen` — compact 80dp active trip card, 72dp re-arm card, 52dp recent trip rows
-4. `TripSetupScreen` — sticky Arm button in `Scaffold` bottomBar, segmented trigger mode, "Advanced ›" collapse
-5. `LiveTripScreen` — 3-icon status strip, "Details ›" collapse, 160dp transfer cards
-6. `AlertScreen` + `RecoveryScreen` — reduced ring, removed label text, side-by-side buttons
-7. `SettingsScreen` — list rows + modal bottom sheet selectors
+All 7 screens redesigned (Wave H). Design tokens added. `PlaceResultRow` composable shipped. See **Wave H** checklist above for full detail and `UI_UX_REDESIGN_PLAN.md` for the original spec.
 
 ---
 
@@ -355,44 +313,37 @@ See **Wave H** above for the full screen-by-screen breakdown. This phase must sh
 
 ---
 
-### Phase 3 — Remote Configuration
+### Phase 3 — Remote Configuration ✅ Complete
 
-- New `:core:remoteconfig` module — add to `settings.gradle.kts`
-- `ThresholdConfig` data class with safe defaults matching current hardcoded constants:
+`:core:remoteconfig` module shipped. `ThresholdConfig` data class with all engine constants. `StaticRemoteConfigRepository` returns hardcoded defaults for v1.0 — designed as a drop-in for Firebase Remote Config post-launch. `ThresholdConfig` injected into `AlertStageEvaluator` and `TripMonitoringRuntime` via constructor. `StaticRemoteConfigRepositoryTest` passes.
 
-| Field | Default | Source |
-|-------|---------|--------|
-| `approachGeofenceRadiusM` | 1500 | `data/alerts/TripMonitoringRuntime.kt` |
-| `approachGeofenceBatterySaverM` | 2250 | `data/alerts/TripMonitoringRuntime.kt` |
-| `biasMultiplierDegradedActive` | 1.15 | `domain/trip/engine/AlertStageEvaluator.kt` |
-| `biasMultiplierDegradedSleep` | 1.20 | `domain/trip/engine/AlertStageEvaluator.kt` |
-| `biasMultiplierOffline` | 1.25 | `domain/trip/engine/AlertStageEvaluator.kt` |
-| `minTripsForClustering` | 2 | `domain/commute/CommutePredictionEngine.kt` |
-
-- `RemoteConfigRepository` — v1.0 returns hardcoded defaults; designed for Firebase Remote Config drop-in post-launch
-- Inject `ThresholdConfig` into `AlertStageEvaluator` and `TripMonitoringRuntime` via constructor
+| Field | Default | Injected into |
+|-------|---------|---------------|
+| `approachGeofenceRadiusM` | 1500 | `TripMonitoringRuntime` |
+| `approachGeofenceBatterySaverM` | 2250 | `TripMonitoringRuntime` |
+| `biasMultiplierDegradedActive` | 1.15 | `AlertStageEvaluator` |
+| `biasMultiplierDegradedSleep` | 1.20 | `AlertStageEvaluator` |
+| `biasMultiplierOffline` | 1.25 | `AlertStageEvaluator` |
+| `minTripsForClustering` | 2 | `CommutePredictionEngine` |
 
 ---
 
-### Phase 4 — Performance
+### Phase 4 — Performance ✅ Complete
 
-- Add `:core:benchmark` module with `implementation(libs.benchmark.macrobenchmark)`
-- Write `NearWakeBaselineProfileGenerator` — launch app, navigate Home, open TripSetup
-- Run on API 34 emulator: `./gradlew :core:benchmark:connectedBenchmarkAndroidTest`
-- Copy generated `baseline-prof.txt` to `app/src/main/`
-- Expected: 30–40% cold start reduction
+`:core:benchmark` module shipped. `NearWakeBaselineProfileGenerator` navigates app → Home → TripSetup. `NearWakeStartupBenchmark` measures cold start. `baseline-prof.txt` generated and committed to `app/src/main/`. Expected 30–40% cold start improvement on production builds.
 
 ---
 
-### Phase 5 — Accessibility
+### Phase 5 — Accessibility 🟡 Partial
 
-- Run Android Studio Accessibility Scanner on all 15 screens
-- All icon-only buttons — add `contentDescription`
+**Done:** `AlertScreen` + `LiveTripScreen` + `NearWakeStatus` updated with `contentDescription`, `semantics`, and `liveRegion`. AlertScreen now announces arrival to TalkBack without user interaction.
+
+**Remaining:**
+- Full TalkBack pass on all 13 remaining screens
 - `NearWakeStateChip` + `NearWakeSelectableChip` — add `semantics { role = Role.Button }`
-- Touch targets — verify ≥ 48dp on chips, back buttons, icon buttons
-- Contrast — 4.5:1 on all text in both light and dark modes
-- `AlertScreen` — add `liveRegion` so screen reader announces arrival without user interaction
-- `LiveTripScreen` — ETA countdown accessible to TalkBack
+- Icon-only buttons on HomeScreen, TripSetupScreen, HistoryScreen — add `contentDescription`
+- Touch targets — verify ≥ 48dp on all chips after Wave H compact redesign
+- Contrast — 4.5:1 check in both light and dark modes
 
 ---
 
@@ -442,7 +393,7 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 
 | File | Purpose |
 |------|---------|
-| `domain/trip/engine/AlertStageEvaluator.kt` | Stage transitions + bias multiplier (thresholds hardcoded → Phase 3: ThresholdConfig) |
+| `domain/trip/engine/AlertStageEvaluator.kt` | Stage transitions + bias multiplier — `ThresholdConfig`-injected (no hardcoded constants) |
 | `domain/trip/engine/TripEngine.kt` | Core state machine |
 | `domain/trip/engine/TransferMonitor.kt` | Transfer checkpoints + RouteSignalQuality passthrough |
 | `domain/trip/engine/BoardingValidator.kt` | Bearing-based direction check |
@@ -461,8 +412,12 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | `data/alerts/TripRecoveryWorker.kt` | WorkManager worker — restore monitoring after process death |
 | `data/analytics/DiagnosticsLogger.kt` | Local Room diagnostic event log (NOT behavioral analytics — see Phase 1) |
 | `data/patterns/CommutePredictionRepository.kt` | Refresh commute predictions from trip history |
-| `core/database/NearWakeDatabase.kt` | Room DB v5, all entities and DAOs |
-| `core/database/di/DatabaseModule.kt` | Migrations 1→5, all DAO provisions |
+| `core/database/NearWakeDatabase.kt` | Room DB v7, all entities and DAOs |
+| `core/database/di/DatabaseModule.kt` | Migrations 1→7, all DAO provisions |
+| `core/remoteconfig/ThresholdConfig.kt` | All tunable engine thresholds — injected via Hilt |
+| `core/remoteconfig/StaticRemoteConfigRepository.kt` | v1.0 defaults; swap for Firebase post-launch |
+| `core/benchmark/NearWakeBaselineProfileGenerator.kt` | Generates baseline-prof.txt for cold start |
+| `core/ui/PlaceResultRow.kt` | 56dp place result row — icon + name + address, tap-to-select |
 | `core/designsystem/NearWakeColors.kt` | Dark + light color token sets, `LocalNearWakeColors` |
 | `core/designsystem/NearWakeTheme.kt` | Theme composition — resolves dark/light per ThemeMode |
 | `core/datastore/` | UserPreferences, ThemeMode, UserPreferencesDataStore |
@@ -480,7 +435,7 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 
 | Layer | State | Action needed |
 |-------|-------|---------------|
-| Module structure | ✅ 31 modules, clean separation | — |
+| Module structure | ✅ 37 modules, clean separation | — |
 | ViewModel lifecycle | ✅ All 15 use `viewModelScope` | — |
 | Service thread safety | ✅ `Mutex` guards session mutations | — |
 | Service shutdown | ✅ No `runBlocking` in `onDestroy()` | — |
@@ -489,7 +444,7 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | Architecture — read path | ✅ All 21 observe use cases through TripLifecycleStore | — |
 | Feature DAO isolation | ✅ Zero `core:database` imports in any feature module | — |
 | Service delegation | ✅ Completion → `MarkTripCompletedUseCase`; cleanup → `TripCleanupUseCase` | — |
-| Room database | ✅ v5, migrations 1→5, indices on all queried columns | — |
+| Room database | ✅ v7, migrations 1→7, indices on all queried columns | — |
 | Theme | ✅ Light / Dark / System, DataStore persistence | — |
 | Place search | ✅ Real Google Places repository (not stub) | — |
 | Departure reminders | ✅ AlarmManager, boot reschedule, UI wired | — |
@@ -497,15 +452,17 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | ProGuard | ✅ R8 full mode, all libraries covered | — |
 | SDK levels | ✅ targetSdk 35 / minSdk 26 | — |
 | Permissions manifest | ✅ All 13 permissions, `FOREGROUND_SERVICE_LOCATION` | — |
-| Test coverage | ✅ 42 test classes across all layers | — |
+| Test coverage | ✅ 67+ test classes across all layers | — |
 | AlertTriggerMode | ✅ TIME/DISTANCE/BOTH, wired in UI, persisted, tested | — |
 | MAPS_API_KEY | ✅ Wired via local.properties | **Rotate key + add SHA-1 restriction before launch** |
 | Crash reporting | ✅ Sentry initialized — DSN from BuildConfig, env-aware, 20% trace sampling | — |
 | Behavioral analytics | ✅ `NearWakeAnalytics` + `SentryNearWakeAnalytics` — 6 events + `recordFailure()` at 7 sites | — |
 | Privacy policy | 🟡 HTML ready + manifest wired — URL not hosted yet | Host + set `PRIVACY_POLICY_URL` |
-| Remote config | 🔴 No `:core:remoteconfig` module | Phase 3 |
-| Baseline Profile | 🔴 No `:core:benchmark`, no `baseline-prof.txt` | Phase 4 |
-| Accessibility | 🔴 No TalkBack pass done | Phase 5 |
+| Remote config | ✅ `:core:remoteconfig` — `ThresholdConfig` injected into engine | Firebase drop-in post-launch |
+| Baseline Profile | ✅ `:core:benchmark` — `baseline-prof.txt` committed to `app/src/main/` | — |
+| StrictMode | ✅ Enabled in debug builds via `BuildConfig.DEBUG` | — |
+| UI/UX redesign | ✅ Wave H complete — all 7 screens, compact tokens, Material icons | — |
+| Accessibility | 🟡 AlertScreen + LiveTripScreen done — full TalkBack pass remaining | Phase 5 remaining |
 | Field testing | 🔴 `FIELD_TEST_RUNBOOK.md` written, trips not done | Phase 6 |
 | Release signing | 🔴 `APP_SIGNING_SETUP_GUIDE.md` written, keystore not generated | Phase 7 |
 | Play Store | 🔴 `PLAY_STORE_SUBMISSION_RUNBOOK.md` written, not submitted | Phase 8 |
@@ -529,10 +486,12 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 
 ## Post-1.0 Deferred
 
-- Wear OS relay
-- Commute analytics dashboard
-- Optional backend / cloud sync
-- Second-device companion
-- Firebase Remote Config (`:core:remoteconfig` ships with hardcoded defaults in v1.0)
-- Lock-screen widget — defer if notification lock-screen coverage is sufficient
+See `PRODUCT_EXPANSION_ROADMAP.md` for the full feature roadmap with step-by-step dev plans.
+
+**Wave I (v1.1 — all local):** Saved trip profiles, scheduled recurring trips, home screen widgets, per-route bias override, arrival SMS to contact
+**Wave J (v1.5 — new integrations):** Google Calendar integration, commute analytics dashboard, weekly report notification, Google Assistant App Actions, DND override for Stage C
+**Wave K (v2.0 — backend required):** Wear OS app, trip share link, family account (parent/child), cloud sync, iOS (KMM)
+
+- Firebase Remote Config live tuning — `:core:remoteconfig` ships with static defaults; Firebase drop-in designed for post-launch
+- Lock-screen widget — Glance `widgetCategory=keyguard` (Wave I extension of home widget)
 - Ads (never)

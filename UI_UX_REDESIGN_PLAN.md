@@ -1,6 +1,6 @@
 # NearWake — UI/UX Redesign Plan (Wave H)
 
-**Status:** Planned — not started
+**Status:** ✅ Complete — all 7 screens shipped
 **Last updated:** 2026-05-10
 **Scope:** Presentation layer only — no ViewModel changes, no architecture changes, no persistence changes
 
