@@ -1,6 +1,7 @@
 package com.nearwake.app
 
 import android.app.Application
+import android.os.StrictMode
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
@@ -13,6 +14,7 @@ class NearWakeApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        enableStrictModeIfDebug()
         initSentry()
     }
 
@@ -20,6 +22,25 @@ class NearWakeApp : Application(), Configuration.Provider {
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
+
+    private fun enableStrictModeIfDebug() {
+        if (!BuildConfig.DEBUG) {
+            return
+        }
+
+        StrictMode.setThreadPolicy(
+            StrictMode.ThreadPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build(),
+        )
+        StrictMode.setVmPolicy(
+            StrictMode.VmPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build(),
+        )
+    }
 
     private fun initSentry() {
         if (BuildConfig.SENTRY_DSN.isBlank()) {
