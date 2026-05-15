@@ -68,7 +68,11 @@ fun CompanionScreen(
 
         NearWakePrimaryButton(
             text = "Share",
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "Share arrival confirmation message"
+                },
             accent = NearWakeColors.MonitoringBase,
             onClick = {
                 context.startActivity(
@@ -85,7 +89,11 @@ fun CompanionScreen(
 
         NearWakePrimaryButton(
             text = "Send SMS",
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "Send arrival confirmation by SMS"
+                },
             accent = NearWakeColors.ApproachBase,
             onClick = {
                 ContextCompat.startActivity(
@@ -101,7 +109,11 @@ fun CompanionScreen(
 
         NearWakePrimaryButton(
             text = "Done",
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "Finish arrival confirmation"
+                },
             accent = NearWakeColors.SafeBase,
             onClick = onDone,
         )

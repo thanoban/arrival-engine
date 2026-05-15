@@ -74,7 +74,11 @@ fun OnboardingScreen(
             }
 
             NearWakePrimaryButton(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = "Start NearWake setup"
+                    },
                 text = "Start setup",
                 onClick = { viewModel.completeOnboarding(onContinue) },
             )

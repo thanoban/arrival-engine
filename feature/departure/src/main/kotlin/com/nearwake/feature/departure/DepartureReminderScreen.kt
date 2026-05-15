@@ -149,7 +149,11 @@ fun DepartureReminderScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         NearWakePrimaryButton(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics {
+                                    contentDescription = "Start trip to ${prediction.destinationName} from your predicted departure plan"
+                                },
                             text = "Start trip to ${prediction.destinationName}",
                             onClick = { onStartTrip(prediction.destinationId) },
                         )

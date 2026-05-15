@@ -130,14 +130,22 @@ fun WalkFinishScreen(
 
         NearWakePrimaryButton(
             text = "Confirm arrival",
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "Confirm arrival at ${state.destinationName}"
+                },
             accent = NearWakeColors.SafeBase,
             onClick = { viewModel.confirmArrival(onArrived) },
         )
 
         NearWakePrimaryButton(
             text = "Confirm and share",
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "Confirm arrival at ${state.destinationName} and open sharing"
+                },
             accent = NearWakeColors.MonitoringBase,
             onClick = {
                 viewModel.confirmArrivalAndShare(onShareArrival)

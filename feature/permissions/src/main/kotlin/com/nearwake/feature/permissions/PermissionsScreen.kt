@@ -126,7 +126,11 @@ fun PermissionsScreen(
             }
 
             NearWakePrimaryButton(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = state.primaryButtonLabel
+                    },
                 text = state.primaryButtonLabel,
                 onClick = {
                     when (state.primaryAction) {
@@ -142,12 +146,20 @@ fun PermissionsScreen(
                 },
             )
             NearWakeSecondaryButton(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = "Open Android app settings for permissions"
+                    },
                 text = "Open app settings",
                 onClick = { context.openAppSettings() },
             )
             NearWakeTextButton(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = "Continue with limited mode"
+                    },
                 text = "Use limited mode",
                 onClick = onUseLimitedMode,
             )
