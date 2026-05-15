@@ -125,6 +125,15 @@ fun LiveTripScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
+                    modifier = Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = buildString {
+                            append(state.destinationName)
+                            append(". ETA ")
+                            append(state.etaLabel)
+                            append(". ")
+                            append(trust.heroMessage)
+                        }
+                    },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(spacing.md),
                 ) {
@@ -195,7 +204,22 @@ fun LiveTripScreen(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = buildString {
+                            append("Trip state. ")
+                            append(trust.stageLabel)
+                            append(". ")
+                            append(trust.confidenceLabel)
+                            if (trust.showUndergroundChip) {
+                                append(". Underground mode")
+                            }
+                            if (state.batterySaverActive) {
+                                append(". Battery saver")
+                            }
+                        }
+                    },
                 horizontalArrangement = Arrangement.spacedBy(spacing.md),
             ) {
                 NearWakeStateChip(

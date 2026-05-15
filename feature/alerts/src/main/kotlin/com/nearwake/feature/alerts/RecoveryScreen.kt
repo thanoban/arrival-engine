@@ -46,7 +46,7 @@ fun RecoveryScreen(
             subtitle = null,
         ) {
             ElevatedCard(
-                modifier = Modifier.semantics {
+                modifier = Modifier.semantics(mergeDescendants = true) {
                     contentDescription = buildString {
                         append("Trip recovery. Monitoring interrupted. ")
                         append("You may have passed your stop at ${state.destinationName}. ")

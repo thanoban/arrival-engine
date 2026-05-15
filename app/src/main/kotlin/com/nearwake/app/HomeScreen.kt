@@ -383,7 +383,12 @@ private fun RecentTripsSection(
         }
     }
     if (trips.isEmpty()) {
-        SurfaceCard {
+        SurfaceCard(
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription =
+                    "No trips yet. Your finished trips will appear here after you arm your first destination."
+            },
+        ) {
             Text(
                 text = "No trips yet",
                 style = MaterialTheme.typography.titleMedium,
@@ -430,7 +435,10 @@ private fun RecentTripRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
+                .height(52.dp)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = "${trip.destinationName}. ${trip.statusLabel}."
+                },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(

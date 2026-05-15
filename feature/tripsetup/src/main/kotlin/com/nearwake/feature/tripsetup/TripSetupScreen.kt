@@ -116,7 +116,18 @@ fun TripSetupScreen(
                 }
 
                 ElevatedCard(
-                    modifier = Modifier.heightIn(min = 72.dp),
+                    modifier = Modifier
+                        .heightIn(min = 72.dp)
+                        .semantics(mergeDescendants = true) {
+                            contentDescription = buildString {
+                                append("Destination. ")
+                                append(state.destinationName)
+                                if (state.destinationAddress.isNotBlank()) {
+                                    append(". ")
+                                    append(state.destinationAddress)
+                                }
+                            }
+                        },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

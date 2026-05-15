@@ -57,7 +57,11 @@ fun HistoryScreen(
         ) {
             NearWakeSectionHeader(text = "All trips")
             if (state.trips.isEmpty()) {
-                SurfaceCard {
+                SurfaceCard(
+                    modifier = Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = "No trips yet. Start a trip from the destination picker and it will appear here."
+                    },
+                ) {
                     Text(
                         text = "No trips yet",
                         style = MaterialTheme.typography.titleMedium,
