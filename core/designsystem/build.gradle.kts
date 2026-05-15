@@ -11,4 +11,7 @@ dependencies {
     implementation(libs.compose.animation)
     implementation(libs.compose.ui.text.google.fonts)
     api(libs.compose.material3)
+
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }

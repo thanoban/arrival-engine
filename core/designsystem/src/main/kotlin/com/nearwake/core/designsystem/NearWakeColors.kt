@@ -12,7 +12,7 @@ object NearWakeColors {
 
     val TextPrimary = Color(0xFFF5F6F7)
     val TextSecondary = Color(0xFFA8ADB4)
-    val TextTertiary = Color(0xFF6E747C)
+    val TextTertiary = Color(0xFF7C838C)
     val TextDisabled = Color(0xFF434950)
 
     val SafeBase = Color(0xFF22C55E)
@@ -94,9 +94,9 @@ val LightNearWakeColors = NearWakeColorRoles(
     borderDefault = Color(0xFFB8C6BF),
     textPrimary = Color(0xFF17211B),
     textSecondary = Color(0xFF516158),
-    textTertiary = Color(0xFF76847D),
+    textTertiary = Color(0xFF606D67),
     textDisabled = Color(0xFFA5AFA9),
-    safeBase = Color(0xFF15803D),
+    safeBase = Color(0xFF166534),
     safeSoft = Color(0xFFE5F6EA),
     safeBorder = Color(0xFFB8E7C4),
     monitoringBase = Color(0xFF0369A1),
@@ -105,7 +105,7 @@ val LightNearWakeColors = NearWakeColorRoles(
     approachBase = Color(0xFFB45309),
     approachSoft = Color(0xFFFFF4DA),
     approachBorder = Color(0xFFFBD38D),
-    alertBase = Color(0xFFDC2626),
+    alertBase = Color(0xFFC62828),
     alertIntense = Color(0xFFB91C1C),
     alertSoft = Color(0xFFFFE8E8),
     alertBorder = Color(0xFFF8B4B4),
