@@ -1,4 +1,6 @@
 sdk.dir=/path/to/android/sdk
 MAPS_API_KEY=REPLACE_WITH_YOUR_KEY
 SENTRY_DSN=
+# After enabling GitHub Pages for this repository, this can point to:
+# https://thanoban.github.io/arrival-engine/privacy-policy.html
 PRIVACY_POLICY_URL=

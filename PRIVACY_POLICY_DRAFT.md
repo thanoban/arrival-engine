@@ -100,3 +100,19 @@ Before public release, replace this section with real contact details such as:
 - support email
 - company or developer name
 - website or policy host URL
+
+## 13. Hosting This Policy
+
+This repo now includes a GitHub Pages workflow at `.github/workflows/deploy-privacy-policy.yml`.
+
+If GitHub Pages is enabled for this repository with **GitHub Actions** as the publishing source, pushes to `main` that change `privacy-policy.html` will publish the page automatically.
+
+Expected public URL for this repository:
+
+- `https://thanoban.github.io/arrival-engine/privacy-policy.html`
+
+After the site is live, set this in `local.properties`:
+
+```properties
+PRIVACY_POLICY_URL=https://thanoban.github.io/arrival-engine/privacy-policy.html
+```
