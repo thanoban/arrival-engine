@@ -73,6 +73,8 @@ dependencies {
     implementation(project(":application:monitoring"))
     implementation(project(":application:trip"))
     implementation(project(":ports:analytics"))
+    debugImplementation(project(":ports:persistence"))
+    debugImplementation(libs.room.runtime)
 
     // Core
     implementation(project(":core:common"))
