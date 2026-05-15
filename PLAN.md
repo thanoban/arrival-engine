@@ -143,7 +143,7 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - CSV export — `BuildTripHistoryCsvUseCase`, share sheet in HistoryScreen
 
 ### UI — Wave H complete
-- All 15 screens modernized — dark-first design system, PulseRing, animated accent
+- All 15 screens use dark-first design system (PulseRing, animated accent); Wave H compact redesign applied to 7 specific screens (see Wave H checklist)
 - Light / Dark / System theme — `ThemeMode` DataStore persistence, `LocalNearWakeColors` CompositionLocal, `NearWakeTheme(darkTheme)` fully wired, 3-chip selector in SettingsScreen
 - OEM reliability guidance — Samsung / Xiaomi / OPPO / Pixel vendor-specific steps
 - Diagnostics screen — "why fired" with confidence, stage, distance, ETA per event
@@ -162,11 +162,11 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - **All 15 ViewModels use `viewModelScope`** — no manual scope anywhere
 - **`TripMonitoringService.onDestroy()`** — no `runBlocking`, uses `serviceScope.cancel()` cleanly
 - **`activeSession` protected by `Mutex`** — no race condition
-- **All 13 UiState classes have `errorMessage: String?`** — error slot present everywhere
+- **All 17 UiState classes have `errorMessage: String?`** — error slot present everywhere
 - **Zero feature modules import `core:database` directly** — all 4 previously-flagged modules (places, tripsetup, diagnostics, companion) now inject use cases only
 - **`TripMonitoringService` delegates all persistence** — completion via `MarkTripCompletedUseCase`, cleanup via `TripCleanupUseCase` (geofences, location orchestrator, activity transitions)
 - **Zero direct DAO calls in any service or feature ViewModel**
-- Room v7, schema exported, migrations 1→7 complete, indices on all queried columns
+- Room v7, exportSchema=true configured (schema JSON not yet committed to schemas/), migrations 1→7 complete, indices on all queried columns
 - **`ThresholdConfig` injected into `AlertStageEvaluator` and `TripMonitoringRuntime`** — all thresholds configurable, no hardcoded constants in engine
 - **StrictMode enabled in debug builds** — `NearWakeApp.onCreate()` behind `BuildConfig.DEBUG`
 - ProGuard: R8 full mode (minifyEnabled + shrinkResources), Room / Hilt / serialization / WorkManager / Places all kept
@@ -175,9 +175,9 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - Google Places real repository-backed search (not stub)
 - DepartureReminderScheduler wired in `DepartureViewModel` and `DepartureReminderBootReceiver`
 
-### Tests — 67+ classes across all layers
+### Tests — 68 classes across all layers
 - **Domain (18):** AlertStageEvaluatorTest (ThresholdConfig-aware), AlertDecisionEngineTest, CommutePredictionEngineTest, ApproachEvaluatorTest, BoardingValidatorTest, OvershootDetectorTest, RecoveryPlannerTest, TransferMonitorTest, TripStateMachineTest, and more
-- **Application (30):** All 21 use cases have tests + FakeNearWakeAnalytics test double
+- **Application (15):** 15 of 21 use cases have test files + FakeNearWakeAnalytics test double (CancelTrip, ClearDiagnosticsEvents, ObserveAlert, RearmTrip, StartTrip, UpdateAlertMode have no test yet)
 - **Data (12):** TripMonitoringRuntime (ThresholdConfig-aware), DiagnosticsLogger, TripCleanupUseCase, DepartureReminderPlanner, TripMonitoringFeedbackCoordinator, MonitoredTripContextLoader, and more
 - **Core (3):** NearWakeHttpClient, UserPreferencesDataStore, StaticRemoteConfigRepositoryTest
 - **Feature (4):** OemReliability, TransferProgressBuilder, PermissionsViewModel, DiagnosticsExport
@@ -427,7 +427,7 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | `feature/settings/SettingsScreen.kt` | Settings + OEM reliability + Appearance (theme selector) |
 | `app/HomeScreen.kt` | Home — active trip card, re-arm card, recent trips |
 | `app/NearWakeNavHost.kt` | All 15 routes |
-| `app/NearWakeApp.kt` | Application class — WorkManager config, **Sentry init goes here** |
+| `app/NearWakeApp.kt` | Application class — WorkManager config, Sentry init, StrictMode |
 
 ---
 
@@ -444,7 +444,7 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | Architecture — read path | ✅ All 21 observe use cases through TripLifecycleStore | — |
 | Feature DAO isolation | ✅ Zero `core:database` imports in any feature module | — |
 | Service delegation | ✅ Completion → `MarkTripCompletedUseCase`; cleanup → `TripCleanupUseCase` | — |
-| Room database | ✅ v7, migrations 1→7, indices on all queried columns | — |
+| Room database | ✅ v7, migrations 1→7, indices on all queried columns; exportSchema=true (schema JSON not committed) | — |
 | Theme | ✅ Light / Dark / System, DataStore persistence | — |
 | Place search | ✅ Real Google Places repository (not stub) | — |
 | Departure reminders | ✅ AlarmManager, boot reschedule, UI wired | — |
