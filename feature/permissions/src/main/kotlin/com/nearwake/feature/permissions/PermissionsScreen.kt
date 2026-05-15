@@ -22,6 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -86,7 +88,16 @@ fun PermissionsScreen(
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = buildString {
+                        append(state.readinessLabel)
+                        append(". ")
+                        append(state.summary)
+                        append(". Android may require app settings for denied notifications or background location on some devices.")
+                    }
+                },
+            ) {
                 NearWakeStateChip(
                     label = state.readinessLabel,
                     state = when (state.readiness) {
@@ -150,7 +161,17 @@ private fun PermissionStatusCard(
 ) {
     if (!permission.relevant) return
 
-    SurfaceCard {
+    SurfaceCard(
+        modifier = Modifier.semantics(mergeDescendants = true) {
+            contentDescription = buildString {
+                append(permission.title)
+                append(". ")
+                append(if (permission.granted) "Granted" else "Needed")
+                append(". ")
+                append(permission.body)
+            }
+        },
+    ) {
         NearWakeStateChip(
             label = if (permission.granted) "Granted" else "Needed",
             state = if (permission.granted) {

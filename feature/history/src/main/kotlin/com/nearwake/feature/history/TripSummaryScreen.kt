@@ -4,6 +4,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.NearWakeColors
@@ -34,7 +37,12 @@ fun TripSummaryScreen(
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
-            HeroCard(accent = accent) {
+            HeroCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "${state.statusLabel}. ${state.startedLabel.ifBlank { "Trip start unavailable" }}. ${state.monitoringLabel}"
+                },
+                accent = accent,
+            ) {
                 NearWakeStateChip(
                     label = state.statusLabel,
                     state = summaryChipState(state.statusLabel),
@@ -51,7 +59,20 @@ fun TripSummaryScreen(
                 )
             }
 
-            ElevatedCard {
+            ElevatedCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = buildString {
+                        append("Route snapshot. ")
+                        append(state.routeSummary)
+                        if (state.etaLabel.isNotBlank()) {
+                            append(". ")
+                            append(state.etaLabel)
+                        }
+                        append(". ")
+                        append(state.confidenceLabel)
+                    }
+                },
+            ) {
                 NearWakeSectionHeader(text = "Route snapshot")
                 Text(
                     text = state.routeSummary,
@@ -72,7 +93,11 @@ fun TripSummaryScreen(
                 )
             }
 
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "${state.alertLeadLabel.ifBlank { "Lead time unavailable" }}. ${state.alertIntensityLabel.ifBlank { "Alert intensity unavailable" }}"
+                },
+            ) {
                 NearWakeSectionHeader(text = "Alert setup")
                 Text(
                     text = state.alertLeadLabel.ifBlank { "Lead time unavailable" },

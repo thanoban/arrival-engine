@@ -8,6 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
@@ -34,7 +37,21 @@ fun WalkFinishScreen(
         title = "Last mile",
         subtitle = "Lightweight final guidance from your stop to the destination.",
     ) {
-        HeroCard(accent = NearWakeColors.SafeBase) {
+        HeroCard(
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription = buildString {
+                    append("Walk finish. ")
+                    append(state.destinationName)
+                    if (state.destinationAddress.isNotBlank()) {
+                        append(". ")
+                        append(state.destinationAddress)
+                    }
+                    append(". ")
+                    append(state.instructionLabel)
+                }
+            },
+            accent = NearWakeColors.SafeBase,
+        ) {
             NearWakeStateChip(
                 label = "Walk finish",
                 state = NearWakeChipState.Safe,
@@ -58,11 +75,15 @@ fun WalkFinishScreen(
             )
         }
 
-        ElevatedCard {
+        ElevatedCard(
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription = "Guidance. Distance ${state.distanceLabel}. Direction ${state.headingLabel}."
+            },
+        ) {
             NearWakeSectionHeader(text = "Guidance")
             Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 Row(
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
@@ -77,7 +98,7 @@ fun WalkFinishScreen(
                     )
                 }
                 Row(
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
@@ -94,7 +115,11 @@ fun WalkFinishScreen(
             }
         }
 
-        SurfaceCard {
+        SurfaceCard(
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription = "Arrival confirmation. ${state.arrivalHint}"
+            },
+        ) {
             NearWakeSectionHeader(text = "Arrival confirmation")
             Text(
                 text = state.arrivalHint,
@@ -105,14 +130,14 @@ fun WalkFinishScreen(
 
         NearWakePrimaryButton(
             text = "Confirm arrival",
-            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             accent = NearWakeColors.SafeBase,
             onClick = { viewModel.confirmArrival(onArrived) },
         )
 
         NearWakePrimaryButton(
             text = "Confirm and share",
-            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             accent = NearWakeColors.MonitoringBase,
             onClick = {
                 viewModel.confirmArrivalAndShare(onShareArrival)

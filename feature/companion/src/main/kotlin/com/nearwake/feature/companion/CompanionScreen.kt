@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,7 +36,12 @@ fun CompanionScreen(
         title = "Arrival confirmation",
         subtitle = "Send a one-shot update that you made it.",
     ) {
-        HeroCard(accent = NearWakeColors.SafeBase) {
+        HeroCard(
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription = "Arrival confirmation ready. ${state.messagePreview}"
+            },
+            accent = NearWakeColors.SafeBase,
+        ) {
             NearWakeStateChip(
                 label = state.title,
                 state = NearWakeChipState.Safe,
@@ -46,7 +53,11 @@ fun CompanionScreen(
             )
         }
 
-        ElevatedCard {
+        ElevatedCard(
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription = "SMS preview. ${state.smsPreview}"
+            },
+        ) {
             NearWakeSectionHeader(text = "Preview")
             Text(
                 text = state.smsPreview,

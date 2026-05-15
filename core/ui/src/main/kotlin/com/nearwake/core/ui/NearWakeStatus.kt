@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
@@ -130,7 +131,7 @@ fun NearWakeSectionHeader(
     val colors = LocalNearWakeColors.current
     Text(
         text = text.uppercase(),
-        modifier = modifier,
+        modifier = modifier.semantics { heading() },
         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
         color = colors.textTertiary,
     )

@@ -9,7 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -75,7 +78,11 @@ fun DiagnosticsScreen(
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "Build and device. App version ${state.buildInfo.appVersionLabel}. Build type ${state.buildInfo.buildTypeLabel}. Git revision ${state.buildInfo.gitShaLabel}. Device ${state.buildInfo.deviceLabel}."
+                },
+            ) {
                 NearWakeSectionHeader(text = "Build and device")
                 Text(
                     text = "App version",
@@ -119,7 +126,15 @@ fun DiagnosticsScreen(
                 )
             }
 
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = buildString {
+                        append("Data and retention. Diagnostics logging is ")
+                        append(if (state.diagnosticsLoggingEnabled) "on" else "off")
+                        append(". Exports share the current snapshot and recent event trail as plain text.")
+                    }
+                },
+            ) {
                 NearWakeSectionHeader(text = "Data and retention")
                 Text(
                     text = "Diagnostics logging is ${if (state.diagnosticsLoggingEnabled) "on" else "off"}.",
@@ -145,7 +160,16 @@ fun DiagnosticsScreen(
                 }
             }
 
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = buildString {
+                        append("Permissions. ")
+                        append(state.permissions.readinessLabel)
+                        append(". ")
+                        append(state.permissions.summary)
+                    }
+                },
+            ) {
                 NearWakeSectionHeader(text = "Permissions")
                 NearWakeStateChip(
                     label = state.permissions.readinessLabel,
@@ -171,7 +195,11 @@ fun DiagnosticsScreen(
                 }
             }
 
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "Environment. Power saver ${state.environment.powerSaverLabel}. Battery optimization ${state.environment.batteryOptimizationLabel}. Network ${state.environment.networkLabel}."
+                },
+            ) {
                 NearWakeSectionHeader(text = "Environment")
                 Text(
                     text = "Power saver: ${state.environment.powerSaverLabel}",
@@ -190,7 +218,11 @@ fun DiagnosticsScreen(
                 )
             }
 
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "Services. ${state.stateLabel.replace('_', ' ').lowercase().replaceFirstChar(Char::uppercase)}."
+                },
+            ) {
                 NearWakeSectionHeader(text = "Services")
                 NearWakeStateChip(
                     label = state.stateLabel.replace('_', ' ').lowercase().replaceFirstChar(Char::uppercase),
@@ -198,7 +230,15 @@ fun DiagnosticsScreen(
                 )
             }
 
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = if (state.registeredGeofences.isEmpty()) {
+                        "Location. No geofences registered."
+                    } else {
+                        "Location. Registered geofences. ${state.registeredGeofences.joinToString(separator = ". ")}."
+                    }
+                },
+            ) {
                 NearWakeSectionHeader(text = "Location")
                 Text(
                     text = "Registered geofences",
@@ -247,7 +287,13 @@ fun DiagnosticsScreen(
 @Composable
 private fun DiagnosticsEventRow(event: DiagnosticsEventUiModel) {
     val spacing = LocalSpacing.current
-    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+    Column(
+        modifier = Modifier.semantics(mergeDescendants = true) {
+            contentDescription = event.tripPrefix?.let { "${event.recordedAtLabel}. ${event.label}. $it. ${event.summary}" }
+                ?: "${event.recordedAtLabel}. ${event.label}. ${event.summary}"
+        },
+        verticalArrangement = Arrangement.spacedBy(spacing.xs),
+    ) {
         Text(
             text = event.tripPrefix?.let { "${event.recordedAtLabel} · ${event.label} · $it" }
                 ?: "${event.recordedAtLabel} · ${event.label}",

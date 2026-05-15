@@ -8,6 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalSpacing
@@ -34,7 +36,11 @@ fun OnboardingScreen(
             subtitle = null,
             showTopBarDivider = false,
         ) {
-            HeroCard {
+            HeroCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "Privacy-first. Background monitoring, quiet until needed, and built for the commutes where fatigue makes timing hard."
+                },
+            ) {
                 NearWakeStateChip(
                     label = "Privacy-first",
                     state = NearWakeChipState.Safe,
@@ -48,7 +54,11 @@ fun OnboardingScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
                 state.pages.forEachIndexed { index, page ->
-                    SurfaceCard {
+                    SurfaceCard(
+                        modifier = Modifier.semantics(mergeDescendants = true) {
+                            contentDescription = "Step ${index + 1}. $page"
+                        },
+                    ) {
                         Text(
                             text = "0${index + 1}",
                             style = MaterialTheme.typography.labelLarge,

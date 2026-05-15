@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalNearWakeColors
@@ -42,7 +45,11 @@ fun DepartureReminderScreen(
                 NearWakeTextButton(text = "Back", onClick = onBack)
             },
         ) {
-            SurfaceCard {
+            SurfaceCard(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "Reminder scheduling. ${state.scheduleStatus}. Departure reminders are ${if (state.remindersEnabled) "on" else "off"}."
+                },
+            ) {
                 NearWakeSectionHeader(text = "Reminder scheduling")
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -56,6 +63,10 @@ fun DepartureReminderScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Switch(
+                        modifier = Modifier.semantics {
+                            contentDescription = "Departure reminders"
+                            stateDescription = if (state.remindersEnabled) "On" else "Off"
+                        },
                         checked = state.remindersEnabled,
                         onCheckedChange = viewModel::setDepartureRemindersEnabled,
                     )
@@ -68,7 +79,11 @@ fun DepartureReminderScreen(
             }
 
             state.errorMessage?.let { errorMessage ->
-                SurfaceCard {
+                SurfaceCard(
+                    modifier = Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = "Scheduling issue. $errorMessage"
+                    },
+                ) {
                     NearWakeSectionHeader(text = "Scheduling issue")
                     Text(
                         text = errorMessage,
@@ -89,7 +104,11 @@ fun DepartureReminderScreen(
             }
 
             if (state.predictions.isEmpty() && !state.isRefreshing) {
-                SurfaceCard {
+                SurfaceCard(
+                    modifier = Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = "No patterns yet. Complete a few trips to the same destination and NearWake will learn your typical departure times."
+                    },
+                ) {
                     NearWakeSectionHeader(text = "No patterns yet")
                     Text(
                         text = "Complete a few trips to the same destination and NearWake will learn your typical departure times.",
@@ -100,7 +119,11 @@ fun DepartureReminderScreen(
             } else {
                 NearWakeSectionHeader(text = "Today's departures")
                 state.predictions.forEach { prediction ->
-                    SurfaceCard {
+                    SurfaceCard(
+                        modifier = Modifier.semantics(mergeDescendants = true) {
+                            contentDescription = "${prediction.destinationName}. Leave by ${prediction.leaveByLabel}. ${prediction.routeLabel}. Based on ${prediction.tripCount} previous trips."
+                        },
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
