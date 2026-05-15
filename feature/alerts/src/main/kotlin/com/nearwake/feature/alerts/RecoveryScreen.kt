@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -43,7 +45,17 @@ fun RecoveryScreen(
             title = "Trip recovery",
             subtitle = null,
         ) {
-            ElevatedCard {
+            ElevatedCard(
+                modifier = Modifier.semantics {
+                    contentDescription = buildString {
+                        append("Trip recovery. Monitoring interrupted. ")
+                        append("You may have passed your stop at ${state.destinationName}. ")
+                        append(state.missedByLabel)
+                        append(". ")
+                        append(state.returnStopLabel ?: state.recoveryGuidanceLabel)
+                    }
+                },
+            ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(spacing.md),
                     verticalAlignment = Alignment.CenterVertically,

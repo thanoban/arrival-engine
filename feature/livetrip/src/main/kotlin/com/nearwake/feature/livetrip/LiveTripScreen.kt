@@ -282,7 +282,32 @@ private fun LiveTripStatusStrip(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(32.dp),
+            .height(32.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = buildString {
+                    append("Trip status. ")
+                    append(
+                        when (alertStage) {
+                            AlertStage.MONITORING -> "Monitoring"
+                            AlertStage.APPROACH -> "Approach window"
+                            AlertStage.IMMINENT -> "Imminent stop"
+                            AlertStage.ARRIVAL -> "Arriving now"
+                            AlertStage.RECOVERY -> "Recovery mode"
+                        },
+                    )
+                    append(". Signal ")
+                    append(
+                        when (confidence) {
+                            Confidence.HIGH -> "high"
+                            Confidence.DEGRADED -> "degraded"
+                            Confidence.OFFLINE -> "offline"
+                        },
+                    )
+                    if (batterySaverActive) {
+                        append(". Battery saver active")
+                    }
+                }
+            },
         horizontalArrangement = Arrangement.spacedBy(spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -389,6 +414,9 @@ private fun LiveTripDetailsSheet(
         )
         colors.forEach { (label, value) ->
             Surface(
+                modifier = Modifier.semantics {
+                    contentDescription = "$label. $value"
+                },
                 color = NearWakeColors.BgElevated,
                 border = BorderStroke(1.dp, NearWakeColors.BorderSubtle),
                 shape = CircleShape,
@@ -415,12 +443,18 @@ private fun LiveTripDetailsSheet(
         }
         Text(
             text = routeSummary,
+            modifier = Modifier.semantics {
+                contentDescription = "Route summary. $routeSummary"
+            },
             style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
             color = NearWakeColors.TextPrimary,
         )
         if (alertSummary.isNotBlank()) {
             Text(
                 text = alertSummary,
+                modifier = Modifier.semantics {
+                    contentDescription = "Alert summary. $alertSummary"
+                },
                 style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                 color = NearWakeColors.TextSecondary,
             )

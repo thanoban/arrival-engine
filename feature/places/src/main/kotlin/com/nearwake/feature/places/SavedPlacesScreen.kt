@@ -5,6 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.ui.NearWakeScaffold
@@ -41,7 +44,12 @@ internal fun SavedPlacesSection(
     onSelectPlace: (String) -> Unit,
 ) {
     if (places.isEmpty()) {
-        SurfaceCard {
+        SurfaceCard(
+            modifier = Modifier.semantics {
+                contentDescription =
+                    "No saved places yet. Search for a stop once and it will appear here for faster setup."
+            },
+        ) {
             Text("No saved places yet.", style = MaterialTheme.typography.titleMedium)
             Text(
                 "Search for a stop once and it will appear here for faster setup.",

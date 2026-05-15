@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalRadius
@@ -42,6 +44,7 @@ fun PlaceSearchScreen(
             OutlinedTextField(
                 value = state.query,
                 onValueChange = viewModel::updateQuery,
+                label = { Text("Search destination") },
                 placeholder = { Text("Search stations, airports, landmarks…") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -68,7 +71,12 @@ fun PlaceSearchScreen(
             if (state.query.length >= 2) {
                 NearWakeSectionHeader(text = "Search results")
                 state.errorMessage?.let { message ->
-                    SurfaceCard(compact = true) {
+                    SurfaceCard(
+                        modifier = Modifier.semantics {
+                            contentDescription = "Search error. $message"
+                        },
+                        compact = true,
+                    ) {
                         Text(
                             text = message,
                             style = MaterialTheme.typography.titleMedium,
@@ -77,7 +85,12 @@ fun PlaceSearchScreen(
                     }
                 }
                 if (state.isSearching) {
-                    SurfaceCard(compact = true) {
+                    SurfaceCard(
+                        modifier = Modifier.semantics {
+                            contentDescription = "Searching places"
+                        },
+                        compact = true,
+                    ) {
                         Text(
                             text = "Searching places...",
                             style = MaterialTheme.typography.titleMedium,
@@ -85,7 +98,13 @@ fun PlaceSearchScreen(
                         )
                     }
                 } else if (state.results.isEmpty() && state.errorMessage == null) {
-                    SurfaceCard(compact = true) {
+                    SurfaceCard(
+                        modifier = Modifier.semantics {
+                            contentDescription =
+                                "No places matched that search yet. Try a broader station, airport, or landmark name."
+                        },
+                        compact = true,
+                    ) {
                         Text(
                             text = "No places matched that search yet.",
                             style = MaterialTheme.typography.titleMedium,
@@ -111,7 +130,13 @@ fun PlaceSearchScreen(
                     }
                 }
             } else if (state.savedPlaces.isEmpty()) {
-                SurfaceCard(compact = true) {
+                SurfaceCard(
+                    modifier = Modifier.semantics {
+                        contentDescription =
+                            "Start typing to search places. Saved places will also appear here for quick reuse."
+                    },
+                    compact = true,
+                ) {
                     Text(
                         text = "Start typing to search places",
                         style = MaterialTheme.typography.titleMedium,
