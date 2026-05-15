@@ -34,6 +34,7 @@ Recommended local-only inputs:
 ## 3. Recommended Local Storage Pattern
 
 Keep release-signing values in a local machine file such as `keystore.properties` at the repo root and do not commit it.
+You can start from `keystore.properties.template`.
 
 Suggested format:
 
@@ -58,6 +59,8 @@ Typical information you will need to decide:
 - who controls backup and recovery
 
 ## 5. Build Integration Expectations
+
+The app module now expects this local file for real release tasks such as `:app:assembleRelease` and `:app:bundleRelease`.
 
 The final release integration should:
 

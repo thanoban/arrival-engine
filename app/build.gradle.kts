@@ -7,6 +7,13 @@ val localProperties = Properties().apply {
     }
 }
 
+val keystoreProperties = Properties().apply {
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    if (keystorePropertiesFile.isFile) {
+        keystorePropertiesFile.inputStream().use(::load)
+    }
+}
+
 fun configuredMapsApiKey(): String =
     ((findProperty("MAPS_API_KEY") as? String) ?: localProperties.getProperty("MAPS_API_KEY"))
         ?.takeUnless { value -> value.isBlank() || value == "REPLACE_WITH_YOUR_KEY" }
@@ -22,6 +29,35 @@ fun configuredPrivacyPolicyUrl(): String =
         ?.trim()
         .orEmpty()
 
+fun configuredReleaseSigning(propertyName: String): String =
+    ((findProperty(propertyName) as? String) ?: keystoreProperties.getProperty(propertyName))
+        ?.trim()
+        .orEmpty()
+
+val releaseSigningStoreFile = configuredReleaseSigning("storeFile")
+val releaseSigningStorePassword = configuredReleaseSigning("storePassword")
+val releaseSigningKeyAlias = configuredReleaseSigning("keyAlias")
+val releaseSigningKeyPassword = configuredReleaseSigning("keyPassword")
+val releaseSigningConfigured =
+    listOf(
+        releaseSigningStoreFile,
+        releaseSigningStorePassword,
+        releaseSigningKeyAlias,
+        releaseSigningKeyPassword,
+    ).all(String::isNotBlank)
+
+val releaseSigningError = """
+    Release signing is not configured.
+    
+    Create an untracked keystore.properties file at the repo root with:
+    storeFile=C:\\path\\to\\nearwake-release.keystore
+    storePassword=REPLACE_ME
+    keyAlias=nearwake
+    keyPassword=REPLACE_ME
+    
+    See APP_SIGNING_SETUP_GUIDE.md for the full setup steps.
+""".trimIndent()
+
 plugins {
     alias(libs.plugins.nearwake.android.application)
     alias(libs.plugins.nearwake.android.application.compose)
@@ -32,6 +68,17 @@ plugins {
 
 android {
     namespace = "com.nearwake.app"
+
+    signingConfigs {
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = rootProject.file(releaseSigningStoreFile)
+                storePassword = releaseSigningStorePassword
+                keyAlias = releaseSigningKeyAlias
+                keyPassword = releaseSigningKeyPassword
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.nearwake.app"
@@ -64,9 +111,20 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+}
+
+val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
+val releaseSigningRequired = requestedTasks.any { taskName ->
+    "release" in taskName &&
+        listOf("assemble", "bundle", "package", "install").any(taskName::contains)
+}
+
+if (releaseSigningRequired && !releaseSigningConfigured) {
+    throw GradleException(releaseSigningError)
 }
 
 dependencies {
