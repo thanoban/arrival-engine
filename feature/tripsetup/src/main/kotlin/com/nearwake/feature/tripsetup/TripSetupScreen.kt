@@ -42,6 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -144,6 +149,13 @@ fun TripSetupScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .semantics {
+                            contentDescription = if (routeReady) {
+                                "Route preview. ${state.routeSummary}. ETA ${state.etaLabel}."
+                            } else {
+                                "Destination-only monitoring fallback. ${state.routeSummary}."
+                            }
+                        }
                         .height(40.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.sm),
                     verticalAlignment = Alignment.CenterVertically,
@@ -226,6 +238,11 @@ fun TripSetupScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .semantics {
+                            role = Role.Button
+                            stateDescription = if (advancedExpanded) "Expanded" else "Collapsed"
+                            contentDescription = "Advanced trip options"
+                        }
                         .clickable { advancedExpanded = !advancedExpanded },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(spacing.sm),

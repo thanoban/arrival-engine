@@ -44,6 +44,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -363,7 +368,16 @@ private fun SettingsRow(
     val spacing = LocalSpacing.current
     val colors = LocalNearWakeColors.current
     val clickableModifier = if (onClick != null) {
-        Modifier.clickable(onClick = onClick)
+        Modifier
+            .semantics {
+                role = Role.Button
+                contentDescription = if (value.isNullOrBlank()) {
+                    label
+                } else {
+                    "$label. $value"
+                }
+            }
+            .clickable(onClick = onClick)
     } else {
         Modifier
     }
@@ -447,6 +461,17 @@ private fun SelectorOptionRow(option: SelectorOption) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .semantics {
+                role = Role.Button
+                stateDescription = if (option.selected) "Selected" else "Not selected"
+                contentDescription = buildString {
+                    append(option.label)
+                    option.supportingText?.takeIf { it.isNotBlank() }?.let {
+                        append(". ")
+                        append(it)
+                    }
+                }
+            }
             .clickable(onClick = option.onSelect)
             .defaultMinSize(minHeight = 52.dp)
             .padding(vertical = spacing.sm),

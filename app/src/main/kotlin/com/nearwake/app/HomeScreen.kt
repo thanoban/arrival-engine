@@ -33,6 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -264,6 +268,10 @@ private fun ActiveTripCard(
     ElevatedCard(
         modifier = modifier
             .heightIn(min = 80.dp)
+            .semantics {
+                role = Role.Button
+                contentDescription = "Resume live trip to ${activeTrip.destinationName}. Status $statusLabel."
+            }
             .clickable { onOpenTrip(activeTrip.tripId) },
     ) {
         Row(
@@ -323,6 +331,10 @@ private fun RearmCard(
         modifier = Modifier
             .alpha(alpha)
             .heightIn(min = 72.dp)
+            .semantics {
+                role = Role.Button
+                contentDescription = "Re-arm trip to $destinationName."
+            }
             .clickable(onClick = onRearm),
         compact = true,
     ) {

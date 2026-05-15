@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -63,6 +65,25 @@ fun PlaceResultRow(
                 .fillMaxWidth()
                 .height(56.dp)
                 .background(if (selected) colors.safeBase.copy(alpha = 0.04f) else Color.Transparent)
+                .semantics {
+                    contentDescription = buildString {
+                        append(
+                            when (kind) {
+                                PlaceResultKind.Saved -> "Saved place. "
+                                PlaceResultKind.Recent -> "Recent place. "
+                                PlaceResultKind.Result -> "Search result. "
+                            },
+                        )
+                        append(name)
+                        if (address.isNotBlank()) {
+                            append(". ")
+                            append(address)
+                        }
+                        if (selected) {
+                            append(". Selected.")
+                        }
+                    }
+                }
                 .clickable(role = Role.Button, onClick = onClick),
         ) {
             if (selected) {
