@@ -28,7 +28,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -59,9 +59,7 @@ fun NearWakeStateChip(
         modifier = modifier
             .defaultMinSize(minHeight = 28.dp)
             .semantics {
-                role = Role.Button
-                contentDescription = label
-                stateDescription = state.a11yLabel
+                contentDescription = label.toStatusDescription(state)
             },
         shape = RoundedCornerShape(radius.sm),
         color = colors.soft,
@@ -95,7 +93,7 @@ fun NearWakeSelectableChip(
             .semantics {
                 role = Role.Button
                 contentDescription = label
-                stateDescription = if (selected) "Selected" else "Not selected"
+                this.selected = selected
             },
         shape = RoundedCornerShape(radius.md),
         border = FilterChipDefaults.filterChipBorder(
@@ -121,6 +119,13 @@ private val NearWakeChipState.a11yLabel: String
         NearWakeChipState.Approaching -> "Approaching"
         NearWakeChipState.Alert -> "Alert"
         NearWakeChipState.Neutral -> "Neutral"
+    }
+
+private fun String.toStatusDescription(state: NearWakeChipState): String =
+    if (equals(state.a11yLabel, ignoreCase = true)) {
+        this
+    } else {
+        "$this. ${state.a11yLabel}"
     }
 
 @Composable

@@ -12,4 +12,5 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     api(libs.compose.material.icons)
     implementation(libs.coil.compose)
+    androidTestImplementation(libs.compose.ui.test.junit4)
 }

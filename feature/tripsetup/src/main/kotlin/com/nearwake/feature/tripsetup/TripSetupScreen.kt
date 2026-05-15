@@ -249,6 +249,7 @@ fun TripSetupScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
                         .semantics {
                             role = Role.Button
                             stateDescription = if (advancedExpanded) "Expanded" else "Collapsed"
