@@ -25,7 +25,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -55,7 +57,11 @@ fun NearWakeStateChip(
     Surface(
         modifier = modifier
             .defaultMinSize(minHeight = 28.dp)
-            .semantics { role = Role.Button },
+            .semantics {
+                role = Role.Button
+                contentDescription = label
+                stateDescription = state.a11yLabel
+            },
         shape = RoundedCornerShape(radius.sm),
         color = colors.soft,
         contentColor = colors.base,
@@ -85,7 +91,11 @@ fun NearWakeSelectableChip(
         onClick = onClick,
         modifier = modifier
             .defaultMinSize(minHeight = 48.dp)
-            .semantics { role = Role.Button },
+            .semantics {
+                role = Role.Button
+                contentDescription = label
+                stateDescription = if (selected) "Selected" else "Not selected"
+            },
         shape = RoundedCornerShape(radius.md),
         border = FilterChipDefaults.filterChipBorder(
             enabled = true,
@@ -102,6 +112,15 @@ fun NearWakeSelectableChip(
         label = { Text(label, style = MaterialTheme.typography.labelLarge) },
     )
 }
+
+private val NearWakeChipState.a11yLabel: String
+    get() = when (this) {
+        NearWakeChipState.Safe -> "Safe"
+        NearWakeChipState.Monitoring -> "Monitoring"
+        NearWakeChipState.Approaching -> "Approaching"
+        NearWakeChipState.Alert -> "Alert"
+        NearWakeChipState.Neutral -> "Neutral"
+    }
 
 @Composable
 fun NearWakeSectionHeader(

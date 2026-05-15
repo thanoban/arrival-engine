@@ -9,6 +9,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.NearWakeColors
@@ -67,7 +71,22 @@ fun HistoryScreen(
                 }
             } else {
                 state.trips.forEach { trip ->
-                    SurfaceCard(modifier = Modifier.clickable { onTripSelected(trip.tripId) }) {
+                    SurfaceCard(
+                        modifier = Modifier
+                            .semantics {
+                                role = Role.Button
+                                contentDescription = buildString {
+                                    append(trip.destinationName)
+                                    append(". ")
+                                    append(trip.statusLabel)
+                                    if (trip.subtitle.isNotBlank()) {
+                                        append(". ")
+                                        append(trip.subtitle)
+                                    }
+                                }
+                            }
+                            .clickable { onTripSelected(trip.tripId) },
+                    ) {
                         NearWakeStateChip(
                             label = trip.statusLabel,
                             state = when (trip.statusLabel) {

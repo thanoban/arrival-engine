@@ -22,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalSpacing
@@ -58,7 +60,25 @@ fun TransferProgressCard(
                 SurfaceCard(
                     modifier = Modifier
                         .width(160.dp)
-                        .height(64.dp),
+                        .height(64.dp)
+                        .semantics {
+                            contentDescription = buildString {
+                                append(
+                                    if (step.status == TransferProgressStatus.Final) {
+                                        "Final leg. "
+                                    } else {
+                                        "Transfer leg. "
+                                    },
+                                )
+                                append(step.title)
+                                if (step.timingLabel.isNotBlank()) {
+                                    append(". ")
+                                    append(step.timingLabel)
+                                }
+                                append(". Signal ")
+                                append(step.signalQuality.a11yLabel)
+                            }
+                        },
                     compact = true,
                 ) {
                     Row(
@@ -107,3 +127,10 @@ private fun RouteSignalQuality.dotColor() = when (this) {
     RouteSignalQuality.DEGRADED -> LocalNearWakeColors.current.approachBase
     RouteSignalQuality.OFFLINE -> LocalNearWakeColors.current.alertBase
 }
+
+private val RouteSignalQuality.a11yLabel: String
+    get() = when (this) {
+        RouteSignalQuality.HIGH -> "high"
+        RouteSignalQuality.DEGRADED -> "degraded"
+        RouteSignalQuality.OFFLINE -> "offline"
+    }
