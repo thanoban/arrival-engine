@@ -112,7 +112,11 @@ fun AlertScreen(
             ) {
                 Button(
                     onClick = { viewModel.enterWalkFinish(onDismiss) },
-                    modifier = Modifier.size(128.dp),
+                    modifier = Modifier
+                        .size(128.dp)
+                        .semantics {
+                            contentDescription = "Walk to the final destination"
+                        },
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = NearWakeColors.TextPrimary,
@@ -135,6 +139,9 @@ fun AlertScreen(
                 }
                 TextButton(
                     onClick = { onRecovery(state.tripId) },
+                    modifier = Modifier.semantics {
+                        contentDescription = "I missed my stop. Open trip recovery."
+                    },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = NearWakeColors.TextPrimary.copy(alpha = 0.7f),
                     ),

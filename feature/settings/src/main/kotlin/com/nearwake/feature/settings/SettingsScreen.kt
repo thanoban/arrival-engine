@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
@@ -327,6 +328,16 @@ private fun SettingsSwitchRow(
         value = value,
         trailing = {
             Switch(
+                modifier = Modifier.semantics {
+                    contentDescription = buildString {
+                        append(label)
+                        if (value.isNotBlank()) {
+                            append(". ")
+                            append(value)
+                        }
+                    }
+                    stateDescription = if (checked) "On" else "Off"
+                },
                 checked = checked,
                 onCheckedChange = onCheckedChange,
             )
@@ -441,6 +452,7 @@ private fun SettingsSelectorSheet(
     ) {
         Text(
             text = title,
+            modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleLarge,
             color = colors.textPrimary,
         )

@@ -363,6 +363,15 @@ fun TripSetupScreen(
                                     )
                                 }
                                 Switch(
+                                    modifier = Modifier.semantics {
+                                        contentDescription =
+                                            "Background monitoring. Keeps the service alive while you lock the screen or switch apps."
+                                        stateDescription = if (state.backgroundMonitoringEnabled) {
+                                            "On"
+                                        } else {
+                                            "Off"
+                                        }
+                                    },
                                     checked = state.backgroundMonitoringEnabled,
                                     onCheckedChange = viewModel::setBackgroundMonitoringEnabled,
                                 )

@@ -96,12 +96,20 @@ fun RecoveryScreen(
                     horizontalArrangement = Arrangement.spacedBy(spacing.md),
                 ) {
                     NearWakeSecondaryButton(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics {
+                                contentDescription = "Resume monitoring for ${state.destinationName}"
+                            },
                         text = "Re-arm",
                         onClick = { viewModel.resumeMonitoring(onResumeMonitoring) },
                     )
                     NearWakePrimaryButton(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics {
+                                contentDescription = "End trip to ${state.destinationName}"
+                            },
                         text = "End trip",
                         accent = NearWakeColors.AlertBase,
                         onClick = { viewModel.endTrip(onEndTrip) },
@@ -110,7 +118,11 @@ fun RecoveryScreen(
                 }
             } else {
                 NearWakePrimaryButton(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            contentDescription = "End trip to ${state.destinationName}"
+                        },
                     text = "End trip",
                     accent = NearWakeColors.AlertBase,
                     onClick = { viewModel.endTrip(onEndTrip) },
