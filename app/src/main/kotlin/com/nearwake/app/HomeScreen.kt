@@ -214,6 +214,7 @@ private fun DestinationHeroCard(
     delayMs: Int,
 ) {
     val spacing = LocalSpacing.current
+    val colors = LocalNearWakeColors.current
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(delayMs.toLong())
@@ -237,20 +238,26 @@ private fun DestinationHeroCard(
                 .alpha(alpha)
                 .heightIn(min = spacing.massive + spacing.xl),
         ) {
+            Icon(
+                imageVector = Icons.Filled.DirectionsTransit,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.CenterHorizontally),
+                tint = colors.monitoringBase,
+            )
             Text(
-                text = "Set your next stop",
-                style = MaterialTheme.typography.titleLarge,
+                text = "Where are you heading?",
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            Text(
-                text = "NearWake will preview the route when it can, then keep destination-only monitoring as a safe fallback.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             NearWakePrimaryButton(
-                modifier = Modifier.padding(top = spacing.md),
-                text = "Choose destination",
+                modifier = Modifier
+                    .padding(top = spacing.md)
+                    .fillMaxWidth(),
+                text = "Search destination",
                 onClick = onSetDestination,
+                size = NearWakeButtonSize.Medium,
             )
         }
     }
