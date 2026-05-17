@@ -44,4 +44,5 @@ sealed class NearWakeRoute(val route: String) {
     }
     data object Settings : NearWakeRoute("settings")
     data object Diagnostics : NearWakeRoute("diagnostics")
+    data object SavedPlaces : NearWakeRoute("saved_places")
 }

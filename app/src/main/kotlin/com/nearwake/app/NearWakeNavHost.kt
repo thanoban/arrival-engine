@@ -15,6 +15,7 @@ import com.nearwake.feature.livetrip.LiveTripScreen
 import com.nearwake.feature.onboarding.OnboardingScreen
 import com.nearwake.feature.permissions.PermissionsScreen
 import com.nearwake.feature.places.PlaceSearchScreen
+import com.nearwake.feature.places.SavedPlacesScreen
 import com.nearwake.feature.settings.SettingsScreen
 import com.nearwake.feature.tripsetup.TripSetupScreen
 import com.nearwake.feature.walkfinish.WalkFinishScreen
@@ -54,6 +55,15 @@ fun NearWakeNavHost(
         }
         composable(NearWakeRoute.Places.route) {
             PlaceSearchScreen(
+                onSelectPlace = { placeId ->
+                    navController.navigate(NearWakeRoute.TripSetup.createRoute(placeId))
+                },
+                onBack = { navController.popBackStack() },
+                onViewSavedPlaces = { navController.navigate(NearWakeRoute.SavedPlaces.route) },
+            )
+        }
+        composable(NearWakeRoute.SavedPlaces.route) {
+            SavedPlacesScreen(
                 onSelectPlace = { placeId ->
                     navController.navigate(NearWakeRoute.TripSetup.createRoute(placeId))
                 },

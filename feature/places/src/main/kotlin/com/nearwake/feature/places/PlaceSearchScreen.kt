@@ -1,6 +1,8 @@
 package com.nearwake.feature.places
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +30,7 @@ import com.nearwake.core.ui.SurfaceCard
 fun PlaceSearchScreen(
     onSelectPlace: (String) -> Unit,
     onBack: () -> Unit,
+    onViewSavedPlaces: (() -> Unit)? = null,
     viewModel: PlaceSearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -63,7 +66,16 @@ fun PlaceSearchScreen(
             )
 
             if (state.savedPlaces.isNotEmpty()) {
-                NearWakeSectionHeader(text = "Saved places")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    NearWakeSectionHeader(text = "Saved places")
+                    if (onViewSavedPlaces != null) {
+                        NearWakeTextButton(text = "View all", onClick = onViewSavedPlaces)
+                    }
+                }
                 SavedPlacesSection(
                     places = state.savedPlaces,
                     onSelectPlace = { placeId -> viewModel.selectSavedPlace(placeId, onSelectPlace) },
