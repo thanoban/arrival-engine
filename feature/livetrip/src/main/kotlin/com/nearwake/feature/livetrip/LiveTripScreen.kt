@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,7 +36,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -108,7 +111,7 @@ fun LiveTripScreen(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(spacing.lg),
         ) {
-            androidx.compose.foundation.layout.Row(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
@@ -139,7 +142,7 @@ fun LiveTripScreen(
                 ) {
                     Text(
                         text = state.destinationName,
-                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = NearWakeColors.TextPrimary,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -167,12 +170,12 @@ fun LiveTripScreen(
                         NearWakeNumericText(
                             text = state.etaLabel.filter { it.isDigit() }.ifBlank { "--" },
                             color = NearWakeColors.TextPrimary,
-                            style = androidx.compose.material3.MaterialTheme.typography.displayMedium,
+                            style = MaterialTheme.typography.displayMedium,
                         )
                         Text(
                             text = "min",
-                            style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
@@ -197,49 +200,8 @@ fun LiveTripScreen(
                     )
                     Text(
                         text = trust.biasEarlyMessage,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics(mergeDescendants = true) {
-                        contentDescription = buildString {
-                            append("Trip state. ")
-                            append(trust.stageLabel)
-                            append(". ")
-                            append(trust.confidenceLabel)
-                            if (trust.showUndergroundChip) {
-                                append(". Underground mode")
-                            }
-                            if (state.batterySaverActive) {
-                                append(". Battery saver")
-                            }
-                        }
-                    },
-                horizontalArrangement = Arrangement.spacedBy(spacing.md),
-            ) {
-                NearWakeStateChip(
-                    label = trust.stageLabel,
-                    state = trust.stageChipState,
-                )
-                NearWakeStateChip(
-                    label = trust.confidenceLabel,
-                    state = trust.confidenceChipState,
-                )
-                if (trust.showUndergroundChip) {
-                    NearWakeStateChip(
-                        label = "Underground mode",
-                        state = NearWakeChipState.Alert,
-                    )
-                }
-                if (state.batterySaverActive) {
-                    NearWakeStateChip(
-                        label = "Battery saver",
-                        state = NearWakeChipState.Approaching,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
@@ -254,7 +216,7 @@ fun LiveTripScreen(
                 )
             }
 
-            androidx.compose.foundation.layout.Row(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(spacing.sm),
             ) {
@@ -377,9 +339,9 @@ private fun LiveTripStatusStrip(
 
 @Composable
 private fun StatusStripLabel(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
-    tint: androidx.compose.ui.graphics.Color,
+    tint: Color,
 ) {
     val spacing = LocalSpacing.current
     Row(
@@ -394,7 +356,7 @@ private fun StatusStripLabel(
         )
         Text(
             text = label,
-            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall,
             color = NearWakeColors.TextSecondary,
         )
     }
@@ -433,7 +395,7 @@ private fun LiveTripDetailsSheet(
     ) {
         Text(
             text = "Trip details",
-            style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLarge,
             color = NearWakeColors.TextPrimary,
         )
         colors.forEach { (label, value) ->
@@ -454,12 +416,12 @@ private fun LiveTripDetailsSheet(
                 ) {
                     Text(
                         text = label,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = NearWakeColors.TextSecondary,
                     )
                     Text(
                         text = value,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = NearWakeColors.TextPrimary,
                     )
                 }
@@ -470,7 +432,7 @@ private fun LiveTripDetailsSheet(
             modifier = Modifier.semantics {
                 contentDescription = "Route summary. $routeSummary"
             },
-            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium,
             color = NearWakeColors.TextPrimary,
         )
         if (alertSummary.isNotBlank()) {
@@ -479,7 +441,7 @@ private fun LiveTripDetailsSheet(
                 modifier = Modifier.semantics {
                     contentDescription = "Alert summary. $alertSummary"
                 },
-                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium,
                 color = NearWakeColors.TextSecondary,
             )
         }
@@ -488,16 +450,11 @@ private fun LiveTripDetailsSheet(
 }
 
 private data class TrustPresentation(
-    val stageLabel: String,
-    val stageChipState: NearWakeChipState,
-    val confidenceLabel: String,
-    val confidenceChipState: NearWakeChipState,
     val heroMessage: String,
     val biasLabel: String,
     val biasChipState: NearWakeChipState,
-    val biasCardAccent: androidx.compose.ui.graphics.Color,
+    val biasCardAccent: Color,
     val biasEarlyMessage: String?,
-    val showUndergroundChip: Boolean,
 )
 
 @Composable
@@ -506,27 +463,8 @@ private fun rememberTrustPresentation(
     monitoringMode: MonitoringMode,
     confidence: Confidence,
 ): TrustPresentation {
-    val stageLabel = when (alertStage) {
-        AlertStage.MONITORING -> "Monitoring"
-        AlertStage.APPROACH -> "Approach"
-        AlertStage.IMMINENT -> "Imminent"
-        AlertStage.ARRIVAL -> "Arrival"
-        AlertStage.RECOVERY -> "Recovery"
-    }
-    val stageChipState = when (stageLabel) {
-        "Arrival" -> NearWakeChipState.Alert
-        "Imminent" -> NearWakeChipState.Alert
-        "Approaching" -> NearWakeChipState.Approaching
-        "Approach" -> NearWakeChipState.Approaching
-        "Recovery" -> NearWakeChipState.Approaching
-        else -> NearWakeChipState.Monitoring
-    }
     return when (confidence) {
         Confidence.HIGH -> TrustPresentation(
-            stageLabel = stageLabel,
-            stageChipState = stageChipState,
-            confidenceLabel = "High confidence",
-            confidenceChipState = NearWakeChipState.Safe,
             heroMessage = when (alertStage) {
                 AlertStage.MONITORING -> "Tracking quietly while you ride."
                 AlertStage.APPROACH -> "NearWake has entered the approach window."
@@ -538,14 +476,9 @@ private fun rememberTrustPresentation(
             biasChipState = NearWakeChipState.Safe,
             biasCardAccent = NearWakeColors.SafeBase,
             biasEarlyMessage = null,
-            showUndergroundChip = false,
         )
 
         Confidence.DEGRADED -> TrustPresentation(
-            stageLabel = stageLabel,
-            stageChipState = stageChipState,
-            confidenceLabel = "Medium confidence",
-            confidenceChipState = NearWakeChipState.Approaching,
             heroMessage = when (alertStage) {
                 AlertStage.MONITORING -> "Monitoring closely and biasing earlier."
                 AlertStage.APPROACH -> "Approach started a little early to stay safe."
@@ -557,14 +490,9 @@ private fun rememberTrustPresentation(
             biasChipState = NearWakeChipState.Approaching,
             biasCardAccent = NearWakeColors.ApproachBase,
             biasEarlyMessage = "One signal has weakened, so NearWake will warn earlier to stay conservative.",
-            showUndergroundChip = false,
         )
 
         Confidence.OFFLINE -> TrustPresentation(
-            stageLabel = if (stageLabel == "Monitoring") "Approaching" else stageLabel,
-            stageChipState = NearWakeChipState.Approaching,
-            confidenceLabel = "Low confidence",
-            confidenceChipState = NearWakeChipState.Alert,
             heroMessage = when (alertStage) {
                 AlertStage.MONITORING -> "Signal dropped, but NearWake is still guarding your stop."
                 AlertStage.APPROACH -> "Signal is weak, so NearWake moved into approach early."
@@ -576,7 +504,6 @@ private fun rememberTrustPresentation(
             biasChipState = NearWakeChipState.Alert,
             biasCardAccent = NearWakeColors.AlertBase,
             biasEarlyMessage = "Location confidence is low, so NearWake has switched to underground-safe behavior and will alert much earlier.",
-            showUndergroundChip = true,
         )
     }
 }
@@ -584,7 +511,7 @@ private fun rememberTrustPresentation(
 private fun liveTripAccent(
     monitoringMode: MonitoringMode,
     alertStage: AlertStage,
-): androidx.compose.ui.graphics.Color {
+): Color {
     return when {
         alertStage == AlertStage.IMMINENT || alertStage == AlertStage.ARRIVAL -> NearWakeColors.AlertBase
         alertStage == AlertStage.APPROACH -> NearWakeColors.ApproachBase
