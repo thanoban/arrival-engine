@@ -33,7 +33,7 @@ fun PlaceSearchScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val radius = LocalRadius.current
 
-    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+    ProvideNearWakeStateAccent(NearWakeColors.BrandBase) {
         NearWakeScaffold(
             title = "Pick a destination",
             subtitle = null,
@@ -46,17 +46,19 @@ fun PlaceSearchScreen(
                 onValueChange = viewModel::updateQuery,
                 label = { Text("Search destination") },
                 placeholder = { Text("Search stations, airports, landmarks…") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Search destination. Type a station, airport, or landmark name." },
                 singleLine = true,
                 shape = RoundedCornerShape(radius.sm),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NearWakeColors.SafeBase,
+                    focusedBorderColor = NearWakeColors.BrandBase,
                     unfocusedBorderColor = NearWakeColors.BorderDefault,
                     focusedContainerColor = NearWakeColors.BgElevated,
                     unfocusedContainerColor = NearWakeColors.BgElevated,
                     focusedTextColor = NearWakeColors.TextPrimary,
                     unfocusedTextColor = NearWakeColors.TextPrimary,
-                    cursorColor = NearWakeColors.SafeBase,
+                    cursorColor = NearWakeColors.BrandBase,
                 ),
             )
 

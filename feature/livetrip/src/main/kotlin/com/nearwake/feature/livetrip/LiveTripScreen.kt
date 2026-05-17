@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -515,7 +516,7 @@ private fun AlertModeTabRow(
             Column(
                 modifier = Modifier
                     .semantics {
-                        role = androidx.compose.ui.semantics.Role.Tab
+                        role = Role.Tab
                         contentDescription = when (mode) {
                             AlertMode.ACTIVE -> "Active mode"
                             AlertMode.SLEEP -> "Sleep mode"

@@ -37,7 +37,7 @@ fun DepartureReminderScreen(
     val spacing = LocalSpacing.current
     val themeColors = LocalNearWakeColors.current
 
-    ProvideNearWakeStateAccent(themeColors.safeBase) {
+    ProvideNearWakeStateAccent(themeColors.brandBase) {
         NearWakeScaffold(
             title = "Leave by",
             subtitle = "Based on your trip history",

@@ -30,7 +30,7 @@ fun OnboardingScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
 
-    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+    ProvideNearWakeStateAccent(NearWakeColors.BrandBase) {
         NearWakeScaffold(
             title = "Wake before your stop",
             subtitle = null,

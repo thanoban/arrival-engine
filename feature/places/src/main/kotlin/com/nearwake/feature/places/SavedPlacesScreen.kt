@@ -10,6 +10,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nearwake.core.designsystem.NearWakeColors
+import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.NearWakeScaffold
 import com.nearwake.core.ui.NearWakeSecondaryButton
 import com.nearwake.core.ui.PlaceResultKind
@@ -24,6 +26,7 @@ fun SavedPlacesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    ProvideNearWakeStateAccent(NearWakeColors.BrandBase) {
     NearWakeScaffold(
         title = "Saved places",
         subtitle = "Places you have used recently are ready for one-tap arming.",
@@ -36,6 +39,7 @@ fun SavedPlacesScreen(
             onSelectPlace = { placeId -> viewModel.selectSavedPlace(placeId, onSelectPlace) },
         )
     }
+    } // ProvideNearWakeStateAccent
 }
 
 @Composable

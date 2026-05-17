@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nearwake.core.designsystem.LocalSpacing
 import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
+import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakePrimaryButton
 import com.nearwake.core.ui.NearWakeScaffold
 import com.nearwake.core.ui.NearWakeSecondaryButton
@@ -101,9 +102,9 @@ fun PermissionsScreen(
                 NearWakeStateChip(
                     label = state.readinessLabel,
                     state = when (state.readiness) {
-                        PermissionReadiness.READY -> com.nearwake.core.ui.NearWakeChipState.Safe
-                        PermissionReadiness.LIMITED -> com.nearwake.core.ui.NearWakeChipState.Approaching
-                        PermissionReadiness.ACTION_NEEDED -> com.nearwake.core.ui.NearWakeChipState.Alert
+                        PermissionReadiness.READY -> NearWakeChipState.Safe
+                        PermissionReadiness.LIMITED -> NearWakeChipState.Approaching
+                        PermissionReadiness.ACTION_NEEDED -> NearWakeChipState.Alert
                     },
                 )
                 Text(
@@ -187,9 +188,9 @@ private fun PermissionStatusCard(
         NearWakeStateChip(
             label = if (permission.granted) "Granted" else "Needed",
             state = if (permission.granted) {
-                com.nearwake.core.ui.NearWakeChipState.Safe
+                NearWakeChipState.Safe
             } else {
-                com.nearwake.core.ui.NearWakeChipState.Approaching
+                NearWakeChipState.Approaching
             },
         )
         Text(
