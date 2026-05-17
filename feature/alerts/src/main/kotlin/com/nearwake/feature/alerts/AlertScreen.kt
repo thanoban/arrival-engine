@@ -85,7 +85,7 @@ fun AlertScreen(
                 Box(contentAlignment = Alignment.Center) {
                     PulseRing(
                         color = NearWakeColors.TextPrimary.copy(alpha = 0.25f),
-                        diameter = spacing.massive * 4,
+                        diameter = 192.dp,
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(spacing.xs),
