@@ -1,7 +1,7 @@
 # NearWake — UI/UX Redesign Plan (Wave H)
 
-**Status:** ✅ Complete — all 7 screens shipped
-**Last updated:** 2026-05-10
+**Status:** ✅ Complete — Wave H (7 screens) + Wave I UI extensions (color system, MyDialog patterns, accessibility pass)
+**Last updated:** 2026-05-17
 **Scope:** Presentation layer only — no ViewModel changes, no architecture changes, no persistence changes
 
 ---
@@ -663,3 +663,111 @@ Implement in this order so each step builds on a stable foundation.
 - OEM reliability sub-screen stays unchanged
 - `DiagnosticsScreen` layout stays unchanged (density is a feature there)
 - `DepartureReminderScreen` layout stays unchanged
+
+---
+
+## Post-Wave H Additions (2026-05-17)
+
+These were implemented after Wave H shipped. They build on the same tokens and architecture but were not in the original Wave H spec.
+
+### 1. Deep Transit Navy Color Palette
+
+**Files changed:** `core/designsystem/NearWakeColors.kt`, `NearWakeTheme.kt`
+
+Background palette shifted from cool-gray to deep transit navy — a deliberate choice aligned with the dark UIs of Transit, TfL, and Singapore MRT apps:
+
+| Token | Old | New |
+|-------|-----|-----|
+| `BgBase` | #0A0B0D | #060C18 |
+| `BgSurface` | #111316 | #0C1425 |
+| `BgElevated` | #181B1F | #12202F |
+| `BgHighest` | #1F2327 | #1A2D42 |
+| `BorderSubtle` | #22262B | #1E3350 |
+| `BorderDefault` | #2C3137 | #2B4A6E |
+
+Text palette updated to Slate scale: TextPrimary #F0F6FC, TextSecondary #94A3B8, TextTertiary #64748B, TextDisabled #3B4A5C.
+
+### 2. BrandBase Accent System
+
+**Files changed:** `NearWakeColors.kt`, `NearWakeTheme.kt`, all 7 setup/navigation screens
+
+Problem: `SafeBase` green (#4CAF50) was used as the brand accent on every screen. This caused semantic confusion — green means "safe/arrived" but was appearing during setup, which is neutral.
+
+Fix: introduce `BrandBase` (#4A7FFF, transit blue) as the brand accent. Wire `ProvideNearWakeStateAccent(BrandBase)` on all setup/navigation screens. `SafeBase` is now reserved for semantically correct arrival/completed states only.
+
+| Color | Role | Screens |
+|-------|------|---------|
+| `BrandBase` #4A7FFF | Brand/navigation/setup | Home, PlaceSearch, SavedPlaces, TripSetup, Permissions, Onboarding, DepartureReminder |
+| `SafeBase` #4CAF50 | Arrival / safe / completed | WalkFinish, Companion, TripSummary ("Completed") |
+| `MonitoringBase` | Active monitoring | LiveTrip (during trip), History rows |
+| `ApproachBase` | Approaching / warning | RecoveryScreen, TripSummary ("Missed") |
+| `AlertBase` | Imminent arrival | AlertScreen |
+
+### 3. QuickActionsStrip (HomeScreen)
+
+**File:** `app/src/main/kotlin/com/nearwake/app/HomeScreen.kt`
+
+A horizontally-scrollable icon strip between the greeting and the main trip card area. Inspired by the action strips in apps like MyDialog and Transit that expose frequent actions without requiring menu navigation.
+
+```
+Row (horizontal scroll)
+  ├── 56dp circle: DirectionsTransit icon + "New trip" label
+  ├── 56dp circle: History icon + "History" label
+  ├── 56dp circle: Schedule icon + "Leave by" label
+  ├── 56dp circle: Settings icon + "Settings" label
+  └── 56dp circle: Security icon + "Permissions" label
+```
+
+Each circle: `BgElevated` background + `BorderDefault` border + `BrandBase` icon tint. Label: `labelSmall`, `TextSecondary`, below circle.
+
+### 4. AlertModeTabRow (LiveTripScreen)
+
+**File:** `feature/livetrip/src/main/kotlin/com/nearwake/feature/livetrip/LiveTripScreen.kt`
+
+Replaces the old `NearWakeSelectableChip` row for Active/Sleep mode selection. Inspired by section-tab patterns (tab bar without elevation) common in MyDialog, Google Pay, and banking apps.
+
+```kotlin
+@Composable
+private fun AlertModeTabRow(selected: AlertMode, onSelect: (AlertMode) -> Unit, accent: Color) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        AlertMode.entries.forEach { mode ->
+            val isSelected = selected == mode
+            Column(
+                modifier = Modifier
+                    .semantics { role = Role.Tab; contentDescription = "..." }
+                    .clickable { onSelect(mode) }
+                    .padding(end = spacing.xxl, top = spacing.xs, bottom = spacing.xs),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            ) {
+                Text(label, color = if (isSelected) accent else NearWakeColors.TextSecondary,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal)
+                Box(modifier = Modifier.height(2.dp).width(if (isSelected) 24.dp else 0.dp)
+                    .background(accent, RoundedCornerShape(1.dp)))
+            }
+        }
+    }
+}
+```
+
+### 5. Filled ActiveTripCard (HomeScreen)
+
+**File:** `app/src/main/kotlin/com/nearwake/app/HomeScreen.kt`
+
+Replaces the plain `ElevatedCard` with a MonitoringBase-tinted stat card — inspired by prepaid balance cards in self-care apps that use color fill to signal "something is active now."
+
+```
+Box (filled, MonitoringBase 18% alpha background + 35% alpha border, 16dp corners)
+  Row
+    ├── 48dp circle (MonitoringBase 20% fill): DirectionsTransit icon
+    ├── Column (weight 1f): destinationName [titleMedium, SemiBold] + subtitle [bodyMedium]
+    └── Column (end): statusLabel [labelLarge, MonitoringBase] + ChevronRight [16dp]
+```
+
+### 6. Accessibility Semantics Pass
+
+All 16 screens now have full accessibility annotations:
+- Every `SurfaceCard` or `ElevatedCard` that contains meaningful content: `Modifier.semantics(mergeDescendants = true) { contentDescription = "..." }`
+- Every `Switch` control: `semantics { contentDescription = "label"; stateDescription = "On/Off" }`
+- `AlertModeTabRow` items: `semantics { role = Role.Tab; contentDescription = "..." }`
+- `NearWakePrimaryButton` and `NearWakeSecondaryButton` on critical screens: `contentDescription` set explicitly where icon or short text would be ambiguous to TalkBack

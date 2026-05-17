@@ -1,6 +1,6 @@
 # NearWake — Product Expansion Roadmap
 
-**Last updated:** 2026-05-10
+**Last updated:** 2026-05-17
 **Applies to:** v1.1 and beyond (v1.0 scope is locked in PLAN.md)
 
 ---

@@ -2,7 +2,7 @@
 
 **Package:** `com.nearwake.app`
 **Platform:** Android-first (Kotlin + Jetpack Compose)
-**Last updated:** 2026-05-10
+**Last updated:** 2026-05-17
 **App version:** versionCode 1 / versionName "0.1.0"
 **DB schema:** Room v7 (migrations 1→7 complete)
 
@@ -142,20 +142,25 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - Walk finish guidance — `ObserveWalkFinishUseCase`, distance + heading
 - CSV export — `BuildTripHistoryCsvUseCase`, share sheet in HistoryScreen
 
-### UI — Wave H complete
-- All 15 screens use dark-first design system (PulseRing, animated accent); Wave H compact redesign applied to 7 specific screens (see Wave H checklist)
+### UI — Wave H + Color System + MyDialog Patterns Complete
+- All 16 screens use dark-first design system (PulseRing, animated accent); Wave H compact redesign applied to 7 screens; color system and MyDialog-inspired patterns applied to all 16
 - Light / Dark / System theme — `ThemeMode` DataStore persistence, `LocalNearWakeColors` CompositionLocal, `NearWakeTheme(darkTheme)` fully wired, 3-chip selector in SettingsScreen
 - OEM reliability guidance — Samsung / Xiaomi / OPPO / Pixel vendor-specific steps
 - Diagnostics screen — "why fired" with confidence, stage, distance, ETA per event
 - All 15 NavGraph routes wired including Departure, Companion, WalkFinish
 - **Wave H redesign complete** — compact layouts, Material icons, icon-driven status strips:
   - `PlaceResultRow` — 56dp rows, tap-to-select, no inline button
-  - `HomeScreen` — 80dp active trip card, 72dp re-arm card, 52dp recent trip rows
+  - `HomeScreen` — 80dp active trip card, 72dp re-arm card, 52dp recent trip rows; `QuickActionsStrip` 5-icon scrollable row
   - `TripSetupScreen` — sticky Arm button in Scaffold bottomBar, segmented trigger mode, "Advanced ›" collapse
-  - `LiveTripScreen` — 3-icon status strip (32dp), "Details ›" bottom sheet, 160dp transfer cards
-  - `AlertScreen` — streamlined, Walk button reduced
+  - `LiveTripScreen` — 3-icon status strip (32dp), "Details ›" bottom sheet, 160dp transfer cards; `AlertModeTabRow` underline tabs
+  - `AlertScreen` — streamlined, 192dp ring, 128dp Walk button
   - `RecoveryScreen` — single ElevatedCard, side-by-side action buttons
   - `SettingsScreen` — grouped list rows with modal bottom sheet selectors
+- **Deep Transit Navy color palette** — backgrounds shifted to deep navy (`BgBase` #060C18, `BgSurface` #0C1425, `BgElevated` #12202F, `BgHighest` #1A2D42); Slate text scale (TextPrimary #F0F6FC, TextSecondary #94A3B8, TextTertiary #64748B)
+- **`BrandBase` (#4A7FFF) transit blue** — new accent token; `SafeBase` green now reserved exclusively for arrival/safe semantic states (WalkFinish, Companion, TripSummary)
+- **`ProvideNearWakeStateAccent(BrandBase)`** wired on all 7 setup/navigation screens (Home, PlaceSearch, SavedPlaces, TripSetup, Permissions, Onboarding, DepartureReminder)
+- **MyDialog-inspired patterns** — `QuickActionsStrip` 5-icon scrollable row on HomeScreen; filled `ActiveTripCard` with MonitoringBase-tinted stat card; `AlertModeTabRow` section-tab style with 2dp underline indicator
+- **Accessibility pass** — all 16 screens have `contentDescription`, `mergeDescendants = true` on composite cards, `stateDescription` on Switch components, `Role.Tab` on mode tabs
 - **Design tokens:** `NearWakeSpacing` + `cardCompact/cardDefault/cardLarge`, `NearWakeButtonSize` enum (Small/Medium/Large), compact `SurfaceCard` variant
 
 ### Architecture — fully verified
@@ -183,7 +188,7 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - **Feature (4):** OemReliability, TransferProgressBuilder, PermissionsViewModel, DiagnosticsExport
 - **Benchmark (2):** NearWakeBaselineProfileGenerator, NearWakeStartupBenchmark
 
-### Documentation — 25 guides in project root
+### Documentation — 26 guides in project root
 `PLAN.md`, `README.md`, `NEARWAKE_MASTER_REFERENCE.md`, `TARGET_PRODUCTION_ARCHITECTURE.md`,
 `FIELD_TEST_RUNBOOK.md`, `REAL_PHONE_TESTING_GUIDE.md`, `APP_SIGNING_SETUP_GUIDE.md`,
 `PLAY_STORE_SUBMISSION_RUNBOOK.md`, `PLAY_STORE_LISTING_DRAFT.md`,
@@ -191,7 +196,8 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 `PRIVACY_AND_DISCLOSURE_NOTES.md`, `RELEASE_READINESS_CHECKLIST.md`,
 `DEVELOPMENT_START.md`, `SETUP_AND_STATUS.md`, `PROJECT_STUDY_GUIDE.md`,
 `UI_MODERNIZATION_PLAN.md`, `UI_UX_REDESIGN_PLAN.md`, `PRODUCT_COMPARE_REFERENCE.md`,
-`PRODUCT_EXPANSION_ROADMAP.md`, `LONG_JOURNEY_MONITORING_STRATEGY.md`,
+`PRODUCT_EXPANSION_ROADMAP.md` (includes Wave I/J/K detailed dev plans),
+`NEARWAKE_FEATURES.md`, `LONG_JOURNEY_MONITORING_STRATEGY.md`,
 `SRI_LANKA_PRODUCTION_DATA_PLAN.md`, `REQUIRED_UPDATES_AND_APIS.md`,
 `LLM_PROJECT_CONTEXT_PROMPT.md`, `corrections.md`
 
@@ -270,13 +276,18 @@ Write commands (8):  updateTripAlertMode, completeTrip, clearTripSession,
 - [x] `core/ui/SurfaceCard.kt` — compact padding variant
 - [x] `core/ui/PlaceResultRow.kt` — new 56dp row composable (icon + name + address, tap-to-select)
 - [x] `feature/places/PlaceSearchScreen.kt` — compact 56dp rows, tap-to-select, no inline button
-- [x] `app/HomeScreen.kt` — 80dp active trip card, 72dp re-arm card, 52dp recent trip rows with outcome icons
+- [x] `app/HomeScreen.kt` — 80dp active trip card, 72dp re-arm card, 52dp recent trip rows with outcome icons; `QuickActionsStrip` 5-icon scrollable row; empty state DirectionsTransit hero
 - [x] `feature/tripsetup/TripSetupScreen.kt` — sticky Arm button in Scaffold bottomBar, segmented trigger mode, "Advanced ›" collapse
-- [x] `feature/livetrip/LiveTripScreen.kt` — 3-icon status strip (32dp), "Details ›" bottom sheet, destination above ring
+- [x] `feature/livetrip/LiveTripScreen.kt` — 3-icon status strip (32dp), "Details ›" bottom sheet, destination above ring; `AlertModeTabRow` replaces chip row
 - [x] `feature/livetrip/TransferProgressCard.kt` — 160dp width, 64dp height, icon+name+status dot
-- [x] `feature/alerts/AlertScreen.kt` — streamlined, Walk button reduced, accessibility semantics added
+- [x] `feature/alerts/AlertScreen.kt` — 192dp ring, 128dp Walk button, semantics added
 - [x] `feature/alerts/RecoveryScreen.kt` — single ElevatedCard, side-by-side 48dp buttons
 - [x] `feature/settings/SettingsScreen.kt` — grouped list rows (52dp), modal bottom sheet selectors
+- [x] `core/designsystem/NearWakeColors.kt` — Deep Transit Navy palette; `BrandBase` #4A7FFF + `BrandSoft` + `BrandBorder`; Slate text scale
+- [x] `core/designsystem/NearWakeTheme.kt` — `DarkNearWakeColorScheme.primary = BrandBase`
+- [x] `NearWakeColorRoles` — `brandBase: Color` field; `DarkNearWakeColors` and `LightNearWakeColors` updated
+- [x] All 7 setup/navigation screens — `ProvideNearWakeStateAccent(BrandBase)`: Home, PlaceSearch, SavedPlaces, TripSetup, Permissions, Onboarding, DepartureReminder
+- [x] Accessibility — `contentDescription`, `mergeDescendants`, `stateDescription`, `Role.Tab` added to all 16 screens
 
 ---
 
@@ -336,14 +347,13 @@ All 7 screens redesigned (Wave H). Design tokens added. `PlaceResultRow` composa
 
 ### Phase 5 — Accessibility 🟡 Partial
 
-**Done:** `AlertScreen` + `LiveTripScreen` + `NearWakeStatus` updated with `contentDescription`, `semantics`, and `liveRegion`. AlertScreen now announces arrival to TalkBack without user interaction.
+**Done:** All 16 screens now have accessibility semantics — `contentDescription` on every interactive card, button, and informational element; `mergeDescendants = true` on composite `SurfaceCard` blocks; `stateDescription` on all `Switch` components; `Role.Tab` on `AlertModeTabRow` items. AlertScreen announces arrival via `liveRegion`. `PermissionsScreen` and `PlaceSearchScreen` have full field semantics.
 
 **Remaining:**
-- Full TalkBack pass on all 13 remaining screens
-- `NearWakeStateChip` + `NearWakeSelectableChip` — add `semantics { role = Role.Button }`
-- Icon-only buttons on HomeScreen, TripSetupScreen, HistoryScreen — add `contentDescription`
-- Touch targets — verify ≥ 48dp on all chips after Wave H compact redesign
-- Contrast — 4.5:1 check in both light and dark modes
+- Full TalkBack end-to-end pass on physical device (all 16 screens, navigate by swipe)
+- `NearWakeStateChip` + `NearWakeSelectableChip` — add `semantics { role = Role.Button }` when tappable
+- Touch target verification — measure all chips ≥ 48dp on compact layouts (Wave H 36dp chips may need `minimumInteractiveComponentEnforcement`)
+- Contrast — 4.5:1 check for TextSecondary (#94A3B8) on BgSurface (#0C1425) in dark mode; full check in light mode
 
 ---
 
@@ -439,7 +449,7 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | ViewModel lifecycle | ✅ All 15 use `viewModelScope` | — |
 | Service thread safety | ✅ `Mutex` guards session mutations | — |
 | Service shutdown | ✅ No `runBlocking` in `onDestroy()` | — |
-| Error surfaces | ✅ `errorMessage: String?` in all 13 UiState | — |
+| Error surfaces | ✅ `errorMessage: String?` in all 17 UiState | — |
 | Architecture — write path | ✅ start/rearm/cancel/complete behind ports | — |
 | Architecture — read path | ✅ All 21 observe use cases through TripLifecycleStore | — |
 | Feature DAO isolation | ✅ Zero `core:database` imports in any feature module | — |
@@ -452,7 +462,7 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | ProGuard | ✅ R8 full mode, all libraries covered | — |
 | SDK levels | ✅ targetSdk 35 / minSdk 26 | — |
 | Permissions manifest | ✅ All 13 permissions, `FOREGROUND_SERVICE_LOCATION` | — |
-| Test coverage | ✅ 67+ test classes across all layers | — |
+| Test coverage | ✅ 68 test classes across all layers | — |
 | AlertTriggerMode | ✅ TIME/DISTANCE/BOTH, wired in UI, persisted, tested | — |
 | MAPS_API_KEY | ✅ Wired via local.properties | **Rotate key + add SHA-1 restriction before launch** |
 | Crash reporting | ✅ Sentry initialized — DSN from BuildConfig, env-aware, 20% trace sampling | — |
@@ -461,8 +471,9 @@ Follow `PLAY_STORE_SUBMISSION_RUNBOOK.md` and `PLAY_STORE_LISTING_DRAFT.md` (bot
 | Remote config | ✅ `:core:remoteconfig` — `ThresholdConfig` injected into engine | Firebase drop-in post-launch |
 | Baseline Profile | ✅ `:core:benchmark` — `baseline-prof.txt` committed to `app/src/main/` | — |
 | StrictMode | ✅ Enabled in debug builds via `BuildConfig.DEBUG` | — |
-| UI/UX redesign | ✅ Wave H complete — all 7 screens, compact tokens, Material icons | — |
-| Accessibility | 🟡 AlertScreen + LiveTripScreen done — full TalkBack pass remaining | Phase 5 remaining |
+| Color system | ✅ Deep Transit Navy + BrandBase (#4A7FFF) — SafeBase reserved for arrival states | — |
+| UI/UX redesign | ✅ Wave H + MyDialog patterns — 16 screens, QuickActionsStrip, AlertModeTabRow, filled ActiveTripCard | — |
+| Accessibility | 🟡 All 16 screens have contentDescription + mergeDescendants — TalkBack device pass + contrast check remaining | Phase 5 remaining |
 | Field testing | 🔴 `FIELD_TEST_RUNBOOK.md` written, trips not done | Phase 6 |
 | Release signing | 🔴 `APP_SIGNING_SETUP_GUIDE.md` written, keystore not generated | Phase 7 |
 | Play Store | 🔴 `PLAY_STORE_SUBMISSION_RUNBOOK.md` written, not submitted | Phase 8 |

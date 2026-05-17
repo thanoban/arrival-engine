@@ -1,6 +1,6 @@
 # NearWake — Complete Feature Catalog
 
-**Last updated:** 2026-05-10
+**Last updated:** 2026-05-17
 **Architecture:** 37-module Clean Architecture (Kotlin + Jetpack Compose)
 **Package:** `com.nearwake.app`
 
@@ -196,11 +196,18 @@ These features span all pillars. They are what make NearWake different from ever
 | Diagnostics CSV export | ✅ | `:application:trip` | `BuildTripHistoryCsvUseCase` |
 | Battery-honest design — geofences first, GPS in bursts | ✅ | `:data:location` | `FusedLocationDataSource`, `LocationStrategyOrchestrator` |
 | Dark-first design system | ✅ | `:core:designsystem` | `NearWakeColors`, `NearWakeTheme`, `LocalNearWakeColors` |
+| Deep Transit Navy palette — #060C18 → #1A2D42 backgrounds; Slate text scale | ✅ | `:core:designsystem` | `NearWakeColors` (BgBase/BgSurface/BgElevated/BgHighest) |
+| BrandBase (#4A7FFF) transit blue accent — non-semantic screens | ✅ | `:core:designsystem` | `NearWakeColors.BrandBase`, `NearWakeColorRoles.brandBase` |
+| SafeBase green — semantic reservation for arrival/safe states only | ✅ | All screens | WalkFinish, Companion, TripSummary only |
 | Light / Dark / System theme selection | ✅ | `:feature:settings` | `SettingsScreen`, `ThemeMode` DataStore |
 | Compact UI tokens — 56dp search rows, 80dp trip cards | ✅ | `:core:designsystem` | `NearWakeSpacing`, `cardCompact/cardDefault/cardLarge` |
 | Icon-driven status strips — 3-icon strip, 32dp | ✅ | `:feature:livetrip` | `LiveTripScreen` |
 | NearWakeButtonSize enum (Small / Medium / Large) | ✅ | `:core:ui` | `NearWakeButtonSize` |
 | PlaceResultRow composable — 56dp tap-to-select | ✅ | `:core:ui` | `PlaceResultRow` |
+| QuickActionsStrip — 5-icon scrollable row (Search, History, Departure, Settings, Permissions) | ✅ | `:app` | `HomeScreen.QuickActionsStrip` |
+| AlertModeTabRow — section-tab Active/Sleep selector with 2dp underline indicator | ✅ | `:feature:livetrip` | `LiveTripScreen.AlertModeTabRow` |
+| Filled ActiveTripCard — MonitoringBase-tinted stat card with circle icon | ✅ | `:app` | `HomeScreen.ActiveTripCard` |
+| Accessibility semantics — all 16 screens | ✅ | All feature modules | `contentDescription`, `mergeDescendants`, `stateDescription`, `Role.Tab` |
 | Sentry crash and non-fatal reporting | ✅ | `:data:analytics`, `:app` | `SentryNearWakeAnalytics`, `NearWakeApp.initSentry()` |
 | Behavioral analytics — 6 events + recordFailure() | ✅ | `:ports:analytics`, `:data:analytics` | `NearWakeAnalytics`, `SentryNearWakeAnalytics` |
 | Baseline Profile — cold start optimization | ✅ | `:core:benchmark` | `NearWakeBaselineProfileGenerator` |
