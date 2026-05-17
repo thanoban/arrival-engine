@@ -2,8 +2,12 @@ package com.nearwake.app
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,11 +18,19 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DirectionsTransit
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -44,9 +59,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nearwake.core.designsystem.LocalNearWakeColors
 import com.nearwake.core.designsystem.LocalSpacing
+import com.nearwake.core.designsystem.NearWakeColors
 import com.nearwake.core.designsystem.NearWakeMotion
 import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
-import com.nearwake.core.ui.ElevatedCard
 import com.nearwake.core.ui.HeroCard
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeButtonSize
@@ -72,7 +87,7 @@ fun HomeScreen(
     val spacing = LocalSpacing.current
     val themeColors = LocalNearWakeColors.current
 
-    ProvideNearWakeStateAccent(themeColors.safeBase) {
+    ProvideNearWakeStateAccent(themeColors.brandBase) {
         NearWakeScaffold(
             title = "NearWake",
             subtitle = null,
@@ -85,6 +100,14 @@ fun HomeScreen(
                 headline = state.headline,
                 statusLabel = state.statusLabel,
                 statusTone = state.statusTone,
+                onPermissions = onPermissions,
+            )
+
+            QuickActionsStrip(
+                onSetDestination = onSetDestination,
+                onHistory = onHistory,
+                onDepartureReminders = onDepartureReminders,
+                onSettings = onSettings,
                 onPermissions = onPermissions,
             )
 
@@ -271,48 +294,133 @@ private fun ActiveTripCard(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalSpacing.current
-    val colors = LocalNearWakeColors.current
-    ElevatedCard(
+    Box(
         modifier = modifier
-            .heightIn(min = 80.dp)
+            .fillMaxWidth()
+            .heightIn(min = 88.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(NearWakeColors.MonitoringBase.copy(alpha = 0.18f))
+            .border(1.dp, NearWakeColors.MonitoringBase.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
             .semantics {
                 role = Role.Button
                 contentDescription = "Resume live trip to ${activeTrip.destinationName}. Status $statusLabel."
             }
-            .clickable { onOpenTrip(activeTrip.tripId) },
+            .clickable { onOpenTrip(activeTrip.tripId) }
+            .padding(horizontal = spacing.lg, vertical = spacing.md),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
-            Icon(
-                imageVector = Icons.Filled.DirectionsTransit,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = colors.monitoringBase,
-            )
-            Spacer(modifier = Modifier.width(spacing.md))
-            Text(
-                text = activeTrip.destinationName,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.textPrimary,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            NearWakeStateChip(
-                label = statusLabel,
-                state = NearWakeChipState.Monitoring,
-            )
-            Spacer(modifier = Modifier.width(spacing.sm))
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = colors.textTertiary,
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(NearWakeColors.MonitoringBase.copy(alpha = 0.2f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DirectionsTransit,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = NearWakeColors.MonitoringBase,
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = activeTrip.destinationName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = NearWakeColors.TextPrimary,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = activeTrip.subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = NearWakeColors.TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = statusLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = NearWakeColors.MonitoringBase,
+                )
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = NearWakeColors.TextTertiary,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun QuickActionsStrip(
+    onSetDestination: () -> Unit,
+    onHistory: () -> Unit,
+    onDepartureReminders: () -> Unit,
+    onSettings: () -> Unit,
+    onPermissions: () -> Unit,
+) {
+    val spacing = LocalSpacing.current
+    val colors = LocalNearWakeColors.current
+
+    data class QuickAction(val icon: ImageVector, val label: String, val onClick: () -> Unit)
+
+    val actions = listOf(
+        QuickAction(Icons.Filled.Search, "New trip", onSetDestination),
+        QuickAction(Icons.Filled.History, "History", onHistory),
+        QuickAction(Icons.Filled.Schedule, "Leave by", onDepartureReminders),
+        QuickAction(Icons.Filled.Settings, "Settings", onSettings),
+        QuickAction(Icons.Filled.Security, "Permissions", onPermissions),
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(spacing.xl),
+    ) {
+        Spacer(modifier = Modifier.width(spacing.xxs))
+        actions.forEach { action ->
+            Column(
+                modifier = Modifier
+                    .semantics {
+                        role = Role.Button
+                        contentDescription = action.label
+                    }
+                    .clickable(onClick = action.onClick),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(colors.bgElevated, CircleShape)
+                        .border(1.dp, colors.borderDefault, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = action.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = colors.brandBase,
+                    )
+                }
+                Text(
+                    text = action.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textSecondary,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(spacing.xxs))
     }
 }
 

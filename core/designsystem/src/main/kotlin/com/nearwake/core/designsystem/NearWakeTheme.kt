@@ -12,7 +12,7 @@ val LocalStateAccent = staticCompositionLocalOf { NearWakeColors.SafeBase }
 val LocalNearWakeColors = staticCompositionLocalOf { DarkNearWakeColors }
 
 private val DarkNearWakeColorScheme = darkColorScheme(
-    primary = DarkNearWakeColors.safeBase,
+    primary = NearWakeColors.BrandBase,
     onPrimary = Color.Black,
     secondary = DarkNearWakeColors.monitoringBase,
     tertiary = DarkNearWakeColors.approachBase,

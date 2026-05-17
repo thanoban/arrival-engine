@@ -80,7 +80,7 @@ fun TripSetupScreen(
     val routeReady = state.etaLabel.startsWith("~")
     var advancedExpanded by rememberSaveable { mutableStateOf(false) }
 
-    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+    ProvideNearWakeStateAccent(NearWakeColors.BrandBase) {
         Scaffold(
             containerColor = colors.bgBase,
             bottomBar = {

@@ -3,17 +3,23 @@ package com.nearwake.core.designsystem
 import androidx.compose.ui.graphics.Color
 
 object NearWakeColors {
-    val BgBase = Color(0xFF0A0B0D)
-    val BgSurface = Color(0xFF111316)
-    val BgElevated = Color(0xFF181B1F)
-    val BgHighest = Color(0xFF1F2327)
-    val BorderSubtle = Color(0xFF22262B)
-    val BorderDefault = Color(0xFF2C3137)
+    // Deep transit-navy backgrounds — shifts from cool gray to navigation blue
+    val BgBase = Color(0xFF060C18)
+    val BgSurface = Color(0xFF0C1425)
+    val BgElevated = Color(0xFF12202F)
+    val BgHighest = Color(0xFF1A2D42)
+    val BorderSubtle = Color(0xFF1E3350)
+    val BorderDefault = Color(0xFF2B4A6E)
 
-    val TextPrimary = Color(0xFFF5F6F7)
-    val TextSecondary = Color(0xFFA8ADB4)
-    val TextTertiary = Color(0xFF7C838C)
-    val TextDisabled = Color(0xFF434950)
+    val TextPrimary = Color(0xFFF0F6FC)
+    val TextSecondary = Color(0xFF94A3B8)
+    val TextTertiary = Color(0xFF64748B)
+    val TextDisabled = Color(0xFF3B4A5C)
+
+    // Brand accent — vibrant transit blue, distinct from semantic safety colors
+    val BrandBase = Color(0xFF4A7FFF)
+    val BrandSoft = Color(0xFF0A1C3E)
+    val BrandBorder = Color(0xFF1A3A7A)
 
     val SafeBase = Color(0xFF22C55E)
     val SafeSoft = Color(0xFF0F2A1A)
@@ -57,6 +63,7 @@ data class NearWakeColorRoles(
     val alertIntense: Color,
     val alertSoft: Color,
     val alertBorder: Color,
+    val brandBase: Color = NearWakeColors.BrandBase,
 )
 
 val DarkNearWakeColors = NearWakeColorRoles(
@@ -83,6 +90,7 @@ val DarkNearWakeColors = NearWakeColorRoles(
     alertIntense = NearWakeColors.AlertIntense,
     alertSoft = NearWakeColors.AlertSoft,
     alertBorder = NearWakeColors.AlertBorder,
+    brandBase = NearWakeColors.BrandBase,
 )
 
 val LightNearWakeColors = NearWakeColorRoles(
@@ -109,4 +117,5 @@ val LightNearWakeColors = NearWakeColorRoles(
     alertIntense = Color(0xFFB91C1C),
     alertSoft = Color(0xFFFFE8E8),
     alertBorder = Color(0xFFF8B4B4),
+    brandBase = Color(0xFF1D4ED8),
 )

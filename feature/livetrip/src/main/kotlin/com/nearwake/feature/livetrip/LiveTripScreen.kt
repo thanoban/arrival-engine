@@ -4,6 +4,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,7 +56,6 @@ import com.nearwake.core.designsystem.ProvideNearWakeStateAccent
 import com.nearwake.core.ui.HeroCard
 import com.nearwake.core.ui.NearWakeChipState
 import com.nearwake.core.ui.NearWakeNumericText
-import com.nearwake.core.ui.NearWakeSelectableChip
 import com.nearwake.core.ui.NearWakeSecondaryButton
 import com.nearwake.core.ui.NearWakeStateChip
 import com.nearwake.core.ui.NearWakeTextButton
@@ -216,21 +217,11 @@ fun LiveTripScreen(
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
-            ) {
-                AlertMode.entries.forEach { mode ->
-                    NearWakeSelectableChip(
-                        selected = state.alertMode == mode,
-                        label = when (mode) {
-                            AlertMode.ACTIVE -> "Active"
-                            AlertMode.SLEEP -> "Sleep"
-                        },
-                        onClick = { viewModel.updateAlertMode(mode) },
-                    )
-                }
-            }
+            AlertModeTabRow(
+                selected = state.alertMode,
+                onSelect = viewModel::updateAlertMode,
+                accent = accent,
+            )
 
             NearWakeSecondaryButton(
                 modifier = Modifier.fillMaxWidth(),
@@ -505,6 +496,53 @@ private fun rememberTrustPresentation(
             biasCardAccent = NearWakeColors.AlertBase,
             biasEarlyMessage = "Location confidence is low, so NearWake has switched to underground-safe behavior and will alert much earlier.",
         )
+    }
+}
+
+@Composable
+private fun AlertModeTabRow(
+    selected: AlertMode,
+    onSelect: (AlertMode) -> Unit,
+    accent: Color,
+) {
+    val spacing = LocalSpacing.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        AlertMode.entries.forEach { mode ->
+            val isSelected = selected == mode
+            Column(
+                modifier = Modifier
+                    .semantics {
+                        role = androidx.compose.ui.semantics.Role.Tab
+                        contentDescription = when (mode) {
+                            AlertMode.ACTIVE -> "Active mode"
+                            AlertMode.SLEEP -> "Sleep mode"
+                        }
+                    }
+                    .clickable { onSelect(mode) }
+                    .padding(end = spacing.xxl, top = spacing.xs, bottom = spacing.xs),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
+            ) {
+                Text(
+                    text = when (mode) {
+                        AlertMode.ACTIVE -> "Active"
+                        AlertMode.SLEEP -> "Sleep"
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isSelected) accent else NearWakeColors.TextSecondary,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                )
+                Box(
+                    modifier = Modifier
+                        .height(2.dp)
+                        .width(if (isSelected) 24.dp else 0.dp)
+                        .background(accent, RoundedCornerShape(1.dp)),
+                )
+            }
+        }
     }
 }
 

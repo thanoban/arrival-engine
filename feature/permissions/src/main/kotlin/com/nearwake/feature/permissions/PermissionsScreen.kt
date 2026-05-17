@@ -80,7 +80,7 @@ fun PermissionsScreen(
         }
     }
 
-    ProvideNearWakeStateAccent(NearWakeColors.SafeBase) {
+    ProvideNearWakeStateAccent(NearWakeColors.BrandBase) {
         NearWakeScaffold(
             title = "Permissions",
             subtitle = null,
