@@ -222,11 +222,13 @@ private fun Context.permissionSnapshot(): PermissionSnapshot =
         },
         notificationsRequestable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
         backgroundLocationRelevant = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
+        backgroundLocationRequestable = Build.VERSION.SDK_INT == Build.VERSION_CODES.Q,
         activityRecognitionRelevant = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
     )
 
 private fun Context.corePermissions(): Array<String> =
     buildList {
+        add(Manifest.permission.ACCESS_COARSE_LOCATION)
         add(Manifest.permission.ACCESS_FINE_LOCATION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             add(Manifest.permission.ACTIVITY_RECOGNITION)

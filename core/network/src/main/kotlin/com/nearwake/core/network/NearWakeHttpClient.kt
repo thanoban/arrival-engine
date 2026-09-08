@@ -21,7 +21,8 @@ object NearWakeHttpClient {
         if (isDebug) {
             builder.addInterceptor(
                 HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BASIC
+                    // Even BASIC logs the URL, including coordinates and the Maps API key.
+                    level = HttpLoggingInterceptor.Level.NONE
                 },
             )
         }

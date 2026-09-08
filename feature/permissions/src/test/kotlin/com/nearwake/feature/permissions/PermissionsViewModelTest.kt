@@ -6,6 +6,19 @@ import org.junit.Test
 class PermissionsViewModelTest {
 
     @Test
+    fun `Android 11 background access opens settings instead of ineffective runtime request`() {
+        val state = PermissionSnapshot(
+            notificationGranted = true,
+            fineLocationGranted = true,
+            backgroundLocationRelevant = true,
+            backgroundLocationRequestable = false,
+        ).toUiState()
+
+        assertEquals(PermissionPromptAction.OPEN_SETTINGS, state.primaryAction)
+        assertEquals(PermissionReadiness.LIMITED, state.readiness)
+    }
+
+    @Test
     fun `missing notifications and location requires action`() {
         val state = PermissionSnapshot(
             notificationGranted = false,

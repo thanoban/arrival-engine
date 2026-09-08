@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 class NearWakeHttpClientTest {
     @Test
-    fun `create adds debug logging interceptor when enabled`() {
+    fun `debug builds do not log URLs containing location and credentials`() {
         val client = NearWakeHttpClient.create(isDebug = true)
 
         val loggingInterceptor = client.interceptors.firstOrNull { interceptor ->
@@ -16,7 +16,7 @@ class NearWakeHttpClientTest {
         } as? HttpLoggingInterceptor
 
         assertNotNull(loggingInterceptor)
-        assertEquals(HttpLoggingInterceptor.Level.BASIC, loggingInterceptor?.level)
+        assertEquals(HttpLoggingInterceptor.Level.NONE, loggingInterceptor?.level)
     }
 
     @Test

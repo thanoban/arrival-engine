@@ -32,6 +32,7 @@ data class PermissionSnapshot(
     val activityRecognitionGranted: Boolean = false,
     val notificationsRequestable: Boolean = false,
     val backgroundLocationRelevant: Boolean = false,
+    val backgroundLocationRequestable: Boolean = true,
     val activityRecognitionRelevant: Boolean = false,
 ) {
     val notificationsMissing: Boolean
@@ -96,7 +97,11 @@ internal fun PermissionSnapshot.toUiState(): PermissionsUiState {
     val primaryAction = when {
         fineLocationMissing || activityRecognitionMissing -> PermissionPromptAction.REQUEST_CORE
         notificationsMissing && notificationsRequestable -> PermissionPromptAction.REQUEST_CORE
-        backgroundLocationMissing -> PermissionPromptAction.REQUEST_BACKGROUND
+        backgroundLocationMissing -> if (backgroundLocationRequestable) {
+            PermissionPromptAction.REQUEST_BACKGROUND
+        } else {
+            PermissionPromptAction.OPEN_SETTINGS
+        }
         notificationsMissing -> PermissionPromptAction.OPEN_SETTINGS
         else -> PermissionPromptAction.REFRESH
     }
