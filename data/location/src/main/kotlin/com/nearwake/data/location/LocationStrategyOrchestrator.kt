@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.emitAll
 
 @Singleton
 class LocationStrategyOrchestrator @Inject constructor(
@@ -24,7 +26,14 @@ class LocationStrategyOrchestrator @Inject constructor(
             MonitoringMode.BALANCED -> fusedLocationDataSource.startBalancedUpdates(
                 minDistanceMeters = balancedMinDistanceMeters,
             )
-            MonitoringMode.PRECISE_BURST -> fusedLocationDataSource.startPreciseBurst()
+            MonitoringMode.PRECISE_BURST -> flow {
+                emitAll(fusedLocationDataSource.startPreciseBurst())
+                // A bounded GPS burst must not leave an active trip without updates.
+                mutableMode.value = MonitoringMode.BALANCED
+                emitAll(fusedLocationDataSource.startBalancedUpdates(
+                    minDistanceMeters = balancedMinDistanceMeters,
+                ))
+            }
         }
     }
 

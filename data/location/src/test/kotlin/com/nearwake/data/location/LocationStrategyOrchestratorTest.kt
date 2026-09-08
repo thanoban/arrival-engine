@@ -9,6 +9,9 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.flow
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
@@ -62,8 +65,44 @@ class LocationStrategyOrchestratorTest {
 
     private fun fakeFusedLocationDataSource(): FusedLocationDataSource =
         mockk {
-            every { startBalancedUpdates(any()) } returns flowOf(balancedLocation)
+            every { startBalancedUpdates(any(), any()) } returns flowOf(balancedLocation)
             every { startPreciseBurst(any()) } returns flowOf(preciseLocation)
             coJustRun { stopUpdates() }
         }
+
+    @Test
+    fun `completed precise burst continues balanced monitoring`() = runTest {
+        val source = fakeFusedLocationDataSource()
+        val orchestrator = LocationStrategyOrchestrator(source)
+
+        val locations = orchestrator.escalate(MonitoringMode.PRECISE_BURST, 200f).toList()
+
+        assertThat(locations).containsExactly(preciseLocation, balancedLocation).inOrder()
+        assertThat(orchestrator.monitoringMode.value).isEqualTo(MonitoringMode.BALANCED)
+        verify { source.startBalancedUpdates(any(), 200f) }
+    }
+
+    @Test
+    fun `cancelled precise collection does not start a new balanced request`() = runTest {
+        val source = fakeFusedLocationDataSource()
+        val orchestrator = LocationStrategyOrchestrator(source)
+
+        orchestrator.escalate(MonitoringMode.PRECISE_BURST).first()
+
+        verify(exactly = 0) { source.startBalancedUpdates(any(), any()) }
+    }
+
+    @Test
+    fun `precise failure is surfaced to the service instead of hidden`() = runTest {
+        val source = fakeFusedLocationDataSource()
+        val failure = SecurityException("Permission revoked")
+        every { source.startPreciseBurst(any()) } returns flow { throw failure }
+
+        val thrown = runCatching {
+            LocationStrategyOrchestrator(source).escalate(MonitoringMode.PRECISE_BURST).toList()
+        }.exceptionOrNull()
+
+        assertThat(thrown).isSameInstanceAs(failure)
+        verify(exactly = 0) { source.startBalancedUpdates(any(), any()) }
+    }
 }

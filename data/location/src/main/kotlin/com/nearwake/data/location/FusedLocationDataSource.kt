@@ -3,6 +3,7 @@ package com.nearwake.data.location
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Looper
+import android.os.SystemClock
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.CancellationException
 
 @Singleton
 class FusedLocationDataSource @Inject constructor(
@@ -30,6 +32,10 @@ class FusedLocationDataSource @Inject constructor(
     suspend fun getLastKnownLocation(): LatLng? =
         client.lastLocation
             .await()
+            ?.takeIf {
+                val ageNanos = SystemClock.elapsedRealtimeNanos() - it.elapsedRealtimeNanos
+                ageNanos in 0..120_000_000_000L
+            }
             ?.let { LatLng(lat = it.latitude, lng = it.longitude) }
 
     @SuppressLint("MissingPermission")
@@ -40,6 +46,7 @@ class FusedLocationDataSource @Inject constructor(
         locationFlow(
             request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, intervalMillis)
                 .setMinUpdateDistanceMeters(minDistanceMeters)
+                .setMaxUpdateAgeMillis(0)
                 .build(),
         )
 
@@ -48,16 +55,27 @@ class FusedLocationDataSource @Inject constructor(
         locationFlow(
             request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5_000L)
                 .setMinUpdateIntervalMillis(2_500L)
+                .setMaxUpdateAgeMillis(0)
+                .setDurationMillis(maxDurationMs)
                 .build(),
             timeoutMs = maxDurationMs,
         )
 
     suspend fun stopUpdates() {
-        val callbacks = activeCallbacks.toList()
-        activeCallbacks.clear()
+        val callbacks = synchronized(activeCallbacks) { activeCallbacks.toList() }
+        var failure: Exception? = null
         callbacks.forEach { callback ->
-            client.removeLocationUpdates(callback).await()
+            try {
+                client.removeLocationUpdates(callback).await()
+                synchronized(activeCallbacks) { activeCallbacks.remove(callback) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                if (failure == null) failure = error
+                else if (failure !== error) failure!!.addSuppressed(error)
+            }
         }
+        failure?.let { throw it }
     }
 
     @SuppressLint("MissingPermission")
@@ -73,20 +91,21 @@ class FusedLocationDataSource @Inject constructor(
             }
         }
 
-        activeCallbacks += callback
-        client.requestLocationUpdates(request, callback, Looper.getMainLooper()).await()
-
-        val timeoutJob = timeoutMs?.let { duration ->
-            launch {
-                delay(duration)
-                close()
+        synchronized(activeCallbacks) { activeCallbacks.add(callback) }
+        try {
+            client.requestLocationUpdates(request, callback, Looper.getMainLooper()).await()
+            val timeoutJob = timeoutMs?.let { duration ->
+                launch {
+                    delay(duration)
+                    close()
+                }
             }
-        }
-
-        awaitClose {
-            timeoutJob?.cancel()
-            activeCallbacks.remove(callback)
-            client.removeLocationUpdates(callback)
+            awaitClose { timeoutJob?.cancel() }
+        } finally {
+            // Registration may fail or be cancelled before awaitClose is reached.
+            client.removeLocationUpdates(callback).addOnSuccessListener {
+                synchronized(activeCallbacks) { activeCallbacks.remove(callback) }
+            }
         }
     }
 }
