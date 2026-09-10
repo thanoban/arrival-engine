@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofenceStatusCodes
@@ -24,19 +25,24 @@ import com.nearwake.domain.trip.engine.TripEngine
 import com.nearwake.domain.trip.engine.TripEngineResult
 import com.nearwake.domain.trip.engine.TripEvent
 import com.nearwake.domain.trip.engine.TripSideEffect
-import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.AlertStage
+import com.nearwake.domain.trip.model.Confidence
 import com.nearwake.domain.trip.model.MonitoringMode
 import com.nearwake.domain.trip.model.TripSession
+import com.nearwake.domain.trip.model.TripState
+import com.nearwake.domain.trip.model.isTerminal
 import com.nearwake.ports.analytics.NearWakeAnalytics
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -67,6 +73,9 @@ class TripMonitoringService : Service() {
     private var activeSession: TripSession? = null
     private var activeContext: MonitoredTripContext? = null
     private var locationJob: Job? = null
+    private var etaRefreshJob: Job? = null
+    private val etaPolicy = EtaRefreshPolicy()
+    private val locationSamples = Channel<Pair<MonitoredTripContext, LatLng>>(Channel.CONFLATED)
 
     override fun onCreate() {
         super.onCreate()
@@ -75,7 +84,7 @@ class TripMonitoringService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        when (intent?.action ?: ACTION_START_MONITORING) {
             ACTION_START_MONITORING -> {
                 startForeground(
                     NOTIFICATION_ID_MONITORING,
@@ -84,10 +93,30 @@ class TripMonitoringService : Service() {
                         stage = AlertStage.MONITORING,
                     ),
                 )
-                val tripId = intent.getStringExtra(EXTRA_TRIP_ID) ?: return START_STICKY
                 serviceScope.launch {
                     stateMutex.withLock {
-                        startMonitoring(tripId)
+                        val tripId = intent?.getStringExtra(EXTRA_TRIP_ID)
+                            ?: tripSessionStore.loadActive()?.tripId
+                        if (tripId == null) {
+                            stopSelf(startId)
+                            return@withLock
+                        }
+                        runCatching { startMonitoring(tripId) }
+                            .onFailure { e ->
+                                if (e is CancellationException) throw e
+                                notificationHelper.notify(
+                                    NOTIFICATION_ID_BOARDING_WARNING,
+                                    notificationHelper.buildMonitoringProblemNotification(tripId),
+                                )
+                                diagnosticsLogger.log(
+                                    eventType = "monitoring_start_failed",
+                                    tripId = tripId,
+                                    payload = buildJsonObject {
+                                        put("message", e.message.orEmpty())
+                                    },
+                                )
+                                stopSelf()
+                            }
                     }
                 }
             }
@@ -99,6 +128,8 @@ class TripMonitoringService : Service() {
 
     override fun onDestroy() {
         locationJob?.cancel()
+        etaRefreshJob?.cancel()
+        locationSamples.close()
         feedbackCoordinator.reset()
         launchCleanup(activeSession?.tripId)
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -109,6 +140,9 @@ class TripMonitoringService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private suspend fun startMonitoring(tripId: String) {
+        locationJob?.cancel()
+        etaRefreshJob?.cancel()
+        etaPolicy.reset(tripId)
         val context = contextLoader.load(
             tripId = tripId,
             batterySaverMode = readBatteryPercent() < BATTERY_SAVER_THRESHOLD,
@@ -127,6 +161,10 @@ class TripMonitoringService : Service() {
         feedbackCoordinator.reset()
         val restoredSession = tripSessionStore.loadOrCreate(tripId)
             .withInitialEta(context.initialEtaMinutes)
+        if (restoredSession.state.isTerminal) {
+            stopSelf()
+            return
+        }
         val preparedSession = registerPrerequisites(restoredSession, context)
         persistSession(preparedSession)
 
@@ -136,6 +174,11 @@ class TripMonitoringService : Service() {
             eventName = "RestoreMonitoring",
             context = context,
         )
+        if (restorationResult.session.state == TripState.Armed ||
+            restorationResult.session.state == TripState.WaitingForMovement) {
+            // Starting while already aboard may never produce an activity ENTER event.
+            startTracking(MonitoringMode.BALANCED)
+        }
         diagnosticsLogger.log(
             eventType = "monitoring_service_started",
             tripId = tripId,
@@ -149,6 +192,21 @@ class TripMonitoringService : Service() {
     }
 
     private fun observeSignals() {
+        // Process decisions outside the producer job: switching GPS modes cancels that job.
+        serviceScope.launch {
+            for ((context, location) in locationSamples) {
+                stateMutex.withLock {
+                    if (activeContext !== context) return@withLock
+                    try {
+                        handleLocationUpdate(context, location)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        failMonitoring(context, error)
+                    }
+                }
+            }
+        }
         serviceScope.launch {
             GeofenceEventBus.events.collect { event ->
                 stateMutex.withLock {
@@ -169,7 +227,7 @@ class TripMonitoringService : Service() {
                         return@withLock
                     }
 
-                    when (tripMonitoringRuntime.classifySignal(event.geofenceIds)) {
+                    when (tripMonitoringRuntime.classifySignal(context, event.geofenceIds)) {
                         GeofenceSignal.APPROACH -> applyEngineResult(
                             result = tripEngine.onEvent(session, TripEvent.ApproachGeofenceEntered),
                             eventName = "ApproachGeofenceEntered",
@@ -280,11 +338,36 @@ class TripMonitoringService : Service() {
         }
         val updates = locationStrategyOrchestrator.escalate(mode, balancedMinDistanceMeters = minDistance)
         locationJob = serviceScope.launch {
-            updates.collectLatest { location ->
+            updates.catch { error ->
                 stateMutex.withLock {
-                    handleLocationUpdate(context, location)
+                    if (activeContext === context) failMonitoring(context, error)
                 }
+            }.collect { location ->
+                locationSamples.trySend(context to location)
             }
+        }
+    }
+
+    private suspend fun failMonitoring(context: MonitoredTripContext, error: Throwable) {
+        try {
+            activeSession?.let {
+                persistSession(
+                    it.copy(
+                        state = TripState.FailedGracefully,
+                        monitoringMode = MonitoringMode.GEOFENCE_ONLY,
+                        confidence = Confidence.OFFLINE,
+                        lastEtaMinutes = null,
+                        updatedAt = Clock.System.now(),
+                    ),
+                )
+            }
+            notificationHelper.notify(
+                NOTIFICATION_ID_BOARDING_WARNING,
+                notificationHelper.buildMonitoringProblemNotification(context.tripId),
+            )
+            analytics.recordFailure("location_monitoring", error, mapOf("trip_id" to context.tripId))
+        } finally {
+            stopSelf()
         }
     }
 
@@ -293,47 +376,56 @@ class TripMonitoringService : Service() {
         location: LatLng,
     ) {
         var session = activeSession ?: return
-        val suppressNetworkRefresh = isOnCellularOnly() && readBatteryPercent() < NETWORK_SUPPRESS_THRESHOLD
-        val etaResult = if (context.hasCachedRoute && !suppressNetworkRefresh) {
-            routingRepository.refreshEta(context.tripId, location)
-        } else {
-            Result.failure(IllegalStateException("No cached route is available for this trip."))
+        if (session.state.isTerminal || session.state == TripState.Alerting) return
+        if (session.state == TripState.Armed || session.state == TripState.WaitingForMovement) {
+            session = session.copy(state = TripState.MonitoringLowPower, monitoringMode = MonitoringMode.BALANCED)
         }
-
-        if (context.hasCachedRoute) {
-            session = when {
-                etaResult.isSuccess && session.confidence == Confidence.OFFLINE -> {
-                    val result = tripEngine.onEvent(session, TripEvent.NetworkRestored())
-                    applyEngineResult(
-                        result = result,
-                        eventName = "NetworkRestored",
-                        context = context,
-                    )
-                    activeSession ?: result.session
+        val now = SystemClock.elapsedRealtime()
+        val conserveBattery = isOnCellularOnly() && readBatteryPercent() < NETWORK_SUPPRESS_THRESHOLD
+        if (context.hasCachedRoute && etaRefreshJob?.isActive != true &&
+            etaPolicy.shouldRefresh(context.tripId, now, conserveBattery)) {
+            etaRefreshJob = serviceScope.launch {
+                val result = try {
+                    routingRepository.refreshEta(context.tripId, location)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Result.failure(error)
                 }
-
-                etaResult.isFailure && session.confidence != Confidence.OFFLINE -> {
-                    val result = tripEngine.onEvent(session, TripEvent.NetworkLost)
-                    applyEngineResult(
-                        result = result,
-                        eventName = "NetworkLost",
-                        context = context,
-                        extraPayload = buildJsonObject {
-                            put("message", etaResult.exceptionOrNull()?.message.orEmpty())
-                        },
-                    )
-                    activeSession ?: result.session
+                stateMutex.withLock {
+                    if (activeContext !== context) return@withLock
+                    etaPolicy.record(context.tripId, SystemClock.elapsedRealtime(), result)
                 }
-
-                else -> session
+                locationSamples.trySend(context to location)
             }
         }
+
+        val freshEta = etaPolicy.currentEta(context.tripId, now)
+        if (context.hasCachedRoute) {
+            val confidenceEvent = when {
+                freshEta != null && session.confidence == Confidence.OFFLINE -> TripEvent.NetworkRestored()
+                etaPolicy.isUnavailable(context.tripId, now) && session.confidence != Confidence.OFFLINE -> {
+                    TripEvent.NetworkLost
+                }
+                else -> null
+            }
+            if (confidenceEvent != null) {
+                val result = tripEngine.onEvent(session, confidenceEvent)
+                applyEngineResult(
+                    result = result,
+                    eventName = confidenceEvent::class.simpleName ?: "NetworkStatusChanged",
+                    context = context,
+                )
+                session = activeSession ?: result.session
+            }
+        }
+        session = session.copy(monitoringMode = locationStrategyOrchestrator.monitoringMode.value)
 
         val update = tripMonitoringRuntime.applyLocationUpdate(
             context = context,
             session = session,
             location = location,
-            etaMinutes = etaResult.getOrNull() ?: session.lastEtaMinutes,
+            etaMinutes = freshEta,
         )
         applyLocationUpdate(
             update = update,
@@ -456,7 +548,6 @@ class TripMonitoringService : Service() {
                 }
 
                 TripSideEffect.CleanupMonitoring -> {
-                    launchCleanup(context.tripId)
                     stopSelf()
                 }
 
@@ -501,7 +592,7 @@ class TripMonitoringService : Service() {
 
     private fun readBatteryPercent(): Int {
         val bm = getSystemService(BATTERY_SERVICE) as? BatteryManager
-        return bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
+        return bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)?.takeIf { it in 0..100 } ?: 100
     }
 
     private fun isOnCellularOnly(): Boolean {

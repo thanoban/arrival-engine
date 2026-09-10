@@ -20,6 +20,39 @@ class TripMonitoringRuntimeTest {
         thresholdConfig = ThresholdConfig(),
     )
 
+    private fun context() = runtime.buildContext(
+        tripId = "trip-1", alertLeadMinutes = 5,
+        alertIntensity = AlertIntensity.STANDARD,
+        destination = LatLng(6.9271, 79.8612), hasCachedRoute = false,
+    )
+
+    @Test
+    fun `delayed geofence from a different trip cannot fire arrival`() {
+        assertThat(runtime.classifySignal(context(), listOf("old-trip:destination"))).isNull()
+        assertThat(runtime.classifySignal(context(), listOf("trip-1:destination")))
+            .isEqualTo(GeofenceSignal.DESTINATION)
+    }
+
+    @Test
+    fun `first low power sample inside destination fires without waiting for another fix`() {
+        val context = context()
+        val session = TripSession(tripId = "trip-1", state = TripState.MonitoringLowPower,
+            monitoringMode = MonitoringMode.BALANCED, updatedAt = Clock.System.now())
+        val update = runtime.applyLocationUpdate(context, session, context.destination, null)
+        assertThat(update.session.state).isEqualTo(TripState.Alerting)
+        assertThat(update.engineResult!!.transition.sideEffects)
+            .contains(com.nearwake.domain.trip.engine.TripSideEffect.FireArrivalAlert)
+    }
+
+    @Test
+    fun `missing fresh eta does not revive a persisted estimate`() {
+        val session = TripSession(tripId = "trip-1", state = TripState.MonitoringLowPower,
+            monitoringMode = MonitoringMode.BALANCED, lastEtaMinutes = 1, updatedAt = Clock.System.now())
+        val update = runtime.applyLocationUpdate(context(), session, LatLng(7.2, 80.2), null)
+        assertThat(update.session.lastEtaMinutes).isNull()
+        assertThat(update.session.state).isEqualTo(TripState.MonitoringLowPower)
+    }
+
     @Test
     fun `buildGeofences creates approach and destination zones`() {
         val context = runtime.buildContext(

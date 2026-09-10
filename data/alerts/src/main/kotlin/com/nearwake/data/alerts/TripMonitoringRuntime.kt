@@ -117,10 +117,10 @@ class TripMonitoringRuntime @Inject constructor(
     fun distanceToDestination(lat: Double, lng: Double, destination: LatLng): Double =
         distanceMeters(LatLng(lat = lat, lng = lng), destination)
 
-    fun classifySignal(geofenceIds: List<String>): GeofenceSignal? =
+    fun classifySignal(context: MonitoredTripContext, geofenceIds: List<String>): GeofenceSignal? =
         when {
-            geofenceIds.any { it.endsWith(DESTINATION_SUFFIX) } -> GeofenceSignal.DESTINATION
-            geofenceIds.any { it.endsWith(APPROACH_SUFFIX) } -> GeofenceSignal.APPROACH
+            context.geofenceIds[1] in geofenceIds -> GeofenceSignal.DESTINATION
+            context.geofenceIds[0] in geofenceIds -> GeofenceSignal.APPROACH
             else -> null
         }
 
@@ -133,7 +133,7 @@ class TripMonitoringRuntime @Inject constructor(
     ): TripMonitoringUpdate {
         val distanceMeters = distanceMeters(location, context.destination)
         val previousDistanceMeters = previousDistanceFromDestination(session, context.destination)
-        val persistedEta = etaMinutes ?: session.lastEtaMinutes
+        val persistedEta = etaMinutes
         val seededSession = session.copy(
             lastKnownLat = location.lat,
             lastKnownLng = location.lng,
@@ -158,6 +158,15 @@ class TripMonitoringRuntime @Inject constructor(
                 previousDistanceMeters = previousDistanceMeters,
                 destinationGeofenceEntered = true,
             )
+
+            seededSession.state == TripState.MonitoringLowPower &&
+                distanceMeters <= context.tripRule.destinationRadiusMeters -> tripEngine.evaluateAlert(
+                    session = seededSession.ensureApproachState(),
+                    tripRule = context.tripRule,
+                    distanceMeters = distanceMeters,
+                    previousDistanceMeters = previousDistanceMeters,
+                    destinationGeofenceEntered = false,
+                )
 
             seededSession.state == TripState.MonitoringLowPower -> tripEngine.evaluateApproach(
                 session = seededSession,

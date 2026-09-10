@@ -13,6 +13,8 @@ import kotlinx.datetime.Clock
 class TripSessionStore @Inject constructor(
     private val tripSessionDao: TripSessionDao,
 ) {
+    suspend fun loadActive(): TripSession? = tripSessionDao.getActiveTripSession()?.toModel()
+
     suspend fun loadOrCreate(tripId: String): TripSession {
         return tripSessionDao.getTripSessionById(tripId)?.toModel()
             ?: TripSession(

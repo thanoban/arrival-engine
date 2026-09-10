@@ -7,6 +7,9 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import com.nearwake.core.database.dao.AlertEventDao
@@ -36,6 +39,9 @@ class AlertOrchestrator @Inject constructor(
     private val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     private var mediaPlayer: MediaPlayer? = null
     private var activeAlertEventId: String? = null
+    private var activeTripId: String? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private val silenceTimeout = Runnable { stopOutputs() }
 
     suspend fun fireAlert(
         tripId: String,
@@ -48,8 +54,10 @@ class AlertOrchestrator @Inject constructor(
         etaMinutes: Int? = null,
     ) {
         notificationHelper.ensureChannels()
+        stopActiveAlert()
         val eventId = UUID.randomUUID().toString()
         activeAlertEventId = eventId
+        activeTripId = tripId
 
         alertEventDao.upsertAlertEvent(
             AlertEventEntity(
@@ -74,11 +82,12 @@ class AlertOrchestrator @Inject constructor(
             intensity = intensity,
             mode = mode,
         )
-        scheduleRepeatingReminder(
+        scheduleReminder(
             tripId = tripId,
             mode = mode,
             recovery = type == AlertType.RECOVERY,
         )
+        handler.postDelayed(silenceTimeout, MAX_ALERT_DURATION_MS)
 
         diagnosticsLogger.log(
             eventType = "alert_fired",
@@ -101,20 +110,15 @@ class AlertOrchestrator @Inject constructor(
     }
 
     suspend fun dismissAlert(tripId: String) {
-        activeAlertEventId?.let { eventId ->
+        val dismissedEventId = activeAlertEventId
+        stopActiveAlert()
+        dismissedEventId?.let { eventId ->
             alertEventDao.getAlertEventById(eventId)?.let { existing ->
                 alertEventDao.upsertAlertEvent(
                     existing.copy(dismissedAt = Clock.System.now()),
                 )
             }
         }
-        activeAlertEventId = null
-        alarmManager.cancel(reminderPendingIntent(tripId))
-        vibrator.cancel()
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-        mediaPlayer = null
-        notificationHelper.cancel(ALERT_NOTIFICATION_ID)
 
         diagnosticsLogger.log(
             eventType = "alert_dismissed",
@@ -123,19 +127,51 @@ class AlertOrchestrator @Inject constructor(
         )
     }
 
+    fun stopActiveAlert() {
+        stopOutputs()
+        activeAlertEventId = null
+        activeTripId = null
+        notificationHelper.cancel(ALERT_NOTIFICATION_ID)
+    }
+
+    private fun stopOutputs() {
+        handler.removeCallbacks(silenceTimeout)
+        activeTripId?.let { alarmManager.cancel(reminderPendingIntent(it)) }
+        vibrator.cancel()
+        val player = mediaPlayer
+        mediaPlayer = null
+        player?.release()
+    }
+
     private fun startSound() {
         mediaPlayer?.release()
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build(),
-            )
-            setDataSource(context, android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI)
-            isLooping = true
-            prepare()
-            start()
+        val player = MediaPlayer()
+        mediaPlayer = player
+        try {
+            player.apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build(),
+                )
+                setDataSource(context, android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI)
+                isLooping = true
+                setOnPreparedListener { prepared ->
+                    if (mediaPlayer === prepared) prepared.start()
+                }
+                setOnErrorListener { failed, _, _ ->
+                    if (mediaPlayer === failed) mediaPlayer = null
+                    failed.release()
+                    true
+                }
+                prepareAsync()
+            }
+        } catch (error: Exception) {
+            player.release()
+            mediaPlayer = null
+            // Notification and vibration must still work if the chosen alarm sound fails.
+            timber.log.Timber.w(error, "Arrival sound unavailable")
         }
     }
 
@@ -163,22 +199,21 @@ class AlertOrchestrator @Inject constructor(
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
         } else {
             @Suppress("DEPRECATION")
-            vibrator.vibrate(pattern, 0)
+            vibrator.vibrate(pattern, -1)
         }
     }
 
-    private fun scheduleRepeatingReminder(
+    private fun scheduleReminder(
         tripId: String,
         mode: AlertMode,
         recovery: Boolean,
     ) {
-        alarmManager.setRepeating(
-            AlarmManager.RTC_WAKEUP,
-            System.currentTimeMillis() + REMINDER_INTERVAL_MS,
-            REMINDER_INTERVAL_MS,
+        alarmManager.set(
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            SystemClock.elapsedRealtime() + REMINDER_INTERVAL_MS,
             reminderPendingIntent(
                 tripId = tripId,
                 mode = mode,
@@ -199,6 +234,7 @@ class AlertOrchestrator @Inject constructor(
                 putExtra(NotificationHelper.EXTRA_TRIP_ID, tripId)
                 putExtra(EXTRA_RECOVERY, recovery)
                 putExtra(EXTRA_MODE, mode.name)
+                putExtra(EXTRA_EXPIRES_AT, SystemClock.elapsedRealtime() + MAX_ALERT_DURATION_MS)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -207,6 +243,8 @@ class AlertOrchestrator @Inject constructor(
         const val ALERT_NOTIFICATION_ID = 42
         const val EXTRA_RECOVERY = "extra_recovery"
         const val EXTRA_MODE = "extra_mode"
+        const val EXTRA_EXPIRES_AT = "extra_expires_at"
+        private const val MAX_ALERT_DURATION_MS = 120_000L
         private const val REMINDER_INTERVAL_MS = 30_000L
     }
 }

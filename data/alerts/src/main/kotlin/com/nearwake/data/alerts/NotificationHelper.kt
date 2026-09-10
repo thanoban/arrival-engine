@@ -228,6 +228,15 @@ class NotificationHelper @Inject constructor(
         notificationManager.notify(id, notification)
     }
 
+    fun buildMonitoringProblemNotification(tripId: String): Notification =
+        NotificationCompat.Builder(context, CHANNEL_IMMINENT)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("Trip monitoring stopped")
+            .setContentText("Open NearWake to check location permissions and restart your trip.")
+            .setContentIntent(contentIntent(tripId))
+            .setAutoCancel(true)
+            .build()
+
     fun cancel(id: Int) {
         notificationManager.cancel(id)
     }
