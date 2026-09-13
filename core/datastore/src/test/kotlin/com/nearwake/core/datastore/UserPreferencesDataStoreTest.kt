@@ -25,6 +25,7 @@ class UserPreferencesDataStoreTest {
         assertEquals(AlertTriggerMode.TIME, preferences.defaultAlertTriggerMode)
         assertEquals(500, preferences.defaultAlertDistanceMeters)
         assertEquals(true, preferences.departureRemindersEnabled)
+        assertEquals(null, preferences.regionOverrideCountryCode)
     }
 
     @Test
@@ -55,6 +56,17 @@ class UserPreferencesDataStoreTest {
         val preferences = store.preferences.first()
         assertEquals(AlertTriggerMode.BOTH, preferences.defaultAlertTriggerMode)
         assertEquals(1500, preferences.defaultAlertDistanceMeters)
+    }
+
+    @Test
+    fun `region override persists and can return to automatic detection`() = runTest {
+        val store = userPreferencesDataStore()
+
+        store.setRegionOverrideCountryCode("LK")
+        assertEquals("LK", store.preferences.first().regionOverrideCountryCode)
+
+        store.setRegionOverrideCountryCode(null)
+        assertEquals(null, store.preferences.first().regionOverrideCountryCode)
     }
 
     private fun TestScope.userPreferencesDataStore(): UserPreferencesDataStore =

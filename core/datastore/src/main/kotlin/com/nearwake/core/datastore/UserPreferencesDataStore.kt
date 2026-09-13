@@ -38,6 +38,7 @@ class UserPreferencesDataStore(
             notificationChannelVersion = preferences[NOTIFICATION_CHANNEL_VERSION] ?: 1,
             themeMode = preferences[THEME_MODE]?.toEnumOrDefault(ThemeMode.SYSTEM) ?: ThemeMode.SYSTEM,
             departureRemindersEnabled = preferences[DEPARTURE_REMINDERS_ENABLED] ?: true,
+            regionOverrideCountryCode = preferences[REGION_OVERRIDE_COUNTRY_CODE],
         )
     }
 
@@ -107,6 +108,16 @@ class UserPreferencesDataStore(
         }
     }
 
+    suspend fun setRegionOverrideCountryCode(countryCode: String?) {
+        dataStore.edit { preferences ->
+            if (countryCode == null) {
+                preferences.remove(REGION_OVERRIDE_COUNTRY_CODE)
+            } else {
+                preferences[REGION_OVERRIDE_COUNTRY_CODE] = countryCode
+            }
+        }
+    }
+
     suspend fun updateAll(values: UserPreferences) {
         dataStore.edit { preferences ->
             preferences[DEFAULT_ALERT_LEAD_MINUTES] = values.defaultAlertLeadMinutes
@@ -120,6 +131,11 @@ class UserPreferencesDataStore(
             preferences[NOTIFICATION_CHANNEL_VERSION] = values.notificationChannelVersion
             preferences[THEME_MODE] = values.themeMode.name
             preferences[DEPARTURE_REMINDERS_ENABLED] = values.departureRemindersEnabled
+            if (values.regionOverrideCountryCode == null) {
+                preferences.remove(REGION_OVERRIDE_COUNTRY_CODE)
+            } else {
+                preferences[REGION_OVERRIDE_COUNTRY_CODE] = values.regionOverrideCountryCode
+            }
         }
     }
 
@@ -135,6 +151,7 @@ class UserPreferencesDataStore(
         private val NOTIFICATION_CHANNEL_VERSION = intPreferencesKey("notification_channel_version")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DEPARTURE_REMINDERS_ENABLED = booleanPreferencesKey("departure_reminders_enabled")
+        private val REGION_OVERRIDE_COUNTRY_CODE = stringPreferencesKey("region_override_country_code")
     }
 }
 
