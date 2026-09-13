@@ -36,6 +36,8 @@
 - ETA refreshes are throttled, stale estimates are rejected, and failures use bounded backoff
 - live-trip and arrival screens no longer invent ETA values when routing is unavailable
 - alert acknowledgement now records dismissal before monitoring stops
+- stale cached route durations are excluded when monitoring restores a session
+- unsupported Android battery readings no longer activate a false saver state
 - all tracked correction items in this file are currently resolved
 
 ---
@@ -64,6 +66,8 @@
 | C-018 | Alert acknowledgement never persisted dismissal time | Medium | ✅ RESOLVED |
 | C-019 | Precise GPS burst completion could stop monitoring | Critical | ✅ RESOLVED |
 | C-020 | ETA refresh and alert output could consume unbounded resources | High | ✅ RESOLVED |
+| C-021 | Monitoring restore trusted stale cached route duration | High | ✅ RESOLVED |
+| C-022 | Live trip UI treated unsupported battery readings as low battery | Low | ✅ RESOLVED |
 
 ---
 
@@ -211,6 +215,14 @@ Precise location bursts transition back to balanced tracking after their bounded
 ## ✅ C-020 — RESOLVED
 
 `EtaRefreshPolicy` limits route requests, rejects stale results, isolates trip responses, and applies bounded retry backoff. Alert sound is asynchronously prepared and bounded to two minutes; vibration and reminder alarms no longer repeat indefinitely.
+
+## ✅ C-021 — RESOLVED
+
+`MonitoredTripContextLoader` keeps a stale cached route available as endpoint context for an online refresh but does not seed `TripSession.lastEtaMinutes` from its old duration. Fresh and stale cache behavior is protected by focused unit tests.
+
+## ✅ C-022 — RESOLVED
+
+`LiveTripViewModel` accepts battery capacity only inside `0..100`, matching the monitoring service. Android's unsupported-property sentinel now falls back to a neutral value instead of falsely enabling the battery-saver label.
 
 ---
 
