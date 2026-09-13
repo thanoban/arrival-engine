@@ -47,7 +47,7 @@ class AlertDecisionEngine(
                 action = AlertAction.ALERT,
                 decision = AlertDecision(
                     tripId = tripId,
-                    reason = AlertReason.ETA_THRESHOLD,
+                    reason = AlertReason.DISTANCE_THRESHOLD,
                     confidence = confidence,
                     decidedAt = decidedAt,
                 ),

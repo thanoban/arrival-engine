@@ -40,7 +40,7 @@ class AlertDecisionEngineTest {
         )
 
         assertThat(outcome.action).isEqualTo(AlertAction.ALERT)
-        assertThat(outcome.decision?.reason).isEqualTo(AlertReason.ETA_THRESHOLD)
+        assertThat(outcome.decision?.reason).isEqualTo(AlertReason.DISTANCE_THRESHOLD)
     }
 
     @Test

@@ -14,6 +14,7 @@ data class AlertDecision(
 @Serializable
 enum class AlertReason {
     ETA_THRESHOLD,
+    DISTANCE_THRESHOLD,
     GEOFENCE_ENTERED,
     OVERSHOOT,
 }
