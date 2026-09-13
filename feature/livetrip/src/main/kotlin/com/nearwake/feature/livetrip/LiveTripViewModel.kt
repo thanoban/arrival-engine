@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 data class LiveTripUiState(
     val tripId: String = "",
     val destinationName: String = "Live trip",
-    val etaLabel: String = "~22 min",
+    val etaLabel: String = "ETA unavailable",
     val routeSummary: String = "Destination-only monitoring",
     val elapsedTimeLabel: String = "",
     val monitoringMode: MonitoringMode = MonitoringMode.GEOFENCE_ONLY,

@@ -56,12 +56,12 @@ class ObserveLiveTripUseCase @Inject constructor(
                 snapshot.savedPlaces.firstOrNull { persistedPlace -> persistedPlace.id == destinationId }
             }
             val routeSnapshot = routingRepository.getCachedRoute(tripId)
-            val minutes = session?.lastEtaMinutes ?: 22
+            val etaMinutes = session?.lastEtaMinutes
 
             LiveTripPresentation(
                 tripId = tripId,
                 destinationName = place?.name ?: "Live trip",
-                etaLabel = "~${minutes} min",
+                etaLabel = etaMinutes?.let { minutes -> "~$minutes min" } ?: "ETA unavailable",
                 routeSummary = routeSnapshot?.toRouteSummary() ?: "Destination-only monitoring",
                 elapsedTimeLabel = trip?.createdAt?.toReadableLabel().orEmpty(),
                 monitoringMode = session?.monitoringMode ?: MonitoringMode.GEOFENCE_ONLY,
@@ -69,6 +69,7 @@ class ObserveLiveTripUseCase @Inject constructor(
                 alertMode = trip?.alertMode ?: AlertMode.ACTIVE,
                 alertStage = session?.alertStage ?: AlertStage.MONITORING,
                 transferSteps = routeSnapshot?.let { snapshotRoute ->
+                    val minutes = etaMinutes ?: return@let emptyList()
                     buildTransferProgress(
                         routeSnapshot = snapshotRoute,
                         etaMinutes = minutes,

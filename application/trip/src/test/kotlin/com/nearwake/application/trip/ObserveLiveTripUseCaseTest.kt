@@ -74,6 +74,25 @@ class ObserveLiveTripUseCaseTest {
         assertEquals(LiveTripTransferStatus.Completed, liveTrip.transferSteps.first().status)
     }
 
+    @Test
+    fun `does not invent an eta or transfer timing when no estimate exists`() = runBlocking {
+        val useCase = ObserveLiveTripUseCase(
+            tripLifecycleStore = TestTripLifecycleStore(
+                PersistedHomeSnapshot(
+                    trips = emptyList(),
+                    sessions = emptyList(),
+                    savedPlaces = emptyList(),
+                ),
+            ),
+            routingRepository = FakeRoutingRepository(),
+        )
+
+        val liveTrip = useCase("trip-without-eta").first()
+
+        assertEquals("ETA unavailable", liveTrip.etaLabel)
+        assertTrue(liveTrip.transferSteps.isEmpty())
+    }
+
     private class FakeRoutingRepository : RoutingRepository {
         override suspend fun fetchRoute(
             origin: com.nearwake.domain.location.model.LatLng,
