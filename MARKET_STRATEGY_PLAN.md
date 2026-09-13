@@ -267,6 +267,12 @@ Each workstream (WS) lists intent → target modules → deliverable → gate.
 - Modules: `core:common` (resolver), `domain:routing`/`data:routing` (pack interface), `feature:places` (merged search), `core:datastore` (region preference).
 - **Gate:** outside a pack region, behavior is byte-for-byte the current Places-only path; unit tests for resolver precedence + override.
 
+Implementation checkpoint (2026-09-13):
+- [x] Pure `RegionResolver` policy with override → SIM → locale precedence, ISO normalization, and unknown-region fallback
+- [x] Nullable region override persisted in Preferences DataStore; `null` preserves automatic detection
+- [ ] Android SIM/locale signal adapter and resolved-region observable
+- [ ] Regional data-pack contract, registry, and merged local → Places search path
+
 **WS-2 — Localization / i18n Engine** · (Section 2 trilingual, Section 4 L1)
 - Externalize hardcoded strings → per-language resources (si/ta/en); locale-aware alert copy.
 - Multi-script + romanization + typo-tolerant search matching.
