@@ -178,7 +178,7 @@ These are product commitments that go on the Play Store listing:
 6. **Battery-honest.** Expose what we spend.
 7. **OEM-aware.** Vendor-specific battery guidance in-product.
 8. **One-tap re-arm.** Returning commuters never re-enter a trip.
-9. **Privacy-respecting.** Local persistence first. No continuous cloud location.
+9. **Privacy-respecting.** Local persistence first. No ambient, public, or indefinite cloud location.
 10. **Fail visible, not silent.**
 
 ---
@@ -191,7 +191,7 @@ These are product commitments that go on the Play Store listing:
 - Social / community reports (Waze-style)
 - AR stop finder
 - Mandatory accounts
-- Continuous cloud location sharing
+- Ambient, public, or indefinite cloud location sharing. A future trip-scoped share may be explicit, recipient-scoped, revocable, and auto-expiring.
 - Safety platform — SOS, emergency contacts, 24/7 monitoring (liability trap)
 - Ads of any kind
 - Wear OS (post-1.0)
@@ -271,3 +271,5 @@ Use [SRI_LANKA_PRODUCTION_DATA_PLAN.md](SRI_LANKA_PRODUCTION_DATA_PLAN.md) for:
 - which official sources to use first
 - what to ask NTC and Sri Lanka Railways for
 - how to structure the production data pipeline
+
+For the consolidated execution strategy — beating current Play Store apps, the Sri Lanka launch plan (including the 2026 Lanka Metro Transit / LMT-GO landscape), and pipeline upgrades — see [MARKET_STRATEGY_PLAN.md](MARKET_STRATEGY_PLAN.md).
