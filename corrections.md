@@ -4,7 +4,7 @@
 
 ---
 
-## Project Status Snapshot (2026-04-23)
+## Project Status Snapshot (2026-09-13)
 
 **Overall:** Build system complete. All modules have source files. Core implementation is substantial and buildable.
 
@@ -52,7 +52,7 @@
 | C-010 | `local.properties.template` missing | Low | ✅ RESOLVED |
 | C-011 | Missing `ksp(libs.hilt.work.compiler)` in `app/build.gradle.kts` | Compile Error | ✅ RESOLVED |
 | C-012 | `AlertReminderReceiver` directly constructs Hilt-managed `NotificationHelper` | Runtime Crash | ✅ RESOLVED |
-| C-013 | `BootReceiver` (data/location) not declared in AndroidManifest | Medium | ✅ RESOLVED |
+| C-013 | Boot recovery must schedule real trip restoration | High | ✅ RESOLVED |
 
 ---
 
@@ -155,13 +155,13 @@ class AlertReminderReceiver : BroadcastReceiver() {
 
 ## ✅ C-013 — RESOLVED
 
-**Severity:** Medium — boot recovery silently never fires
-**File:** `data/location/src/main/AndroidManifest.xml`
+**Severity:** High — boot recovery must restore active monitoring, not only log
+**Files:** `data/alerts/src/main/AndroidManifest.xml`, `data/alerts/.../TripRecoveryBootReceiver.kt`
 
-`BootReceiver` is now declared in `data/location/src/main/AndroidManifest.xml`:
+The production receiver is `TripRecoveryBootReceiver`, declared by `data:alerts`:
 ```xml
 <receiver
-    android:name=".receivers.BootReceiver"
+    android:name=".worker.TripRecoveryBootReceiver"
     android:enabled="true"
     android:exported="true">
     <intent-filter>
@@ -169,7 +169,7 @@ class AlertReminderReceiver : BroadcastReceiver() {
     </intent-filter>
 </receiver>
 ```
-`RECEIVE_BOOT_COMPLETED` was already present in the app manifest.
+It enqueues `TripRecoveryWorker`, which reloads the active Room session and restarts monitoring. The duplicate `data/location` receiver was removed because it only wrote a log line and could falsely imply recovery had occurred. `RECEIVE_BOOT_COMPLETED` remains in the app manifest.
 
 ---
 
