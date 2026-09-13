@@ -6,7 +6,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nearwake.application.trip.CancelTripUseCase
-import com.nearwake.application.trip.LiveTripTransferStatus
 import com.nearwake.application.trip.ObserveLiveTripUseCase
 import com.nearwake.application.trip.UpdateTripAlertModeUseCase
 import com.nearwake.domain.routing.model.RouteSignalQuality
@@ -71,20 +70,7 @@ class LiveTripViewModel @Inject constructor(
                     alertSummary = liveTrip.alertSummary,
                     alertMode = liveTrip.alertMode,
                     alertStage = liveTrip.alertStage,
-                    transferSteps = liveTrip.transferSteps.map { step ->
-                        TransferProgressUiState(
-                            title = step.title,
-                            subtitle = step.subtitle,
-                            timingLabel = step.timingLabel,
-                            status = when (step.status) {
-                                LiveTripTransferStatus.Completed -> TransferProgressStatus.Completed
-                                LiveTripTransferStatus.Soon -> TransferProgressStatus.Soon
-                                LiveTripTransferStatus.Upcoming -> TransferProgressStatus.Upcoming
-                                LiveTripTransferStatus.Final -> TransferProgressStatus.Final
-                            },
-                            signalQuality = step.signalQuality,
-                        )
-                    },
+                    transferSteps = buildTransferProgress(liveTrip.transferSteps),
                     errorMessage = null,
                 )
             }
