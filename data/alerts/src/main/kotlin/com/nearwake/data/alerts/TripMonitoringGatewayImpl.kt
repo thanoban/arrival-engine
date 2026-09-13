@@ -20,4 +20,9 @@ class TripMonitoringGatewayImpl @Inject constructor(
         alertOrchestrator.stopActiveAlert()
         appContext.stopService(Intent(appContext, TripMonitoringService::class.java))
     }
+
+    override suspend fun acknowledgeAlert(tripId: String) {
+        alertOrchestrator.dismissAlert(tripId)
+        appContext.stopService(Intent(appContext, TripMonitoringService::class.java))
+    }
 }

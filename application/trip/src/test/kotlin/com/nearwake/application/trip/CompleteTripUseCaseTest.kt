@@ -36,5 +36,7 @@ class CompleteTripUseCaseTest {
         override fun stopMonitoring() {
             stopCalls += 1
         }
+
+        override suspend fun acknowledgeAlert(tripId: String) = Unit
     }
 }

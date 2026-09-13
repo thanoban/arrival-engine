@@ -96,6 +96,8 @@ class TripCreationEtaTest {
         override fun startMonitoring(tripId: String) = Unit
 
         override fun stopMonitoring() = Unit
+
+        override suspend fun acknowledgeAlert(tripId: String) = Unit
     }
 
     private class NoLocationRepository : LocationRepository {

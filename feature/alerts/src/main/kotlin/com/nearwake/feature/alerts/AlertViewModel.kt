@@ -3,7 +3,7 @@ package com.nearwake.feature.alerts
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nearwake.application.monitoring.StopTripMonitoringUseCase
+import com.nearwake.application.monitoring.AcknowledgeTripAlertUseCase
 import com.nearwake.application.trip.ObserveAlertUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -23,7 +23,7 @@ data class AlertUiState(
 class AlertViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     observeAlert: ObserveAlertUseCase,
-    private val stopTripMonitoring: StopTripMonitoringUseCase,
+    private val acknowledgeTripAlert: AcknowledgeTripAlertUseCase,
 ) : ViewModel() {
     private val tripId = savedStateHandle.get<String>(TRIP_ID_ARG).orEmpty()
     private val mutableState = MutableStateFlow(AlertUiState(tripId = tripId))
@@ -43,7 +43,7 @@ class AlertViewModel @Inject constructor(
 
     fun enterWalkFinish(onDismissed: (String) -> Unit) {
         viewModelScope.launch {
-            stopTripMonitoring()
+            acknowledgeTripAlert(tripId)
             onDismissed(tripId)
         }
     }

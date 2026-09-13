@@ -7,5 +7,6 @@ dependencies {
     implementation("javax.inject:javax.inject:1")
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.coroutines.core)
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
