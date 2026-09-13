@@ -66,11 +66,9 @@ fun AlertScreen(
                         append(state.destinationName)
                         append(". ")
                         append(
-                            if (state.etaLabel.any { it.isDigit() }) {
-                                "${state.etaLabel} remaining."
-                            } else {
-                                "Arriving now."
-                            },
+                            state.etaMinutes?.let { minutes ->
+                                "Approximately $minutes minutes remaining."
+                            } ?: "Arrival alert active. Exit now.",
                         )
                     }
                 },
@@ -87,19 +85,28 @@ fun AlertScreen(
                         color = NearWakeColors.TextPrimary.copy(alpha = 0.25f),
                         diameter = 192.dp,
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
-                        verticalAlignment = Alignment.Bottom,
-                    ) {
-                        NearWakeNumericText(
-                            text = state.etaLabel.filter { it.isDigit() }.ifBlank { "0" },
-                            color = NearWakeColors.TextPrimary,
-                            style = MaterialTheme.typography.displayMedium,
-                        )
+                    val etaMinutes = state.etaMinutes
+                    if (etaMinutes != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+                            verticalAlignment = Alignment.Bottom,
+                        ) {
+                            NearWakeNumericText(
+                                text = etaMinutes.toString(),
+                                color = NearWakeColors.TextPrimary,
+                                style = MaterialTheme.typography.displayMedium,
+                            )
+                            Text(
+                                text = "min",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = NearWakeColors.TextPrimary.copy(alpha = 0.85f),
+                            )
+                        }
+                    } else {
                         Text(
-                            text = "min",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = NearWakeColors.TextPrimary.copy(alpha = 0.85f),
+                            text = "EXIT NOW",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = NearWakeColors.TextPrimary,
                         )
                     }
                 }

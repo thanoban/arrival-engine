@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 data class AlertPresentation(
     val tripId: String,
     val destinationName: String,
-    val etaLabel: String,
+    val etaMinutes: Int?,
 )
 
 class ObserveAlertUseCase @Inject constructor(
@@ -24,7 +24,7 @@ class ObserveAlertUseCase @Inject constructor(
             AlertPresentation(
                 tripId = tripId,
                 destinationName = place?.name ?: "Arrival alert",
-                etaLabel = session?.lastEtaMinutes?.let { minutes -> "~$minutes min away" } ?: "You are close",
+                etaMinutes = session?.lastEtaMinutes?.takeIf { minutes -> minutes >= 0 },
             )
         }
 }

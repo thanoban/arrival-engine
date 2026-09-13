@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 data class AlertUiState(
     val tripId: String = "",
     val destinationName: String = "Arrival alert",
-    val etaLabel: String = "~8 min away",
+    val etaMinutes: Int? = null,
     val errorMessage: String? = null,
 )
 
@@ -35,7 +35,7 @@ class AlertViewModel @Inject constructor(
                 mutableState.value = AlertUiState(
                     tripId = alert.tripId,
                     destinationName = alert.destinationName,
-                    etaLabel = alert.etaLabel,
+                    etaMinutes = alert.etaMinutes,
                 )
             }
         }
