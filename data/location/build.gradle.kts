@@ -29,9 +29,11 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:database"))
+    implementation(project(":core:datastore"))
     implementation(project(":domain:location"))
     implementation(project(":domain:trip"))
 
+    implementation(libs.androidx.core.ktx)
     implementation(libs.play.services.location)
     implementation(libs.google.places)
     implementation(libs.coroutines.android)
@@ -40,6 +42,7 @@ dependencies {
     implementation(libs.timber)
 
     testImplementation(project(":core:testing"))
+    testImplementation(libs.datastore.preferences)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.coroutines.test)

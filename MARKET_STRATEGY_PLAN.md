@@ -270,7 +270,7 @@ Each workstream (WS) lists intent → target modules → deliverable → gate.
 Implementation checkpoint (2026-09-13):
 - [x] Pure `RegionResolver` policy with override → SIM → locale precedence, ISO normalization, and unknown-region fallback
 - [x] Nullable region override persisted in Preferences DataStore; `null` preserves automatic detection
-- [ ] Android SIM/locale signal adapter and resolved-region observable
+- [x] Android SIM/locale signal adapter and resolved-region observable; no GPS is used before onboarding
 - [ ] Regional data-pack contract, registry, and merged local → Places search path
 
 **WS-2 — Localization / i18n Engine** · (Section 2 trilingual, Section 4 L1)

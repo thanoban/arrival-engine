@@ -2,6 +2,7 @@ package com.nearwake.core.common.region
 
 import java.util.Locale
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
 enum class RegionSource {
     USER_OVERRIDE,
@@ -14,6 +15,19 @@ data class ResolvedRegion(
     val countryCode: String?,
     val source: RegionSource,
 )
+
+data class RegionSignals(
+    val simCountryCode: String?,
+    val localeCountryCode: String?,
+)
+
+interface RegionSignalDataSource {
+    fun observeRegionSignals(): Flow<RegionSignals>
+}
+
+interface ResolvedRegionRepository {
+    fun observeResolvedRegion(): Flow<ResolvedRegion>
+}
 
 class RegionResolver @Inject constructor() {
     fun resolve(
