@@ -13,7 +13,7 @@ object NearWakeColors {
 
     val TextPrimary = Color(0xFFF0F6FC)
     val TextSecondary = Color(0xFF94A3B8)
-    val TextTertiary = Color(0xFF64748B)
+    val TextTertiary = Color(0xFF7B8EAA)
     val TextDisabled = Color(0xFF3B4A5C)
 
     // Brand accent — vibrant transit blue, distinct from semantic safety colors
