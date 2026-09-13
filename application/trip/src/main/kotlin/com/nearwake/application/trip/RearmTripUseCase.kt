@@ -70,7 +70,7 @@ class RearmTripUseCase @Inject constructor(
                 monitoringMode = MonitoringMode.GEOFENCE_ONLY,
                 confidence = Confidence.HIGH,
                 geofenceIds = emptyList(),
-                lastEtaMinutes = routeSnapshot?.totalDurationMinutes ?: 35,
+                lastEtaMinutes = routeSnapshot?.totalDurationMinutes,
                 updatedAt = now,
             ),
         )

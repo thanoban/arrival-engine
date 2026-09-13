@@ -19,6 +19,8 @@ internal class TestTripLifecycleStore(
 ) : TripLifecycleStore {
     private val state = MutableStateFlow(snapshot)
     private val diagnosticsState = MutableStateFlow(diagnosticsEvents)
+    var savedTripSession: SaveTripSessionCommand? = null
+        private set
 
     override fun observeHomeSnapshot(): Flow<PersistedHomeSnapshot> = state
 
@@ -50,5 +52,7 @@ internal class TestTripLifecycleStore(
 
     override suspend fun saveTrip(command: SaveTripCommand) = Unit
 
-    override suspend fun saveTripSession(command: SaveTripSessionCommand) = Unit
+    override suspend fun saveTripSession(command: SaveTripSessionCommand) {
+        savedTripSession = command
+    }
 }

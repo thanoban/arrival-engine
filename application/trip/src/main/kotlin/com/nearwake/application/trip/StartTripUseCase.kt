@@ -62,7 +62,7 @@ class StartTripUseCase @Inject constructor(
                 monitoringMode = MonitoringMode.GEOFENCE_ONLY,
                 confidence = Confidence.HIGH,
                 geofenceIds = emptyList(),
-                lastEtaMinutes = request.previewRouteSnapshot?.totalDurationMinutes ?: 35,
+                lastEtaMinutes = request.previewRouteSnapshot?.totalDurationMinutes,
                 updatedAt = now,
             ),
         )
