@@ -92,7 +92,7 @@ class LiveTripViewModel @Inject constructor(
 
     private fun readBatteryPercent(): Int {
         val bm = appContext.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
-        return bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
+        return bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)?.takeIf { it in 0..100 } ?: 100
     }
 
     companion object {
