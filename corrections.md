@@ -32,6 +32,10 @@
 - route preview is shown during trip setup and cached per trip
 - live trip and trip summary show route/session data from persistence
 - monitoring service restores and saves `TripSession` state through Room while active
+- location bursts fall back to balanced tracking instead of silently ending monitoring
+- ETA refreshes are throttled, stale estimates are rejected, and failures use bounded backoff
+- live-trip and arrival screens no longer invent ETA values when routing is unavailable
+- alert acknowledgement now records dismissal before monitoring stops
 - all tracked correction items in this file are currently resolved
 
 ---
@@ -53,6 +57,13 @@
 | C-011 | Missing `ksp(libs.hilt.work.compiler)` in `app/build.gradle.kts` | Compile Error | ✅ RESOLVED |
 | C-012 | `AlertReminderReceiver` directly constructs Hilt-managed `NotificationHelper` | Runtime Crash | ✅ RESOLVED |
 | C-013 | Boot recovery must schedule real trip restoration | High | ✅ RESOLVED |
+| C-014 | Distance arrivals recorded as ETA decisions | Medium | ✅ RESOLVED |
+| C-015 | Transfer UI test depended on an untracked duplicate implementation | High | ✅ RESOLVED |
+| C-016 | Live and arrival screens displayed fabricated ETA values | High | ✅ RESOLVED |
+| C-017 | Trip creation persisted a fabricated 35-minute ETA | High | ✅ RESOLVED |
+| C-018 | Alert acknowledgement never persisted dismissal time | Medium | ✅ RESOLVED |
+| C-019 | Precise GPS burst completion could stop monitoring | Critical | ✅ RESOLVED |
+| C-020 | ETA refresh and alert output could consume unbounded resources | High | ✅ RESOLVED |
 
 ---
 
@@ -170,6 +181,36 @@ The production receiver is `TripRecoveryBootReceiver`, declared by `data:alerts`
 </receiver>
 ```
 It enqueues `TripRecoveryWorker`, which reloads the active Room session and restarts monitoring. The duplicate `data/location` receiver was removed because it only wrote a log line and could falsely imply recovery had occurred. `RECEIVE_BOOT_COMPLETED` remains in the app manifest.
+
+---
+
+## ✅ C-014 — RESOLVED
+
+Distance-radius alerts now persist `AlertReason.DISTANCE_THRESHOLD` instead of incorrectly reporting `ETA_THRESHOLD`. `AlertDecisionEngineTest` protects the diagnostic reason.
+
+## ✅ C-015 — RESOLVED
+
+`TransferProgressBuilder.kt` is tracked and limited to mapping application presentation models into UI state. Transfer timing remains owned by `ObserveLiveTripUseCase` and `TransferMonitor`, avoiding duplicate business logic across layers.
+
+## ✅ C-016 — RESOLVED
+
+Missing ETA is represented as nullable data. Live trip shows `ETA unavailable`; the arrival screen shows `EXIT NOW` without converting missing data to `0` or a placeholder countdown. Application tests cover both available and unavailable estimates.
+
+## ✅ C-017 — RESOLVED
+
+`StartTripUseCase` and `RearmTripUseCase` persist `null` when no route ETA exists instead of a fabricated 35-minute estimate. `TripCreationEtaTest` covers both creation paths.
+
+## ✅ C-018 — RESOLVED
+
+`AcknowledgeTripAlertUseCase` carries the trip ID through `TripMonitoringGateway`. The Android gateway now calls `AlertOrchestrator.dismissAlert()` before stopping the service, preserving acknowledgement timestamps for trust metrics.
+
+## ✅ C-019 — RESOLVED
+
+Precise location bursts transition back to balanced tracking after their bounded duration. Monitoring decisions run through a conflated channel so changing location modes cannot cancel the consumer handling the triggering sample. Cleanup attempts every resource release independently.
+
+## ✅ C-020 — RESOLVED
+
+`EtaRefreshPolicy` limits route requests, rejects stale results, isolates trip responses, and applies bounded retry backoff. Alert sound is asynchronously prepared and bounded to two minutes; vibration and reminder alarms no longer repeat indefinitely.
 
 ---
 
