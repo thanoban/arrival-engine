@@ -44,6 +44,7 @@ class MonitoredTripContextLoaderTest {
         val destination = savedPlaceEntity()
         val cachedRoute = mockk<RouteSnapshot> {
             every { totalDurationMinutes } returns 32
+            every { isStale } returns false
         }
         val expectedContext = mockk<MonitoredTripContext>()
         coEvery { tripDao.getTripById("trip-1") } returns trip
@@ -70,6 +71,40 @@ class MonitoredTripContextLoaderTest {
         val context = loader.load(
             tripId = "trip-1",
             batterySaverMode = true,
+        )
+
+        assertThat(context).isSameInstanceAs(expectedContext)
+    }
+
+    @Test
+    fun `load does not seed eta from a stale cached route`() = runTest {
+        val cachedRoute = mockk<RouteSnapshot> {
+            every { isStale } returns true
+        }
+        val expectedContext = mockk<MonitoredTripContext>()
+        coEvery { tripDao.getTripById("trip-1") } returns tripEntity()
+        coEvery { savedPlaceDao.getSavedPlaceById("place-1") } returns savedPlaceEntity()
+        coEvery { routingRepository.getCachedRoute("trip-1") } returns cachedRoute
+        every {
+            tripMonitoringRuntime.buildContext(
+                tripId = "trip-1",
+                destinationName = "Colombo Fort",
+                alertLeadMinutes = 5,
+                alertTriggerMode = AlertTriggerMode.BOTH,
+                alertDistanceMeters = 650,
+                alertIntensity = AlertIntensity.STANDARD,
+                alertMode = AlertMode.SLEEP,
+                destination = any(),
+                hasCachedRoute = true,
+                routeSnapshot = cachedRoute,
+                initialEtaMinutes = null,
+                batterySaverMode = false,
+            )
+        } returns expectedContext
+
+        val context = loader.load(
+            tripId = "trip-1",
+            batterySaverMode = false,
         )
 
         assertThat(context).isSameInstanceAs(expectedContext)

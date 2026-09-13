@@ -37,7 +37,7 @@ class MonitoredTripContextLoader @Inject constructor(
                 destination = LatLng(lat = destination.lat, lng = destination.lng),
                 hasCachedRoute = cachedRoute != null,
                 routeSnapshot = cachedRoute,
-                initialEtaMinutes = cachedRoute?.totalDurationMinutes,
+                initialEtaMinutes = cachedRoute?.takeUnless { it.isStale }?.totalDurationMinutes,
                 batterySaverMode = batterySaverMode,
             )
         }.onFailure { error ->
