@@ -1,7 +1,10 @@
 .gradle/
 .idea/
+.vscode/
 build/
 **/build/
+**/bin/
+audit-*.log
 local.properties
 keystore.properties
 *.jks
